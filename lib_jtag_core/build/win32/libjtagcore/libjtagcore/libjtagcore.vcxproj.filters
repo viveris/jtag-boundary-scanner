@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\bsdl_parser">
+      <UniqueIdentifier>{1e62a315-c065-4c43-b641-351c1e2e22bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bus_over_jtag">
+      <UniqueIdentifier>{5208b7a4-be09-422a-ac16-7972fcf1343c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\probes_drivers">
+      <UniqueIdentifier>{ce2073c5-9808-435d-94e7-a8526edd614b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\probes_drivers\ftdi_jtag">
+      <UniqueIdentifier>{2ad82e78-a316-4425-b988-91d0236566ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\probes_drivers\lpt_jtag">
+      <UniqueIdentifier>{3d7d3e7a-705e-4a81-8462-4f77797bb1bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\probes_drivers\jlink_jtag">
+      <UniqueIdentifier>{b133c262-64c0-4c10-98d2-9273a0aa1823}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\dbg_logs.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\jtag_core.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bsdl_parser\bsdl_loader.c">
+      <Filter>Source Files\bsdl_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bsdl_parser\bsdl_strings.c">
+      <Filter>Source Files\bsdl_parser</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bus_over_jtag\i2c_over_jtag.c">
+      <Filter>Source Files\bus_over_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bus_over_jtag\mdio_over_jtag.c">
+      <Filter>Source Files\bus_over_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bus_over_jtag\spi_over_jtag.c">
+      <Filter>Source Files\bus_over_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\drivers\drivers_list.c">
+      <Filter>Source Files\probes_drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\drivers\drv_loader.c">
+      <Filter>Source Files\probes_drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\drivers\ftdi_jtag\ftdi_jtag_drv.c">
+      <Filter>Source Files\probes_drivers\ftdi_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\drivers\lpt_jtag\lpt_jtag_drv.c">
+      <Filter>Source Files\probes_drivers\lpt_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\drivers\jlink_jtag\jlink_jtag_drv.c">
+      <Filter>Source Files\probes_drivers\jlink_jtag</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\bus_over_jtag\memory_over_jtag.c">
+      <Filter>Source Files\bus_over_jtag</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\bsdl_parser\bsdl_loader.h">
+      <Filter>Source Files\bsdl_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\bsdl_parser\bsdl_strings.h">
+      <Filter>Source Files\bsdl_parser</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\drivers_list.h">
+      <Filter>Source Files\probes_drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\drv_loader.h">
+      <Filter>Source Files\probes_drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\ftdi_jtag\ftdi\ftd2xx.h">
+      <Filter>Source Files\probes_drivers\ftdi_jtag</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\ftdi_jtag\ftdi_jtag_drv.h">
+      <Filter>Source Files\probes_drivers\ftdi_jtag</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\lpt_jtag\lpt_jtag_drv.h">
+      <Filter>Source Files\probes_drivers\lpt_jtag</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\drivers\jlink_jtag\jlink_jtag_drv.h">
+      <Filter>Source Files\probes_drivers\jlink_jtag</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\jtag_core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

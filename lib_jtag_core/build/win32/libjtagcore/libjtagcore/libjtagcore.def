@@ -1,0 +1,45 @@
+LIBRARY LIBJTAGCORE
+
+EXPORTS
+	jtagcore_init @1
+
+	jtagcore_scan_and_init_chain @3
+	jtagcore_get_number_of_devices @4
+	jtagcore_get_dev_id @5
+	jtagcore_loadbsdlfile @6
+	jtagcore_get_number_of_pins @7
+	jtagcore_get_pin_properties @8
+	jtagcore_get_bsdl_id @9
+	jtagcore_set_scan_mode @10
+	jtagcore_get_pin_state @11
+	jtagcore_set_pin_state @12
+	jtagcore_push_and_pop_chain @13
+
+	jtagcore_get_number_of_probes_drv @14
+	jtagcore_get_probe_name @15
+	jtagcore_select_and_open_probe @16
+	jtagcore_get_pin_id @17
+
+	jtagcore_deinit @18
+
+	jtagcore_i2c_set_scl_pin @100
+	jtagcore_i2c_set_sda_pin @101
+	jtagcore_i2c_write_read @102
+
+	jtagcore_spi_set_cs_pin @200
+	jtagcore_spi_set_clk_pin @201
+	jtagcore_spi_set_miso_pin @202
+	jtagcore_spi_set_mosi_pin @203
+	jtagcore_spi_write_read @204
+
+	jtagcore_mdio_set_mdio_pin @300
+	jtagcore_mdio_set_mdc_pin @301
+	jtagcore_mdio_read @302
+	jtagcore_mdio_write @303
+
+	jtagcore_memory_clear_pins @400
+	jtagcore_memory_set_address_pin @401
+	jtagcore_memory_set_data_pin @402
+	jtagcore_memory_set_ctrl_pin @403
+	jtagcore_memory_read @404
+	jtagcore_memory_write @405

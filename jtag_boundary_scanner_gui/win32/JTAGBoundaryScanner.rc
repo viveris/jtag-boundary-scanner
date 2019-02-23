@@ -1,0 +1,398 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#include "resource.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// French (France) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRA)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_JTAGTEST            ICON    DISCARDABLE     ".\\images\\JTAGBoundaryScanner.ico"
+IDI_SMALL               ICON    DISCARDABLE     ".\\images\\JTAGBoundaryScanner_small.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDC_JTAGTEST MENU DISCARDABLE 
+BEGIN
+    POPUP "&File"
+    BEGIN
+        MENUITEM "Open boundary scan file",     ID_FILE_OPENBOUNDARYSCANFILE
+        MENUITEM "E&xit",                       IDM_EXIT
+    END
+    POPUP "&Scan mode"
+    BEGIN
+        MENUITEM "no refresh",                  ID_BOUNDARYSCAN_NOREFRESH
+        MENUITEM "20ms refresh",                ID_BOUNDARYSCAN_10MSREFRESH
+        MENUITEM "200ms refresh",               ID_BOUNDARYSCAN_100MSREFRESH
+        MENUITEM "1s refresh",                  ID_BOUNDARYSCAN_1SREFRESH
+        MENUITEM SEPARATOR
+        MENUITEM "SAMPLE mode",                 ID_BOUNDARYSCAN_SAMPLEMODE
+        MENUITEM "EXTEST mode",                 ID_BOUNDARYSCAN_EXTESTMODE
+        MENUITEM SEPARATOR
+    END
+    POPUP "&JTAG Chain"
+    BEGIN
+        MENUITEM "Get ID",                      ID_BOUNDARYSCAN_GETID
+        MENUITEM SEPARATOR
+        MENUITEM "BSDL Auto Load",              ID_JTAGCHAIN_BSDLAUTOLOAD
+        MENUITEM SEPARATOR
+    END
+    POPUP "&Probe"
+    BEGIN
+        MENUITEM SEPARATOR
+    END
+    POPUP "Tools"
+    BEGIN
+        MENUITEM "I2C Tool",                    ID_TOOLS_I2CTOOL
+        MENUITEM "SPI Tool",                    ID_TOOLS_SPITOOL
+        MENUITEM "MDIO Tool",                   ID_TOOLS_MDIOTOOL
+        MENUITEM "MEM Tool",                    ID_TOOLS_MEMTOOL
+        MENUITEM "Script execution",            ID_TOOLS_SCRIPTEXECUTION
+        MENUITEM "Pins state export",           ID_TOOLS_PINSSTATEEXPORT
+    END
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "H&elp",                       ID_HELP
+        MENUITEM "&About ...",                  IDM_ABOUT
+        MENUITEM "Logs",                        IDM_LOGS
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDC_JTAGTEST ACCELERATORS MOVEABLE PURE 
+BEGIN
+    "?",            IDM_ABOUT,              ASCII,  ALT
+    "/",            IDM_ABOUT,              ASCII,  ALT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 22, 17, 234, 105
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "System"
+BEGIN
+    ICON            IDI_JTAGTEST,IDC_MYICON,7,5,20,20
+    LTEXT           "JTAG Boundary Scanner Version 2.18",IDC_STATIC,39,6,130,
+                    8,SS_NOPREFIX
+    LTEXT           "Copyright (C) Viveris Technologies 2008-2019",
+                    IDC_STATIC,39,16,155,10
+    DEFPUSHBUTTON   "OK",IDOK,190,90,41,11,WS_GROUP
+    CONTROL         137,IDC_VIVERISLOGO,"Static",SS_BITMAP | 
+                    SS_REALSIZEIMAGE,82,26,69,43,WS_EX_DLGMODALFRAME
+    LTEXT           "https://www.viveris.fr/",IDC_STATIC,80,70,74,10
+    LTEXT           "https://github.com/viveris/jtag-boundary-scanner",
+                    IDC_STATIC,38,80,158,8
+END
+
+IDD_HELP DIALOG DISCARDABLE  0, 0, 347, 113
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION
+CAPTION "Help"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,290,92,50,14
+    LTEXT           "Help on colomns names :",IDC_STATIC,7,6,333,10
+    LTEXT           "O :\t[Output] :\tCheck to set pin level to high.",
+                    IDC_STATIC,7,19,333,10
+    LTEXT           "OE :\t[Output Enable] :Pin is output when checked..",
+                    IDC_STATIC,7,32,333,8
+    LTEXT           "I :\t[Input] :\t\tChecked when pin is high.",IDC_STATIC,
+                    7,45,204,8
+    LTEXT           "T :\t[Toggle] :\tCheck to toggle pin level (rate selected in Boundary Scan Menu).",
+                    IDC_STATIC,7,58,333,8
+    LTEXT           "SAMPLE Mode : IO Observation during the normal operation of the device.  ",
+                    IDC_STATIC,8,75,317,8
+    LTEXT           "EXTEST Mode : Direct IO control.  ",IDC_STATIC,7,89,268,
+                    8
+END
+
+IDD_SPITOOL DIALOG DISCARDABLE  0, 0, 284, 167
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "SPI Tool"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_SPIWRDATA,57,74,160,36,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    LTEXT           "Data to Write :",IDC_STATIC,9,74,47,8
+    LTEXT           "Data Read :",IDC_STATIC,10,119,44,8
+    EDITTEXT        IDC_SPIRDDATA,57,119,160,39,ES_MULTILINE | 
+                    ES_AUTOVSCROLL | WS_VSCROLL
+    DEFPUSHBUTTON   "WRITE",IDWRITE,223,74,50,14
+    LTEXT           "MOSI Pin :",IDC_STATIC,16,10,35,8
+    COMBOBOX        IDC_MOSIPIN,57,8,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MISOPIN,158,8,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "MISO Pin :",IDC_STATIC,118,10,35,8
+    COMBOBOX        IDC_CSPIN,57,39,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "CS Pin :",IDC_STATIC,17,41,26,8
+    COMBOBOX        IDC_CLKPIN,158,39,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "CLK Pin :",IDC_STATIC,120,41,30,8
+    CONTROL         "Shifted on Clock phase 1",IDC_POLMOSI,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,15,23,101,10
+    CONTROL         "Sampled on Clock phase 1",IDC_POLMISO,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,119,23,101,10
+    CONTROL         "High when idle",IDC_POLCLK,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,119,52,64,10
+    CONTROL         "Active high polarity",IDC_POLCS,"Button",
+                    BS_AUTOCHECKBOX | WS_TABSTOP,16,53,81,10
+    CONTROL         "Data lsb first",IDC_LSB_FIRST,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,212,10,62,10
+END
+
+IDD_I2CTOOL DIALOG DISCARDABLE  0, 0, 290, 148
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "I2C Tool"
+FONT 8, "MS Sans Serif"
+BEGIN
+    CONTROL         "10 bits address",IDC_10BITSADR,"Button",BS_AUTOCHECKBOX | 
+                    WS_TABSTOP,122,37,63,10
+    EDITTEXT        IDC_I2CADR,57,34,52,14,ES_AUTOHSCROLL
+    LTEXT           "Address :",IDC_STATIC,11,36,30,8
+    EDITTEXT        IDC_I2CWRDATA,57,54,160,36,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    LTEXT           "Data to Write :",IDC_STATIC,9,55,47,8
+    LTEXT           "Data Read :",IDC_STATIC,10,96,44,8
+    EDITTEXT        IDC_I2CRDDATA,57,95,160,46,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    DEFPUSHBUTTON   "WRITE",IDWRITE,227,54,50,14
+    DEFPUSHBUTTON   "READ",IDREAD,227,124,50,14
+    EDITTEXT        IDC_NBBYTESTOREAD,228,101,46,14,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    LTEXT           "SDA Pin :",IDC_STATIC,16,17,32,8
+    COMBOBOX        IDC_SDAPIN,57,14,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_SCLPIN,147,14,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "SCL Pin :",IDC_STATIC,113,16,30,8
+    DEFPUSHBUTTON   "Auto Scan",IDAUTOSCAN,227,33,50,14
+END
+
+IDD_MDIOTOOL DIALOG DISCARDABLE  0, 0, 290, 148
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "MDC/MDIO Tool"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_DEVADR,57,34,52,14,ES_AUTOHSCROLL
+    LTEXT           "Address :",IDC_STATIC,9,36,30,8
+    EDITTEXT        IDC_REGADR,164,34,52,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_WRDATA,57,54,160,36,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    LTEXT           "Data to Write :",IDC_STATIC,9,55,47,8
+    LTEXT           "Data Read :",IDC_STATIC,10,96,44,8
+    EDITTEXT        IDC_RDDATA,57,95,160,46,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    DEFPUSHBUTTON   "WRITE",IDWRITE,227,54,50,14
+    DEFPUSHBUTTON   "READ",IDREAD,227,124,50,14
+    LTEXT           "MDIO Pin :",IDC_STATIC,16,17,32,8
+    COMBOBOX        IDC_MDIOPIN,57,14,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MDCPIN,147,14,46,127,CBS_DROPDOWN | CBS_AUTOHSCROLL | 
+                    CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "MDC Pin :",IDC_STATIC,113,16,30,8
+    LTEXT           "Register :",IDC_STATIC,123,36,31,8
+    PUSHBUTTON      "Auto Scan",IDAUTOSCAN,230,34,46,13
+END
+
+IDD_MEMTOOL DIALOG DISCARDABLE  0, 0, 290, 148
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "MEM Tool"
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_MEMADR,57,10,52,14,ES_AUTOHSCROLL
+    LTEXT           "Address :",IDC_STATIC,10,12,30,8
+    EDITTEXT        IDC_MEMWRDATA,57,29,160,49,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    LTEXT           "Data to Write :",IDC_STATIC,9,30,47,8
+    LTEXT           "Data Read :",IDC_STATIC,10,83,44,8
+    EDITTEXT        IDC_MEMRDDATA,57,84,160,50,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    WS_VSCROLL
+    DEFPUSHBUTTON   "WRITE",IDWRITE,227,28,50,14
+    DEFPUSHBUTTON   "READ",IDREAD,227,116,50,14
+    EDITTEXT        IDC_NBBYTESTOREAD,227,95,49,14,ES_AUTOHSCROLL | 
+                    ES_NUMBER
+    LTEXT           "Count :",IDC_STATIC,226,84,24,8
+    DEFPUSHBUTTON   "Load pin cfg",IDLOADPINCFG,227,8,50,14
+END
+
+IDD_LOGS DIALOG DISCARDABLE  0, 0, 425, 282
+STYLE DS_MODALFRAME | WS_CAPTION | WS_SYSMENU
+CAPTION "Logs"
+FONT 8, "MS Sans Serif"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,364,257,50,14
+    EDITTEXT        IDC_EDIT1,14,13,400,240,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_AUTOHSCROLL | WS_VSCROLL | WS_HSCROLL
+    CONTROL         "Slider1",IDC_SLIDER1,"msctls_trackbar32",TBS_BOTH | 
+                    TBS_NOTICKS | WS_TABSTOP,62,255,62,16
+    LTEXT           "Logs levels :",IDC_STATIC,19,258,40,8
+END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+2 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""resource.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+1 TEXTINCLUDE MOVEABLE PURE 
+BEGIN
+    "resource.h\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO MOVEABLE PURE 
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 104
+    END
+
+    IDD_HELP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 340
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 106
+    END
+
+    IDD_SPITOOL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 277
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 160
+    END
+
+    IDD_I2CTOOL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 283
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 141
+    END
+
+    IDD_MEMTOOL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 283
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 141
+    END
+
+    IDD_LOGS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 418
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 275
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_ABOUTBOX AFX_DIALOG_LAYOUT MOVEABLE PURE 
+BEGIN
+    0x0000
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BITMAP1             BITMAP  DISCARDABLE     ".\\images\\viveris.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    IDS_APP_TITLE           "JTAG Boundary Scanner"
+    IDC_JTAGTEST            "JTAGTEST"
+END
+
+#endif    // French (France) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

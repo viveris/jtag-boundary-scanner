@@ -1,0 +1,42 @@
+=================================================
+* JTAG Boundary scanner
+* Copyright (c) 2008 - 2019 Viveris Technologies
+* Release notes
+=================================================
+
+Noteworthy changes in release v2.18 (2019-02-22)
+=================================================
+
+* First public release.
+
+    - Windows version GUI.
+
+  * Main features
+
+    - BSDL files support.
+
+    - Target IOs sampling and control mode ( SAMPLE & EXTEST ).
+
+    - I2C Bus over JTAG emulation.
+
+    - SPI Bus over JTAG emulation.
+
+    - MDIO Bus over JTAG emulation.
+
+    - Parallel port bus over JTAG emulation.
+
+    - JTAG Bus scan and devices auto-detection.
+
+    - BSDL files auto-load.
+
+    - script support.
+
+    - socket interface for remote control.
+
+  * Probes support
+
+    - FTDI FT2232H based JTAG probes support (Olimex, Xilinx...).
+
+    - JLINK JTAG probes support.
+
+    - Parallel port based JTAG probes support (Altera ByteBlaster, Memec IJC-4, Macgraigor Wiggler).

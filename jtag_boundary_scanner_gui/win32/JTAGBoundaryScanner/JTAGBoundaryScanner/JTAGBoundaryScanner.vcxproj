@@ -84,10 +84,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\fileselector.c" />
     <ClCompile Include="..\..\JTAGBoundaryScanner.c" />
+    <ClCompile Include="..\..\script.c" />
+    <ClCompile Include="..\..\socket.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fileselector.h" />
     <ClInclude Include="..\..\JTAGBoundaryScanner.h" />
+    <ClInclude Include="..\..\script.h" />
+    <ClInclude Include="..\..\socket.h" />
     <ClInclude Include="..\..\resource.h" />
   </ItemGroup>
   <ItemGroup>

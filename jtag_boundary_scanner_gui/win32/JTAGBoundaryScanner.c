@@ -625,17 +625,17 @@ int update_jtag_ids_menu(HWND hWnd)
 		}while(FindNextFile(hFind,&FindFileData));
 
 		FindClose(hFind);
+	}
 
-		loaded_bsdl = 0;
-		// Count the loaded bsdl
-		for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
-		{
-			entityname[0] = 0;
-			jtagcore_get_dev_name(jc, dev_nb, entityname, file);
-			sprintf(idstring, "Device %d: 0x%.8X - %s (%s)", dev_nb, jtagcore_get_dev_id(jc, dev_nb),entityname,file);
+	loaded_bsdl = 0;
+	// Count the loaded bsdl
+	for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
+	{
+		entityname[0] = 0;
+		jtagcore_get_dev_name(jc, dev_nb, entityname, file);
+		sprintf(idstring, "Device %d: 0x%.8X - %s (%s)", dev_nb, jtagcore_get_dev_id(jc, dev_nb),entityname,file);
 
-			AppendMenu(GetSubMenu(GetMenu(hWnd), 2), MF_STRING | MF_POPUP, BASE_DEV_ID + dev_nb, idstring);
-		}
+		AppendMenu(GetSubMenu(GetMenu(hWnd), 2), MF_STRING | MF_POPUP, BASE_DEV_ID + dev_nb, idstring);
 	}
 
 	return 0;

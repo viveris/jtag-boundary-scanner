@@ -109,7 +109,7 @@ CAPTION "About"
 FONT 8, "System"
 BEGIN
     ICON            IDI_JTAGTEST,IDC_MYICON,7,5,20,20
-    LTEXT           "JTAG Boundary Scanner Version 2.18",IDC_STATIC,39,6,130,
+    LTEXT           "JTAG Boundary Scanner Version 2.19",IDC_STATIC,39,6,130,
                     8,SS_NOPREFIX
     LTEXT           "Copyright (C) Viveris Technologies 2008-2019",
                     IDC_STATIC,39,16,155,10

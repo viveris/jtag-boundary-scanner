@@ -875,9 +875,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			else
 			{
-				if (wmId >= BASE_PROBE_ID && wmId <= BASE_PROBE_ID + 0x80)
+				if (wmId >= BASE_PROBE_ID && wmId < ( BASE_PROBE_ID + 0x800 ) )
 				{
-					for (i = 0; i < 0x80; i++)
+					for (i = 0; i < 0x800; i++)
 					{
 						CheckMenuItem(GetMenu(hWnd), BASE_PROBE_ID + i, MF_BYCOMMAND | MF_UNCHECKED);
 					}

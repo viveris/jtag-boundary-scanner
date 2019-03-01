@@ -39,6 +39,7 @@ The JTAG Boundary Scanner is a JTAG software tool to debug or test any electroni
 - FTDI FT2232H based JTAG probes support (Olimex ARM-USB_OCD-H, Lattice HW-USBN-2B, Xilinx...).
 
 - JLINK JTAG probes support.
+Note : JLinkARM.dll need to be copied into the JTAGBoundaryScanner folder for the JLink probes support.
 
 - Parallel port based JTAG probes support (Altera ByteBlaster, Memec IJC-4, Macgraigor Wiggler).
 

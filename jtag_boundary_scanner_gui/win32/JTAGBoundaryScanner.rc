@@ -127,22 +127,22 @@ CAPTION "Help"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,290,189,50,14
-    LTEXT           "Colomns meaning :",IDC_STATIC,7,6,333,10
+    LTEXT           "Columns meaning :",IDC_STATIC,7,6,333,10
     LTEXT           "O :\t[Output] :\tSet it to to turn the pin to high level. (Only effective if OE is set)",
-                    IDC_STATIC,8,19,246,8
+                    IDC_STATIC,8,19,313,8
     LTEXT           "OE :\t[Output Enable] :Set it to turn the pin in output mode.",
-                    IDC_STATIC,8,30,186,8
+                    IDC_STATIC,8,30,255,8
     LTEXT           "I :\t[Input] :\t\tSet when the physical pin is high level.",
-                    IDC_STATIC,8,41,168,8
+                    IDC_STATIC,8,41,245,8
     LTEXT           "T :\t[Toggle] :\tSet to automatically toggle the pin output state. ",
-                    IDC_STATIC,8,52,200,8
-    LTEXT           "SAMPLE Mode : IO Observation during the normal operation of the device.  ",
-                    IDC_STATIC,8,181,240,8
-    LTEXT           "EXTEST Mode : Direct IO control.  ",IDC_STATIC,8,192,
-                    112,8
+                    IDC_STATIC,8,52,252,8
+    LTEXT           "SAMPLE Mode : IOs observation during the device's normal operation.",
+                    IDC_STATIC,8,181,235,8
+    LTEXT           "EXTEST Mode : Direct IOs control mode.",IDC_STATIC,8,
+                    192,152,8
     CONTROL         141,IDC_STATIC,"Static",SS_BITMAP,60,75,227,102
     LTEXT           "\t\t\t(Update rate selected in the scan mode menu).",
-                    IDC_STATIC,8,63,164,8
+                    IDC_STATIC,8,63,246,8
 END
 
 IDD_SPITOOL DIALOG DISCARDABLE  0, 0, 284, 167

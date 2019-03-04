@@ -31,6 +31,7 @@
 #define IDD_MEMTOOL                     135
 #define IDB_BITMAP1                     137
 #define IDD_LOGS                        138
+#define IDB_IOBLOCK                     141
 #define IDC_10BITSADR                   1001
 #define IDC_I2CADR                      1002
 #define IDC_I2CADR2                     1003
@@ -91,7 +92,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        139
+#define _APS_NEXT_RESOURCE_VALUE        142
 #define _APS_NEXT_COMMAND_VALUE         32792
 #define _APS_NEXT_CONTROL_VALUE         1024
 #define _APS_NEXT_SYMED_VALUE           110

@@ -31,11 +31,12 @@
 #include "../bsdl_parser/bsdl_loader.h"
 
 #ifdef WIN32
-
 #include "./ftdi_jtag/ftdi_jtag_drv.h"
 #include "./lpt_jtag/lpt_jtag_drv.h"
-#include "./jlink_jtag/jlink_jtag_drv.h"
+#endif 
 
+#if defined(__linux__) || defined(WIN32)
+#include "./jlink_jtag/jlink_jtag_drv.h"
 #endif
 
 #include "drivers_list.h"
@@ -44,10 +45,12 @@ const drv_entry staticdrvs[] =
 {
 #ifdef WIN32
 	{(DRV_GETMODULEINFOS)drv_FTDI_libGetDrv,0},
-	{(DRV_GETMODULEINFOS)drv_JLINK_libGetDrv,0},
 	{(DRV_GETMODULEINFOS)drv_LPT_libGetDrv,0},
 	{(DRV_GETMODULEINFOS)drv_LPT_libGetDrv,1},
 	{(DRV_GETMODULEINFOS)drv_LPT_libGetDrv,2},
+#endif
+#if defined(__linux__) || defined(WIN32)
+	{(DRV_GETMODULEINFOS)drv_JLINK_libGetDrv,0},
 #endif
 	{(DRV_GETMODULEINFOS)-1,0}
 };

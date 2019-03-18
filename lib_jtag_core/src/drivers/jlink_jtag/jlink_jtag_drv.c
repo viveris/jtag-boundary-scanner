@@ -36,6 +36,11 @@
 #if defined(WIN32)
 // Compiling on Windows
 #include <windows.h>
+#elif defined(__linux__)
+#include <dlfcn.h>
+#include <stdbool.h>
+#else
+#error "Unsupported OS (only available on Windows or Linux)"
 #endif
 
 typedef struct _drv_desc
@@ -58,6 +63,8 @@ unsigned char jlink_in_buf[64 * 1024];
 
 #if defined(WIN32)
 
+#define MODULE_NAME		"JLinkARM.dll"
+
 typedef const char* (WINAPIV * JL_OPENEX)(const char* pfLog, void*);
 typedef int  (WINAPIV * JL_JTAG_STORERAW)(const unsigned char* pTDI, const unsigned char* pTMS, unsigned int NumBits);
 typedef int  (WINAPIV * JL_JTAG_STOREGETRAW)(const unsigned char* pTDI, unsigned char* pTDO, const unsigned char* pTMS, unsigned int NumBits);
@@ -71,7 +78,18 @@ typedef void (WINAPIV * JL_CLOSE)(void);
 
 #else
 
-#define __cdecl
+#define MODULE_NAME		"./libjlinkarm.so"
+
+#if defined(__x86_64__)
+    #define __cdecl
+#endif
+#if defined(__i386__)
+    #define __cdecl __attribut__((cdecl))
+#endif
+
+
+
+typedef void* HMODULE;
 
 typedef const char* (__cdecl * JL_OPENEX)(const char* pfLog, void*);
 typedef int  (__cdecl * JL_JTAG_STORERAW)(const unsigned char* pTDI, const unsigned char* pTMS, unsigned int NumBits);
@@ -83,6 +101,32 @@ typedef void (__cdecl * JL_RESETPULLSRESET)(unsigned char OnOff);
 typedef void (__cdecl * JL_RESET)(void);
 typedef int  (__cdecl * JL_HASERROR)(void);
 typedef void (__cdecl * JL_CLOSE)(void);
+
+void* GetProcAddress(HMODULE handle, const char* name)
+{
+	if(!handle || !name)
+		return NULL;
+
+	dlerror();
+
+	return dlsym(handle, name);
+}
+
+bool FreeLibrary(HMODULE handle)
+{
+	dlerror();
+	if(0 != dlclose(handle)) {
+		return false;
+	}
+
+	return true;
+}
+
+HMODULE LoadLibrary(const char* path)
+{
+	dlerror();
+	return dlopen(path, RTLD_NOW);
+}
 
 #endif
 
@@ -99,11 +143,11 @@ JL_RESET            pJLINKARM_Reset;
 JL_HASERROR         pJLINKARM_HasError;
 JL_CLOSE            pJLINKARM_Close;
 
-
 int drv_JLINK_Detect(jtag_core * jc)
 {
-	if(lib_handle == NULL)
-		lib_handle = LoadLibrary("JLinkARM.dll");
+	if(lib_handle == NULL) {
+		lib_handle = LoadLibrary(MODULE_NAME);
+	}
 
 	if (lib_handle)
 	{
@@ -117,10 +161,10 @@ int drv_JLINK_Init(jtag_core * jc, int sub_drv, char * params)
 {
 	const char* sError;
 
-	#if defined(WIN32)
 
-	if(lib_handle == NULL)
-		lib_handle = LoadLibrary("JLinkARM.dll");
+	if(lib_handle == NULL) {
+		lib_handle = LoadLibrary(MODULE_NAME);
+	}
 
 	if (lib_handle)
 	{
@@ -177,13 +221,6 @@ int drv_JLINK_Init(jtag_core * jc, int sub_drv, char * params)
 	}
 
 	pJLINKARM_SetSpeed(1000); // 1 Mhz
-	#else
-
-	// TODO : Linux libloader
-	jtagcore_logs_printf(jc,MSG_ERROR,"drv_JLINK_Init : Linux support to be done !\r\n");
-	return -1;
-
-	#endif
 
 	jtagcore_logs_printf(jc,MSG_INFO_0,"drv_JLINK_Init : Probe Driver loaded successfully...\r\n");
 
@@ -306,7 +343,6 @@ int drv_JLINK_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 
 int drv_JLINK_libGetDrv(jtag_core * jc,int sub_drv,unsigned int infotype,void * returnvalue)
 {
-
 	drv_ptr drv_funcs =
 	{
 		(DRV_DETECT)         drv_JLINK_Detect,
@@ -326,3 +362,4 @@ int drv_JLINK_libGetDrv(jtag_core * jc,int sub_drv,unsigned int infotype,void * 
 			&drv_funcs
 			);
 }
+

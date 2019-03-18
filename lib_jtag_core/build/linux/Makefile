@@ -27,7 +27,7 @@ LDFLAGS +=-arch i386 -dynamiclib -current_version 2.0 -install_name @executable_
 EXEC=lib_jtag_core.dylib
 endif
 
-PROBES_DRIVERS = #lpt_jtag_drv.o jlink_jtag_drv.o ftdi_jtag_drv.o
+PROBES_DRIVERS = jlink_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
 
 all: $(EXEC)

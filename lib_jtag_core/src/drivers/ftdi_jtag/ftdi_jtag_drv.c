@@ -533,7 +533,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 			ftdi_out_buf[nbtosend] = 0x4B; // cmd
 
 			if (str_in)
-				ftdi_out_buf[nbtosend] |= 0x20;
+				ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
 
 			nbtosend++;
 
@@ -586,7 +586,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		ftdi_out_buf[nbtosend] = 0x19;
 
 		if (str_in)
-			ftdi_out_buf[nbtosend] |= 0x20;
+			ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
 
 		nbtosend++;
 
@@ -657,7 +657,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		ftdi_out_buf[nbtosend] = 0x1B; //bit mode
 
 		if (str_in)
-			ftdi_out_buf[nbtosend] |= 0x20;
+			ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
 
 		nbtosend++;
 

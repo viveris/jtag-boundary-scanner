@@ -78,7 +78,7 @@ int jtagcore_loaddriver(jtag_core * jc, int id, char * parameters)
 	int i,ret;
 	i = 0;
 
-	while (staticdrvs[i].getinfosfunc != (DRV_GETMODULEINFOS)0xFFFFFFFF )
+	while (staticdrvs[i].getinfosfunc != (DRV_GETMODULEINFOS)-1 )
 	{
 		i++;
 	}

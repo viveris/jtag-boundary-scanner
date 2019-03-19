@@ -193,7 +193,7 @@ unsigned long jtagcore_memory_read(jtag_core * jc, int mem_adr)
 
 	if ( jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_READ) != JTAG_CORE_NO_ERROR )
 	{
-		return 0xFFFFFFFF;
+		return (unsigned long)-1;
 	}
 
 	// read the data bus.

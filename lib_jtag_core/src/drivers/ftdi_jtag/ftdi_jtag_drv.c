@@ -251,6 +251,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	DWORD openex_flags = 0;
 	char *openex_string = NULL;
 	int numDevs;
+	int baseclock, divisor, tckfreq;
 	DWORD devIndex;
 	int nbRead,nbtosend;
 
@@ -474,10 +475,19 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	}
 
 	// Clock divisor
+	// 0x86 ValueL ValueH
+	// FT2232D/H
+	// TCK clock = (12Mhz or 60Mhz)/ ((1 + ([ValueH << 8 | ValueL]))*2)
+
 	nbtosend = 0;
+	baseclock = 60000; // FT2232H -> 60 Mhz
+	tckfreq =   1000;
+	divisor = ( ( baseclock / tckfreq ) - 2 ) / 2;
+
 	ftdi_out_buf[nbtosend++] = 0x86;
-	ftdi_out_buf[nbtosend++] = 0x05;
-	ftdi_out_buf[nbtosend++] = 0x00;
+	ftdi_out_buf[nbtosend++] = divisor & 0xFF;
+	ftdi_out_buf[nbtosend++] = (divisor>>8) & 0xFF;
+
 	status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 	if (status != FT_OK) {
 		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_Write : Error %x !\r\n",status);
@@ -486,6 +496,9 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 
 	/* turn red LED on */
 	high_output |= 0x08;
+
+	/* Release system reset */
+	high_output |= nSRST;
 
  	ft2232_set_data_bits_high_byte(high_output , high_direction);
 

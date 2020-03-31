@@ -1,6 +1,6 @@
 /*
  * JTAG Boundary Scanner
- * Copyright (c) 2008 - 2019 Viveris Technologies
+ * Copyright (c) 2008 - 2020 Viveris Technologies
  *
  * JTAG Boundary Scanner is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public
@@ -57,62 +57,109 @@ void setOutputFunc( PRINTF_FUNC ext_printf )
 	return;
 }
 
-int get_param_offset(char * line, int param)
+static int is_end_line(char c)
 {
-	int i,j;
-
-	i = 0;
-	j = 0;
-
-	while( ( line[j] != 0 ) && ( line[j] == ' ' ) )
+	if( c == 0 || c == '#' || c == '\r' || c == '\n' )
 	{
-		j++;
+		return 1;
 	}
-
-	do
+	else
 	{
-		while( ( line[j] != 0 ) && ( line[j] != ' ' ) )
-		{
-			j++;
-		}
-
-		while( ( line[j] != 0 ) && ( line[j] == ' ' ) )
-		{
-			j++;
-		}
-
-		if(line[j] == 0)
-			return -1;
-
-		i++;
-	}while(i<param);
-
-	return j;
+		return 0;
+	}
 }
 
-int get_param(char * line, int param_index,char * param)
+static int is_space(char c)
 {
-	int i,j;
-
-	i = get_param_offset(line, param_index);
-	j = 0;
-
-	if(i>=0)
+	if( c == ' ' || c == '\t' )
 	{
-		while( ( line[i] != 0 ) && ( line[i] != ' ' ) && ( line[i] != '\r' ) && ( line[i] != '\n' ) )
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+static int get_next_word(char * line, int offset)
+{
+	while( !is_end_line(line[offset]) && ( line[offset] == ' ' ) )
+	{
+		offset++;
+	}
+
+	return offset;
+}
+
+static int copy_param(char * dest, char * line, int offs)
+{
+	int i,insidequote;
+
+	i = 0;
+	insidequote = 0;
+	while( !is_end_line(line[offs]) && ( insidequote || !is_space(line[offs]) ) )
+	{
+		if(line[offs] != '"')
 		{
-			param[j] = line[i];
-			j++;
+			if(dest)
+				dest[i] = line[offs];
+
 			i++;
 		}
+		else
+		{
+			if(insidequote)
+				insidequote = 0;
+			else
+				insidequote = 1;
+		}
 
-		param[j] = 0;
+		offs++;
+	}
+
+	if(dest)
+		dest[i] = 0;
+
+	return offs;
+}
+
+static int get_param_offset(char * line, int param)
+{
+	int param_cnt, offs;
+
+	offs = 0;
+	offs = get_next_word(line, offs);
+
+	param_cnt = 0;
+	do
+	{
+		offs = copy_param(NULL, line, offs);
+
+		offs = get_next_word( line, offs );
+
+		if(line[offs] == 0 || line[offs] == '#')
+			return -1;
+
+		param_cnt++;
+	}while( param_cnt < param );
+
+	return offs;
+}
+
+static int get_param(char * line, int param_offset,char * param)
+{
+	int offs;
+
+	offs = get_param_offset(line, param_offset);
+
+	if(offs>=0)
+	{
+		offs = copy_param(param, line, offs);
 
 		return 1;
 	}
 
 	return -1;
-
 }
 
 int cmd_autoinit(char * line)
@@ -224,6 +271,26 @@ int cmd_print(char * line)
 		script_printf(MSG_NONE,"%s\n",&line[i]);
 
 	return 1;
+}
+
+int cmd_pause(char * line)
+{
+	int i;
+	char delay_str[DEFAULT_BUFLEN];
+
+	i = get_param(line, 1,delay_str);
+
+	if(i>=0)
+	{
+#ifdef WIN32
+		Sleep(atoi(delay_str));
+#endif
+		return 1;
+	}
+
+	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+
+	return 0;
 }
 
 int cmd_init_and_scan(char * line)
@@ -1068,7 +1135,6 @@ int cmd_get_pins_list(char * line)
 
 int cmd_help(char * line);
 
-
 int cmd_version(char * line)
 {
 	script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
@@ -1077,69 +1143,70 @@ int cmd_version(char * line)
 
 cmd_list cmdlist[] =
 {
-	{"print",					cmd_print},
-	{"help",					cmd_help},
-	{"?",						cmd_help},
-	{"version",					cmd_version},
-	{"jtag_get_probes_list",	cmd_print_probes_list},
-	{"jtag_open_probe",			cmd_open_probe},
-	{"jtag_autoinit",			cmd_autoinit},
+	{"print",                   cmd_print},
+	{"help",                    cmd_help},
+	{"?",                       cmd_help},
+	{"version",                 cmd_version},
+	{"pause",                   cmd_pause},
 
-	{"jtag_init_scan",			cmd_init_and_scan},
-	{"jtag_get_nb_of_devices",	cmd_print_nb_dev},
-	{"jtag_get_devices_list",	cmd_print_devs_list},
-	{"jtag_load_bsdl",			cmd_load_bsdl},
-	{"jtag_set_mode",			cmd_set_scan_mode},
+	{"jtag_get_probes_list",    cmd_print_probes_list},
+	{"jtag_open_probe",         cmd_open_probe},
+	{"jtag_autoinit",           cmd_autoinit},
 
-	{"jtag_push_pop",			cmd_push_and_pop},
+	{"jtag_init_scan",          cmd_init_and_scan},
+	{"jtag_get_nb_of_devices",  cmd_print_nb_dev},
+	{"jtag_get_devices_list",   cmd_print_devs_list},
+	{"jtag_load_bsdl",          cmd_load_bsdl},
+	{"jtag_set_mode",           cmd_set_scan_mode},
 
-	{"jtag_get_pins_list",		cmd_get_pins_list},
+	{"jtag_push_pop",           cmd_push_and_pop},
 
-	{"jtag_set_pin_dir",		cmd_set_pin_mode},
-	{"jtag_set_pin_state",		cmd_set_pin_state},
-	{"jtag_get_pin_state",		cmd_get_pin_state},
+	{"jtag_get_pins_list",      cmd_get_pins_list},
 
-	{"jtag_set_i2c_scl_pin",	cmd_set_i2c_scl_pin},
-	{"jtag_set_i2c_sda_pin",	cmd_set_i2c_sda_pin},
-	{"jtag_i2c_rd",				cmd_do_i2c_rd},
-	{"jtag_i2c_wr",				cmd_do_i2c_wr},
+	{"jtag_set_pin_dir",        cmd_set_pin_mode},
+	{"jtag_set_pin_state",      cmd_set_pin_state},
+	{"jtag_get_pin_state",      cmd_get_pin_state},
 
-	{"jtag_set_mdio_mdc_pin",	cmd_set_mdio_mdc_pin},
-	{"jtag_set_mdio_mdio_pin",	cmd_set_mdio_mdio_pin},
-	{"jtag_mdio_rd",			cmd_do_mdio_rd},
-	{"jtag_mdio_wr",			cmd_do_mdio_wr},
+	{"jtag_set_i2c_scl_pin",    cmd_set_i2c_scl_pin},
+	{"jtag_set_i2c_sda_pin",    cmd_set_i2c_sda_pin},
+	{"jtag_i2c_rd",             cmd_do_i2c_rd},
+	{"jtag_i2c_wr",             cmd_do_i2c_wr},
 
-	{"jtag_set_spi_cs_pin",		cmd_set_spi_cs_pin},
-	{"jtag_set_spi_mosi_pin",	cmd_set_spi_mosi_pin},
-	{"jtag_set_spi_miso_pin",	cmd_set_spi_miso_pin},
-	{"jtag_set_spi_clk_pin",	cmd_set_spi_clk_pin},
-	{"jtag_spi_rd_wr",			cmd_spi_rd_wr},
+	{"jtag_set_mdio_mdc_pin",   cmd_set_mdio_mdc_pin},
+	{"jtag_set_mdio_mdio_pin",  cmd_set_mdio_mdio_pin},
+	{"jtag_mdio_rd",            cmd_do_mdio_rd},
+	{"jtag_mdio_wr",            cmd_do_mdio_wr},
+
+	{"jtag_set_spi_cs_pin",     cmd_set_spi_cs_pin},
+	{"jtag_set_spi_mosi_pin",   cmd_set_spi_mosi_pin},
+	{"jtag_set_spi_miso_pin",   cmd_set_spi_miso_pin},
+	{"jtag_set_spi_clk_pin",    cmd_set_spi_clk_pin},
+	{"jtag_spi_rd_wr",          cmd_spi_rd_wr},
 
 	{0 , 0}
 };
 
-
-int extract_cmd(char * line, char * command)
+static int extract_cmd(char * line, char * command)
 {
-	int i;
+	int offs,i;
 
 	i = 0;
-	while( ( line[i] != 0 ) && ( line[i] == ' ' ) )
-	{
-		i++;
-	}
+	offs = 0;
 
-	if( line[i] != 0 )
+	offs = get_next_word(line, offs);
+
+	if( !is_end_line(line[offs]) )
 	{
-		while( ( line[i] != 0 ) && ( line[i] != ' ' ) && ( line[i] != '\r' ) && ( line[i] != '\n' ))
+		while( !is_end_line(line[offs]) && !is_space(line[offs]) )
 		{
-			command[i] = line[i];
+			command[i] = line[offs];
+			offs++;
 			i++;
 		}
 
 		command[i] = 0;
 
-		return 1;
+		return i;
 	}
 
 	return 0;

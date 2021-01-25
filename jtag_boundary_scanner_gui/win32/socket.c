@@ -1,6 +1,6 @@
 /*
  * JTAG Boundary Scanner
- * Copyright (c) 2008 - 2019 Viveris Technologies
+ * Copyright (c) 2008 - 2021 Viveris Technologies
  *
  * JTAG Boundary Scanner is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public

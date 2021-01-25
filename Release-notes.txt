@@ -1,6 +1,6 @@
 =================================================
 * JTAG Boundary scanner
-* Copyright (c) 2008 - 2019 Viveris Technologies
+* Copyright (c) 2008 - 2021 Viveris Technologies
 * Release notes
 =================================================
 

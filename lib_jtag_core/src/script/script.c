@@ -163,7 +163,7 @@ static int get_param(char * line, int param_offset,char * param)
 	return -1;
 }
 
-int cmd_autoinit( jtag_core * jc, char * line)
+static int cmd_autoinit( jtag_core * jc, char * line)
 {
 	int i;
 	int number_of_devices, dev_nb;
@@ -271,7 +271,7 @@ int cmd_autoinit( jtag_core * jc, char * line)
 	return loaded_bsdl;
 }
 
-int cmd_print( jtag_core * jc, char * line)
+static int cmd_print( jtag_core * jc, char * line)
 {
 	int i;
 
@@ -282,7 +282,7 @@ int cmd_print( jtag_core * jc, char * line)
 	return 1;
 }
 
-int cmd_pause( jtag_core * jc, char * line)
+static int cmd_pause( jtag_core * jc, char * line)
 {
 	int i;
 	char delay_str[DEFAULT_BUFLEN];
@@ -301,7 +301,7 @@ int cmd_pause( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_init_and_scan( jtag_core * jc, char * line)
+static int cmd_init_and_scan( jtag_core * jc, char * line)
 {
 	int ret;
 
@@ -320,7 +320,7 @@ int cmd_init_and_scan( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_print_nb_dev( jtag_core * jc, char * line)
+static int cmd_print_nb_dev( jtag_core * jc, char * line)
 {
 	int i;
 
@@ -386,7 +386,7 @@ static char * get_id_str( jtag_core * jc, int numberofdevice)
 	return stringbuffer;
 }
 
-int cmd_print_devs_list( jtag_core * jc, char * line)
+static int cmd_print_devs_list( jtag_core * jc, char * line)
 {
 	int i;
 
@@ -399,7 +399,7 @@ int cmd_print_devs_list( jtag_core * jc, char * line)
 	return 1;
 }
 
-int cmd_print_probes_list( jtag_core * jc, char * line)
+static int cmd_print_probes_list( jtag_core * jc, char * line)
 {
 	int i,j;
 	char probe_list[64];
@@ -423,7 +423,7 @@ int cmd_print_probes_list( jtag_core * jc, char * line)
 	return 1;
 }
 
-int cmd_open_probe( jtag_core * jc, char * line)
+static int cmd_open_probe( jtag_core * jc, char * line)
 {
 	int ret;
 	char probe_id[64];
@@ -448,7 +448,7 @@ int cmd_open_probe( jtag_core * jc, char * line)
 	return 1;
 }
 
-int cmd_load_bsdl( jtag_core * jc, char * line)
+static int cmd_load_bsdl( jtag_core * jc, char * line)
 {
 	int i,j;
 	char dev_index[DEFAULT_BUFLEN];
@@ -476,7 +476,7 @@ int cmd_load_bsdl( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_scan_mode( jtag_core * jc, char * line)
+static int cmd_set_scan_mode( jtag_core * jc, char * line)
 {
 	int i,j;
 	char dev_index[DEFAULT_BUFLEN];
@@ -515,7 +515,7 @@ int cmd_set_scan_mode( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_push_and_pop( jtag_core * jc, char * line)
+static int cmd_push_and_pop( jtag_core * jc, char * line)
 {
 	int ret;
 
@@ -534,7 +534,7 @@ int cmd_push_and_pop( jtag_core * jc, char * line)
 	return 1;
 }
 
-int cmd_set_pin_mode( jtag_core * jc, char * line)
+static int cmd_set_pin_mode( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -569,7 +569,7 @@ int cmd_set_pin_mode( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_pin_state( jtag_core * jc, char * line)
+static int cmd_set_pin_state( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -604,7 +604,7 @@ int cmd_set_pin_state( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_get_pin_state( jtag_core * jc, char * line)
+static int cmd_get_pin_state( jtag_core * jc, char * line)
 {
 	int i,j,k,ret,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -643,7 +643,7 @@ int cmd_get_pin_state( jtag_core * jc, char * line)
 // I2C Commands
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
+static int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -673,7 +673,7 @@ int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
+static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -704,7 +704,7 @@ int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_do_i2c_wr( jtag_core * jc, char * line)
+static int cmd_do_i2c_wr( jtag_core * jc, char * line)
 {
 	// jtag_set_do_i2c_wr E8 EAACCDD4455
 	int i, j;
@@ -760,7 +760,7 @@ int cmd_do_i2c_wr( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_do_i2c_rd( jtag_core * jc, char * line)
+static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 {
 	// jtag_set_do_i2c_rd 0xE8 8
 	int i,j,i2cadr,size;
@@ -815,7 +815,7 @@ int cmd_do_i2c_rd( jtag_core * jc, char * line)
 // MDIO Commands
 /////////////////////////////////////////////////////////////////////////////////////////
 
-int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
+static int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -846,7 +846,7 @@ int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
+static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -877,7 +877,7 @@ int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_do_mdio_wr( jtag_core * jc, char * line)
+static int cmd_do_mdio_wr( jtag_core * jc, char * line)
 {
 	// jtag_mdio_wr 01 04 EAAC
 	int i,j,k,mdioadr,regadr,datatowrite;
@@ -913,7 +913,7 @@ int cmd_do_mdio_wr( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_do_mdio_rd( jtag_core * jc, char * line)
+static int cmd_do_mdio_rd( jtag_core * jc, char * line)
 {
 	// jtag_mdio_rd 01 04
 	int i,j,mdioadr,regadr,dataread;
@@ -948,7 +948,7 @@ int cmd_do_mdio_rd( jtag_core * jc, char * line)
 /////////////////////////////////////////////////////////////////////////////////////////
 // SPI Commands
 /////////////////////////////////////////////////////////////////////////////////////////
-int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -981,7 +981,7 @@ int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -1014,7 +1014,7 @@ int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -1047,7 +1047,7 @@ int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
@@ -1079,7 +1079,7 @@ int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_spi_rd_wr( jtag_core * jc, char * line)
+static int cmd_spi_rd_wr( jtag_core * jc, char * line)
 {
 	int i,j,k,size;
 	char data_out_txt[DEFAULT_BUFLEN];
@@ -1138,7 +1138,7 @@ int cmd_spi_rd_wr( jtag_core * jc, char * line)
 	return 0;
 }
 
-int cmd_get_pins_list( jtag_core * jc, char * line)
+static int cmd_get_pins_list( jtag_core * jc, char * line)
 {
 	int i,j,nb_of_pins;
 	char dev_index[DEFAULT_BUFLEN];
@@ -1195,9 +1195,9 @@ int cmd_get_pins_list( jtag_core * jc, char * line)
 }
 
 
-int cmd_help( jtag_core * jc, char * line);
+static int cmd_help( jtag_core * jc, char * line);
 
-int cmd_version( jtag_core * jc, char * line)
+static int cmd_version( jtag_core * jc, char * line)
 {
 	script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
 	return 1;
@@ -1293,7 +1293,7 @@ int exec_cmd( jtag_core * jc, char * command,char * line)
 	return ERROR_CMD_NOT_FOUND;
 }
 
-int cmd_help( jtag_core * jc, char * line)
+static int cmd_help( jtag_core * jc, char * line)
 {
 	int i;
 

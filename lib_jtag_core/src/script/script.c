@@ -37,6 +37,7 @@
 #include "../os_interface/os_interface.h"
 
 #include "script.h"
+#include "env.h"
 
 typedef int (* CMD_FUNC)( jtag_core * jc, char * line);
 
@@ -1203,6 +1204,48 @@ static int cmd_version( jtag_core * jc, char * line)
 	return 1;
 }
 
+static int set_env_var_cmd( jtag_core * jc, char * line )
+{
+	int i,j,ret;
+	char varname[DEFAULT_BUFLEN];
+	char varvalue[DEFAULT_BUFLEN];
+
+	ret = -1;
+
+	i = get_param(line, 1,varname);
+	j = get_param(line, 2,varvalue);
+
+	if(i>=0 && j>=0)
+	{
+		ret = jtagcore_setEnvVar( jc, (char*)&varname, (char*)&varvalue );
+	}
+
+	return ret;
+}
+
+static int print_env_var_cmd( jtag_core * jc, char * line )
+{
+	int i,ret;
+	char varname[DEFAULT_BUFLEN];
+	char varvalue[DEFAULT_BUFLEN];
+	char * ptr;
+
+	ret = -1;
+
+	i = get_param(line, 1,varname);
+
+	if(i>=0)
+	{
+		ptr = jtagcore_getEnvVar( jc, (char*)&varname, (char*)&varvalue );
+		if(ptr)
+		{
+			script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
+		}
+	}
+
+	return ret;
+}
+
 cmd_list cmdlist[] =
 {
 	{"print",                   cmd_print},
@@ -1244,6 +1287,9 @@ cmd_list cmdlist[] =
 	{"jtag_set_spi_miso_pin",   cmd_set_spi_miso_pin},
 	{"jtag_set_spi_clk_pin",    cmd_set_spi_clk_pin},
 	{"jtag_spi_rd_wr",          cmd_spi_rd_wr},
+
+	{"set",                     set_env_var_cmd},
+	{"print_env_var_cmd",       print_env_var_cmd},
 
 	{0 , 0}
 };

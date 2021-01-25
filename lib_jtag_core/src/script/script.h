@@ -23,12 +23,11 @@
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
 
-#define MAX_LINE_SIZE 2048
-#define DEFAULT_BUFLEN 512
+#define DEFAULT_BUFLEN 1024
 
-int execute_script(char * filename);
-int execute_line(char * line);
-int savepinstate_script(char * filename);
+int execute_script( jtag_core * jc, char * filename );
+int execute_line( jtag_core * jc, char * line );
+int savepinstate_script( jtag_core * jc, int device, char * filename );
 
 // Output Message level
 #define MSG_NONE                         0

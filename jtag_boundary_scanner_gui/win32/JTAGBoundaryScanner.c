@@ -34,11 +34,11 @@
 #include "fileselector.h"
 #include "jtagboundaryscanner.h"
 
-#include "script/script.h"
 #include "socket.h"
 
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"
+#include "script/script.h"
 
 #define BASE_CHECKBOX_ID 0x4000
 #define BASE_PINNAME_ID  0x3000
@@ -924,7 +924,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 								openconsole();
 								printf("Starting %s...\n", filename);
 
-								execute_script(filename);
+								execute_script(jc,filename);
 
 								printf("Press enter to exit\n");
 
@@ -936,7 +936,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							memset(filename, 0, sizeof(filename));
 							if (fileselector(hWnd, 1, 0, filename, "Select script", TEXT("*.TXT\0\0"), TEXT("TXT")))
 							{
-								savepinstate_script(filename);
+								savepinstate_script(jc,last_selected_dev_index,filename);
 							}
 						break;
 						case IDM_ABOUT:
@@ -1424,8 +1424,8 @@ LRESULT CALLBACK DialogProc_I2CTOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 {
 	int wmId, wmEvent,number_of_pins,pin_id;
 	HWND combo1,combo2;
-	unsigned char tmp_buffer[MAX_LINE_SIZE];
-	unsigned char tmp_buffer2[MAX_LINE_SIZE];
+	unsigned char tmp_buffer[DEFAULT_BUFLEN];
+	unsigned char tmp_buffer2[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer3[16];
 	int ItemIndex,i2cadr,size;
 	int i,ret;
@@ -1609,9 +1609,9 @@ LRESULT CALLBACK DialogProc_SPITOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 	int wmId, wmEvent,number_of_pins,pin_id;
 	HWND combo1,combo2,combo3,combo4;
 	LRESULT check;
-	unsigned char tmp_buffer[MAX_LINE_SIZE];
-	unsigned char tmp_buffer2[MAX_LINE_SIZE];
-	unsigned char tmp_buffer4[MAX_LINE_SIZE];
+	unsigned char tmp_buffer[DEFAULT_BUFLEN];
+	unsigned char tmp_buffer2[DEFAULT_BUFLEN];
+	unsigned char tmp_buffer4[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer3[16];
 	int ItemIndex,size;
 	int i,ret;
@@ -1768,7 +1768,7 @@ LRESULT CALLBACK DialogProc_MDIOTOOL(HWND hDlg, UINT message, WPARAM wParam, LPA
 {
 	int wmId, wmEvent, number_of_pins, pin_id;
 	HWND combo1, combo2;
-	unsigned char tmp_buffer[MAX_LINE_SIZE];
+	unsigned char tmp_buffer[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer3[16];
 	int ItemIndex, devadr, regadr, datatowrite, dataread;
 	int ret;
@@ -2017,8 +2017,8 @@ int set_mem_pins(char * filename)
 LRESULT CALLBACK DialogProc_MEMTOOL(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	int wmId, wmEvent;
-	unsigned char tmp_buffer[MAX_LINE_SIZE];
-	unsigned long tmp_buffer2[MAX_LINE_SIZE];
+	unsigned char tmp_buffer[DEFAULT_BUFLEN];
+	unsigned long tmp_buffer2[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer3[16];
 	char filename[DEFAULT_BUFLEN];
 	int memadr,size;

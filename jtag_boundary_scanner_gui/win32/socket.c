@@ -40,13 +40,12 @@
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
-#include "script/script.h"
-
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"
+#include "script/script.h"
 
+extern jtag_core * jc;
 int line_index;
-
 SOCKET ClientSocket = INVALID_SOCKET;
 
 int Printf_socket(int MSGTYPE,char * chaine, ...)
@@ -123,7 +122,7 @@ int launch_server(int port)
 
 	struct addrinfo hints;
 	char recvbuf[DEFAULT_BUFLEN];
-	char fullline[MAX_LINE_SIZE];
+	char fullline[DEFAULT_BUFLEN];
 	char port_string[16];
 
 	int recvbuflen = DEFAULT_BUFLEN;
@@ -209,7 +208,7 @@ int launch_server(int port)
 				{
 					while( recvbuf[i]!='\n' && i < iResult )
 					{
-						if(line_index<MAX_LINE_SIZE)
+						if(line_index<DEFAULT_BUFLEN)
 						{
 							fullline[line_index] = recvbuf[i];
 							line_index++;
@@ -230,7 +229,7 @@ int launch_server(int port)
 						}
 						else
 						{
-							execute_line(fullline);
+							execute_line(jc,fullline);
 							line_index = 0;
 						}
 						i++;

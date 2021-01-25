@@ -1,0 +1,16 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    working-directory: ./your_working_dir
+    steps:
+    - uses: actions/checkout@v1
+    - name: make
+      run:
+        working-directory: ./lib_jtag_core/build/linux
+        make
+

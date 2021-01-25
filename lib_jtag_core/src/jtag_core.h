@@ -269,3 +269,11 @@ int jtagcore_memory_set_data_pin(jtag_core * jc, int data_bit, int device, int p
 int jtagcore_memory_set_ctrl_pin(jtag_core * jc, int ctrl, int polarity, int device, int pin);
 unsigned long jtagcore_memory_read(jtag_core * jc, int mem_adr);
 int jtagcore_memory_write(jtag_core * jc, int mem_adr, unsigned long data);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Internal variables interfaces
+
+int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue );
+char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue);
+int jtagcore_getEnvVarValue( jtag_core * jc, char * varname);
+char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue);

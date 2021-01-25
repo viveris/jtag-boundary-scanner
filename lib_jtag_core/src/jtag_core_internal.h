@@ -50,6 +50,8 @@ typedef struct _jtag_core
 	void * jtagcore_print_callback;
 	int logs_level;
 
+	void * envvar;
+
 	int t;
 
 	int nb_of_devices_in_chain;

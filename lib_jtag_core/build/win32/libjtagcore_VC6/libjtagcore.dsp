@@ -189,6 +189,14 @@ SOURCE=..\..\..\src\drivers\drv_loader.h
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=..\..\..\src\script\env.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\script\env.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\src\script\script.c
 # End Source File
 # Begin Source File

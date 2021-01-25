@@ -41,7 +41,7 @@ RSC=rc.exe
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
+# ADD CPP /nologo /W3 /GX /O2 /I "..\..\..\src\os_interface\win32" /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD BASE RSC /l 0x40c /d "NDEBUG"
 # ADD RSC /l 0x40c /d "NDEBUG"
 BSC32=bscmake.exe
@@ -64,7 +64,7 @@ LIB32=link.exe -lib
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /I "..\..\..\src\os_interface\win32" /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /FD /GZ /c
 # SUBTRACT CPP /YX
 # ADD BASE RSC /l 0x40c /d "_DEBUG"
 # ADD RSC /l 0x40c /d "_DEBUG"
@@ -182,6 +182,50 @@ SOURCE=..\..\..\src\drivers\drv_loader.c
 # Begin Source File
 
 SOURCE=..\..\..\src\drivers\drv_loader.h
+# End Source File
+# End Group
+# Begin Group "script"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\script\script.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\script\script.h
+# End Source File
+# End Group
+# Begin Group "os_interface"
+
+# PROP Default_Filter ""
+# Begin Group "win32"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\win32\stdint.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\fs.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\network.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\network.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\os_interface.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\os_interface\os_interface.h
 # End Source File
 # End Group
 # Begin Source File

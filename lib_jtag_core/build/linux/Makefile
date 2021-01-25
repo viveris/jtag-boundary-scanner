@@ -27,21 +27,22 @@ LDFLAGS +=-arch i386 -dynamiclib -current_version 2.0 -install_name @executable_
 EXEC=lib_jtag_core.dylib
 endif
 
-PROBES_DRIVERS = jlink_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
+LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o script.o fs.o os_interface.o network.o
+PROBES_DRIVERS = drivers_list.o jlink_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
 
 all: $(EXEC)
 
-lib_jtag_core.dylib: jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o drivers_list.o $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.a: jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o drivers_list.o $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.a: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
 	$(AR) r $@    $^
 
-lib_jtag_core.so: jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o drivers_list.o $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.dll: jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o drivers_list.o $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
 jtag_core.o: $(BASEDIR)/jtag_core.c
@@ -81,6 +82,18 @@ jlink_jtag_drv.o: $(BASEDIR)/drivers/jlink_jtag/jlink_jtag_drv.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 ftdi_jtag_drv.o: $(BASEDIR)/drivers/ftdi_jtag/ftdi_jtag_drv.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+script.o: $(BASEDIR)/script/script.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+fs.o: $(BASEDIR)/os_interface/fs.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+os_interface.o: $(BASEDIR)/os_interface/os_interface.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+network.o: $(BASEDIR)/os_interface/network.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:

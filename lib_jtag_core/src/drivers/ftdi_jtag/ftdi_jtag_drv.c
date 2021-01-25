@@ -449,7 +449,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	ADBUS7 -> RTCK; (in)                 (GPIOL3) (in)
 
 	ACBUS0 -> TRST;                      (GPIOH0)
-	ACBUS1 -> TSRST;                     (GPIOH1)
+	ACBUS1 -> SRST;                      (GPIOH1)
 	ACBUS2 -> TRST buffer enable         (GPIOH2)
 	ACBUS3 -> RED LED;                   (GPIOH3)
 	*/

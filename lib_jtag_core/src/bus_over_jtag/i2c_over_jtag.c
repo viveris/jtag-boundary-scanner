@@ -260,16 +260,30 @@ int jtagcore_i2c_write_read(jtag_core * jc, int address, int address10bits,int w
 
 				for(j=0;j<8;j++)
 				{
-					jtagcore_set_pin_state(jc, jc->i2c_scl_device, jc->i2c_scl_pin, JTAG_CORE_OE, 0); // SCL High
-					if ( jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_READ) != JTAG_CORE_NO_ERROR )
+					do
 					{
-						jtagcore_set_pin_state(jc, jc->i2c_scl_device, jc->i2c_scl_pin, JTAG_CORE_OE, 0);
-						jtagcore_set_pin_state(jc, jc->i2c_sda_device, jc->i2c_sda_pin, JTAG_CORE_OE, 0);
+						jtagcore_set_pin_state(jc, jc->i2c_scl_device, jc->i2c_scl_pin, JTAG_CORE_OE, 0); // SCL High
+						if ( jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_READ) != JTAG_CORE_NO_ERROR )
+						{
+							jtagcore_set_pin_state(jc, jc->i2c_scl_device, jc->i2c_scl_pin, JTAG_CORE_OE, 0);
+							jtagcore_set_pin_state(jc, jc->i2c_sda_device, jc->i2c_sda_pin, JTAG_CORE_OE, 0);
 
-						jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_ONLY);
+							jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_ONLY);
 
-						return JTAG_CORE_IO_ERROR;
-					}
+							return JTAG_CORE_IO_ERROR;
+						}
+
+						if ( jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_READ) != JTAG_CORE_NO_ERROR )
+						{
+							jtagcore_set_pin_state(jc, jc->i2c_scl_device, jc->i2c_scl_pin, JTAG_CORE_OE, 0);
+							jtagcore_set_pin_state(jc, jc->i2c_sda_device, jc->i2c_sda_pin, JTAG_CORE_OE, 0);
+
+							jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_ONLY);
+
+							return JTAG_CORE_IO_ERROR;
+						}
+					}while(!jtagcore_get_pin_state(jc,jc->i2c_scl_device,jc->i2c_scl_pin,JTAG_CORE_INPUT));
+
 
 					if(jtagcore_get_pin_state(jc,jc->i2c_sda_device,jc->i2c_sda_pin,JTAG_CORE_INPUT))
 					{

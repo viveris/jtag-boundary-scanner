@@ -34,7 +34,7 @@
 #include "fileselector.h"
 #include "jtagboundaryscanner.h"
 
-#include "script.h"
+#include "script/script.h"
 #include "socket.h"
 
 #include "jtag_core.h"
@@ -303,7 +303,7 @@ void closeconsole()
 	FreeConsole();
 }
 
-void bsdl_id_str(unsigned long id, char * str)
+static void bsdl_id_str(unsigned long id, char * str)
 {
 	int i;
 
@@ -327,7 +327,7 @@ void bsdl_id_str(unsigned long id, char * str)
 	str[i] = 0;
 }
 
-char * get_id_str(int numberofdevice)
+static char * get_id_str(int numberofdevice)
 {
 	// compare passed device ID to the one returned from the ID command
 	int i;

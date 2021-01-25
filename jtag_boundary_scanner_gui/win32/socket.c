@@ -40,7 +40,7 @@
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
-#include "script.h"
+#include "script/script.h"
 
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"

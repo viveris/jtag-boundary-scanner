@@ -102,10 +102,6 @@ SOURCE=..\JTAGBoundaryScanner.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\script.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\socket.c
 # End Source File
 # End Group
@@ -119,10 +115,6 @@ SOURCE=..\fileselector.h
 # Begin Source File
 
 SOURCE=..\JTAGBoundaryScanner.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\script.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"

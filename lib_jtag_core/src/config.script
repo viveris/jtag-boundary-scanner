@@ -1,0 +1,17 @@
+#
+# lib jtag core init config script
+#
+# This script is built-in the jtag library and is executed at startup to apply
+# the default variables values.
+#
+# You can put a "config.script" file in the Jtag Software folder to change one
+# or more of these variables if needed.
+# Your "config.script" will be executed right after this script at startup.
+# The syntax to use in your script is exactly the same.
+#
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
+set TEST_VARIABLE_1      8192
+set DEFAULT_IP_ADDRESS "192.168.20.7"

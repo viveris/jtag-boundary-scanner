@@ -36,6 +36,7 @@
 
 #include "drivers/drivers_list.h"
 
+#include "config_script.h"
 
 jtag_core * jtagcore_init()
 {
@@ -45,6 +46,11 @@ jtag_core * jtagcore_init()
 	if ( jc )
 	{
 		memset( jc, 0, sizeof(jtag_core) );
+
+		jtagcore_setEnvVar( jc, "LIBVERSION", "v"LIB_JTAG_CORE_VERSION);
+		jtagcore_execScriptRam( jc, config_script, config_script_len );
+
+		jtagcore_execScriptFile( jc, "config.script" );
 	}
 
 	return jc;

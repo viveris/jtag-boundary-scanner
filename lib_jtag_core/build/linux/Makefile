@@ -31,7 +31,7 @@ LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o
 PROBES_DRIVERS = drivers_list.o jlink_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
 
-all: $(EXEC)
+all: $(BASEDIR)/config_script.h $(EXEC)
 
 lib_jtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
 	$(CC) -o $@    $^ $(LDFLAGS)
@@ -98,6 +98,9 @@ os_interface.o: $(BASEDIR)/os_interface/os_interface.c
 
 network.o: $(BASEDIR)/os_interface/network.c
 	$(CC) -o $@ -c $< $(CFLAGS)
+
+$(BASEDIR)/config_script.h: $(BASEDIR)/config.script
+	cd $(BASEDIR);xxd -i config.script > config_script.h
 
 clean:
 	rm -rf *.o

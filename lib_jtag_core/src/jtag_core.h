@@ -260,6 +260,7 @@ int jtagcore_mdio_write(jtag_core * jc, int phy_adr, int reg_adr, int data);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Parallel Memory over JTAG API functions
+
 #define JTAG_CORE_RAM_CS_CTRL  0x00
 #define JTAG_CORE_RAM_WR_CTRL  0x01
 #define JTAG_CORE_RAM_RD_CTRL  0x02
@@ -273,9 +274,17 @@ unsigned long jtagcore_memory_read(jtag_core * jc, int mem_adr);
 int jtagcore_memory_write(jtag_core * jc, int mem_adr, unsigned long data);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Internal variables interfaces
+// Internal variables functions
 
 int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue );
 char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue);
 int jtagcore_getEnvVarValue( jtag_core * jc, char * varname);
 char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue);
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Script execution functions
+
+int jtagcore_execScriptLine( jtag_core * jc, char * line );
+int jtagcore_execScriptFile( jtag_core * jc, char * script_path );
+int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int buffersize );
+int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path );

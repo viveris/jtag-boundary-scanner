@@ -1215,7 +1215,7 @@ static int cmd_version( jtag_core * jc, char * line)
 	return JTAG_CORE_NO_ERROR;
 }
 
-static int set_env_var_cmd( jtag_core * jc, char * line )
+static int cmd_set_env_var( jtag_core * jc, char * line )
 {
 	int i,j,ret;
 	char varname[DEFAULT_BUFLEN];
@@ -1234,7 +1234,7 @@ static int set_env_var_cmd( jtag_core * jc, char * line )
 	return ret;
 }
 
-static int print_env_var_cmd( jtag_core * jc, char * line )
+static int cmd_print_env_var( jtag_core * jc, char * line )
 {
 	int i;
 	char varname[DEFAULT_BUFLEN];
@@ -1268,6 +1268,8 @@ cmd_list cmdlist[] =
 	{"?",                       cmd_help},
 	{"version",                 cmd_version},
 	{"pause",                   cmd_pause},
+	{"set",                     cmd_set_env_var},
+	{"print_env_var",           cmd_print_env_var},
 
 	{"jtag_get_probes_list",    cmd_print_probes_list},
 	{"jtag_open_probe",         cmd_open_probe},
@@ -1302,9 +1304,6 @@ cmd_list cmdlist[] =
 	{"jtag_set_spi_miso_pin",   cmd_set_spi_miso_pin},
 	{"jtag_set_spi_clk_pin",    cmd_set_spi_clk_pin},
 	{"jtag_spi_rd_wr",          cmd_spi_rd_wr},
-
-	{"set",                     set_env_var_cmd},
-	{"print_env_var_cmd",       print_env_var_cmd},
 
 	{0 , 0}
 };

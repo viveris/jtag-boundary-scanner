@@ -80,9 +80,11 @@ static unsigned char nSRSTnOE;
 
 
 static unsigned char low_direction;
+static unsigned char low_polarity;
 static unsigned char low_output;
 
 static unsigned char high_output;
+static unsigned char high_polarity;
 static unsigned char high_direction;
 
 unsigned char ftdi_out_buf[64 * 1024];
@@ -478,6 +480,16 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		}
 	}
 
+	low_polarity = 0;
+	for(i=0;i<8;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_POLARITY_ADBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			low_polarity |= (0x01<<i);
+		}
+	}
+
 	high_direction = 0x00;
 	for(i=0;i<4;i++)
 	{
@@ -488,14 +500,32 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		}
 	}
 
+	high_output = 0x00;
+	for(i=0;i<4;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			high_output |= (0x01<<i);
+		}
+	}
+
+	high_polarity = 0x00;
+	for(i=0;i<4;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_POLARITY_ACBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			high_polarity |= (0x01<<i);
+		}
+	}
+
 	ft2232_set_data_bits_low_byte(low_output, low_direction);
 
 	nTRST = 0x01;
 	nTRSTnOE = 0x4;
 	nSRST = 0x02;
 	nSRSTnOE = 0x00;// no output enable for nSRST
-
-	high_output = 0x0;
 
 	if ( 0 ) //jtag_reset_config & RESET_TRST_OPEN_DRAIN) {
 	{

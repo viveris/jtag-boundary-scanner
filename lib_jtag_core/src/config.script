@@ -4,8 +4,8 @@
 # This script is built-in the jtag library and is executed at startup to apply
 # the default variables values.
 #
-# You can put a "config.script" file in the Jtag Software folder to change one
-# or more of these variables if needed.
+# You can put a "config.script" file in the JTAG boundaryscanner software's
+# folder to change one or more of these variables if needed.
 # Your "config.script" will be executed right after this script at startup.
 # The syntax to use in your script is exactly the same.
 #
@@ -13,5 +13,77 @@
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 
-set TEST_VARIABLE_1      8192
-set DEFAULT_IP_ADDRESS "192.168.20.7"
+#
+# This section expose the FTDI probes parameters
+#
+
+#
+# Parameters to compute the FDTI FT2232D/H clock divisor.
+# ( TCK clock = (12Mhz or 60Mhz)/ ((1 + ([ValueH << 8 | ValueL]))*2) )
+#
+
+# Internal clock : FT2232H -> 60 MHz, FT2232D -> 12MHz
+
+set PROBE_FTDI_INTERNAL_FREQ_KHZ 60000
+
+# Max TCK Clock
+
+set PROBE_FTDI_TCK_FREQ_KHZ 1000
+
+#
+# Probe internal mapping
+#
+# Olimex ARM-USB-OCD-H JTAG signals example
+#
+# VREF – voltage follower input for the output buffers adjust
+# JTAG signals as per your target board voltage levels
+#
+# The TCK/TDI/TDO/TMS signals are fixed to these pins
+# ADBUS0 -> TCK; (out)
+# ADBUS1 -> TDI; (out)
+# ADBUS2 -> TDO; (in)
+# ADBUS3 -> TMS; (out)
+
+# ADBUS4 -> 0 to enable JTAG buffers;  (GPIOL0) (out)
+# ADBUS5 -> 0 if target present;       (GPIOL1) (in)
+# ADBUS6 -> TSRST in;                  (GPIOL2) (in)
+# ADBUS7 -> RTCK; (in)                 (GPIOL3) (in)
+# ACBUS0 -> TRST;                      (GPIOH0)
+# ACBUS1 -> SRST;                      (GPIOH1)
+# ACBUS2 -> TRST buffer enable         (GPIOH2)
+# ACBUS3 -> RED LED;                   (GPIOH3)
+
+# Set the internal GPIO direction (0 -> input, 1 -> output)
+
+set PROBE_FTDI_SET_PIN_DIR_ADBUS0 1  # TCK -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS1 1  # TDI -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS2 0  # TDO -> in
+set PROBE_FTDI_SET_PIN_DIR_ADBUS3 1  # TMS -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS4 1  # Buffers enable -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS5 0  # Target presence : 0 if target present -> in
+set PROBE_FTDI_SET_PIN_DIR_ADBUS6 0  # TSRST -> in
+set PROBE_FTDI_SET_PIN_DIR_ADBUS7 0  # RTCK -> in
+
+set PROBE_FTDI_SET_PIN_DIR_ACBUS0 1  # TRST -> out
+set PROBE_FTDI_SET_PIN_DIR_ACBUS1 1  # SRST -> out
+set PROBE_FTDI_SET_PIN_DIR_ACBUS2 1  # TRST buffer enable -> out
+set PROBE_FTDI_SET_PIN_DIR_ACBUS3 1  # RED LED -> out
+
+# Set the internal GPIO direction output state
+
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS0 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS1 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS2 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS3 1
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS4 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS5 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS6 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS7 0
+
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS0 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS1 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS2 0
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS3 0
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------

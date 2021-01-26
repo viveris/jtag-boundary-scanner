@@ -80,6 +80,8 @@ static unsigned char nSRSTnOE;
 
 
 static unsigned char low_direction;
+static unsigned char low_output;
+
 static unsigned char high_output;
 static unsigned char high_direction;
 
@@ -248,12 +250,14 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	DWORD deviceID;
 	char SerialNumber[16];
 	char Description[64];
+	char tmp_str[64];
 	DWORD openex_flags = 0;
 	char *openex_string = NULL;
 	int numDevs;
 	int baseclock, divisor, tckfreq;
 	DWORD devIndex;
 	int nbRead,nbtosend;
+	int i;
 
 	#ifdef WIN32
 
@@ -454,7 +458,37 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	ACBUS3 -> RED LED;                   (GPIOH3)
 	*/
 
-	ft2232_set_data_bits_low_byte(0x08, 0x1b);
+	low_direction = 0x00;
+	for(i=0;i<8;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_DIR_ADBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			low_direction |= (0x01<<i);
+		}
+	}
+
+	low_output = 0x00;
+	for(i=0;i<8;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			low_output |= (0x01<<i);
+		}
+	}
+
+	high_direction = 0x00;
+	for(i=0;i<4;i++)
+	{
+		sprintf(tmp_str,"PROBE_FTDI_SET_PIN_DIR_ACBUS%d",i);
+		if( jtagcore_getEnvVarValue( jc, tmp_str) > 0 )
+		{
+			high_direction |= (0x01<<i);
+		}
+	}
+
+	ft2232_set_data_bits_low_byte(low_output, low_direction);
 
 	nTRST = 0x01;
 	nTRSTnOE = 0x4;
@@ -462,7 +496,6 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	nSRSTnOE = 0x00;// no output enable for nSRST
 
 	high_output = 0x0;
-	high_direction = 0x0f;
 
 	if ( 0 ) //jtag_reset_config & RESET_TRST_OPEN_DRAIN) {
 	{
@@ -480,8 +513,13 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	// TCK clock = (12Mhz or 60Mhz)/ ((1 + ([ValueH << 8 | ValueL]))*2)
 
 	nbtosend = 0;
-	baseclock = 60000; // FT2232H -> 60 Mhz
-	tckfreq =   1000;
+	baseclock = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_INTERNAL_FREQ_KHZ");
+	tckfreq =   jtagcore_getEnvVarValue( jc, "PROBE_FTDI_TCK_FREQ_KHZ");
+	if( baseclock <= 0 || tckfreq <= 0){
+		jtagcore_logs_printf(jc,MSG_ERROR,"drv_FTDI_Init : Invalid probe clock settings !\r\n");
+		goto loadliberror;
+	}
+
 	divisor = ( ( baseclock / tckfreq ) - 2 ) / 2;
 
 	ftdi_out_buf[nbtosend++] = 0x86;

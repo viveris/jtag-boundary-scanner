@@ -40,6 +40,8 @@ typedef void jtag_core;
 #define JTAG_CORE_MEM_ERROR      -4
 #define JTAG_CORE_NO_PROBE       -5
 #define JTAG_CORE_NOT_FOUND      -6
+#define JTAG_CORE_CMD_NOT_FOUND  -7
+#define JTAG_CORE_INTERNAL_ERROR -8
 
 #define JTAG_CORE_I2C_BUS_NOTFREE -10
 

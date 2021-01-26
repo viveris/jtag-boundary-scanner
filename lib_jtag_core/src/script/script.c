@@ -49,9 +49,6 @@ typedef struct cmd_list_
 	CMD_FUNC func;
 }cmd_list;
 
-#define ERROR_CMD_NOT_FOUND -10
-
-
 void setOutputFunc( PRINTF_FUNC ext_printf )
 {
 	script_printf = ext_printf;
@@ -280,7 +277,7 @@ static int cmd_print( jtag_core * jc, char * line)
 	if(i>=0)
 		script_printf(MSG_NONE,"%s\n",&line[i]);
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static int cmd_pause( jtag_core * jc, char * line)
@@ -294,12 +291,12 @@ static int cmd_pause( jtag_core * jc, char * line)
 	{
 		genos_pause(atoi(delay_str));
 
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_init_and_scan( jtag_core * jc, char * line)
@@ -311,7 +308,8 @@ static int cmd_init_and_scan( jtag_core * jc, char * line)
 	if( ret == JTAG_CORE_NO_ERROR )
 	{
 		script_printf(MSG_INFO_0,"JTAG Scan done\n");
-		return 1;
+
+		return JTAG_CORE_NOT_FOUND;
 	}
 	else
 	{
@@ -329,7 +327,7 @@ static int cmd_print_nb_dev( jtag_core * jc, char * line)
 
 	script_printf(MSG_INFO_0,"%d device(s) found in chain\n",i);
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static void bsdl_id_str(unsigned long id, char * str)
@@ -397,7 +395,7 @@ static int cmd_print_devs_list( jtag_core * jc, char * line)
 		script_printf(MSG_INFO_0,"%s\n",get_id_str(jc,i));
 	}
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static int cmd_print_probes_list( jtag_core * jc, char * line)
@@ -421,7 +419,7 @@ static int cmd_print_probes_list( jtag_core * jc, char * line)
 		j++;
 	}
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static int cmd_open_probe( jtag_core * jc, char * line)
@@ -444,9 +442,11 @@ static int cmd_open_probe( jtag_core * jc, char * line)
 	else
 	{
 		script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+
+		return JTAG_CORE_BAD_PARAMETER;
 	}
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static int cmd_load_bsdl( jtag_core * jc, char * line)
@@ -463,7 +463,7 @@ static int cmd_load_bsdl( jtag_core * jc, char * line)
 		if (jtagcore_loadbsdlfile(jc, filename, atoi(dev_index)) >= 0)
 		{
 			script_printf(MSG_INFO_0,"BSDL %s loaded and parsed !\n",filename);
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -474,7 +474,7 @@ static int cmd_load_bsdl( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_scan_mode( jtag_core * jc, char * line)
@@ -508,12 +508,12 @@ static int cmd_set_scan_mode( jtag_core * jc, char * line)
 			}
 		}
 
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_push_and_pop( jtag_core * jc, char * line)
@@ -532,7 +532,7 @@ static int cmd_push_and_pop( jtag_core * jc, char * line)
 		script_printf(MSG_INFO_0,"JTAG chain updated\n");
 	}
 
-	return 1;
+	return JTAG_CORE_NOT_FOUND;
 }
 
 static int cmd_set_pin_mode( jtag_core * jc, char * line)
@@ -556,7 +556,7 @@ static int cmd_set_pin_mode( jtag_core * jc, char * line)
 
 			script_printf(MSG_INFO_0,"Pin %s mode set to %d\n",pinname,atoi(mode));
 
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -567,7 +567,7 @@ static int cmd_set_pin_mode( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_pin_state( jtag_core * jc, char * line)
@@ -591,7 +591,7 @@ static int cmd_set_pin_state( jtag_core * jc, char * line)
 
 			script_printf(MSG_INFO_0,"Pin %s set to %d\n",pinname,atoi(state));
 
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -602,7 +602,7 @@ static int cmd_set_pin_state( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_get_pin_state( jtag_core * jc, char * line)
@@ -626,7 +626,7 @@ static int cmd_get_pin_state( jtag_core * jc, char * line)
 
 			script_printf(MSG_INFO_0,"Pin %s state : %d\n",pinname,ret);
 
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -637,7 +637,7 @@ static int cmd_get_pin_state( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -661,7 +661,7 @@ static int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_i2c_set_sda_pin(jc, atoi(dev_index), id);
 			script_printf(MSG_INFO_0,"SDA set to Pin %s\n",pinname);
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -671,7 +671,8 @@ static int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
-	return 0;
+
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
@@ -691,7 +692,7 @@ static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_i2c_set_scl_pin(jc, atoi(dev_index), id);
 			script_printf(MSG_INFO_0,"SCL set to Pin %s\n",pinname);
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -702,7 +703,7 @@ static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_do_i2c_wr( jtag_core * jc, char * line)
@@ -754,11 +755,12 @@ static int cmd_do_i2c_wr( jtag_core * jc, char * line)
 			}
 			script_printf(MSG_INFO_0,"WR I2C 0x%.2X :%s\n",i2cadr,data);
 		}
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
-	return 0;
+
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_do_i2c_rd( jtag_core * jc, char * line)
@@ -804,12 +806,12 @@ static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 			}
 			script_printf(MSG_INFO_0,"RD I2C 0x%.2X :%s\n",i2cadr,tmp_buffer);
 		}
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -833,7 +835,7 @@ static int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_mdio_set_mdc_pin(jc, atoi(dev_index), id);
 			script_printf(MSG_INFO_0,"MDC set to Pin %s\n",pinname);
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -844,7 +846,7 @@ static int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
@@ -864,7 +866,7 @@ static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_mdio_set_mdio_pin(jc, atoi(dev_index), id);
 			script_printf(MSG_INFO_0,"MDIO set to Pin %s\n",pinname);
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -875,7 +877,7 @@ static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_do_mdio_wr( jtag_core * jc, char * line)
@@ -906,12 +908,12 @@ static int cmd_do_mdio_wr( jtag_core * jc, char * line)
 
 		script_printf(MSG_INFO_0,"WR MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, datatowrite);
 
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_do_mdio_rd( jtag_core * jc, char * line)
@@ -938,12 +940,12 @@ static int cmd_do_mdio_rd( jtag_core * jc, char * line)
 
 		script_printf(MSG_INFO_0,"RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread);
 
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -968,7 +970,7 @@ static int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_spi_set_cs_pin(jc, atoi(dev_index), id, atoi(polarity));
 			script_printf(MSG_INFO_0,"CS set to Pin %s with polarity %d\n",pinname,atoi(polarity));
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -979,7 +981,7 @@ static int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
@@ -1001,7 +1003,7 @@ static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_spi_set_clk_pin(jc, atoi(dev_index), id, atoi(polarity));
 			script_printf(MSG_INFO_0,"CLK set to Pin %s with polarity %d\n",pinname,atoi(polarity));
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -1012,7 +1014,7 @@ static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
@@ -1034,7 +1036,7 @@ static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_spi_set_mosi_pin(jc, atoi(dev_index), id, atoi(phase));
 			script_printf(MSG_INFO_0,"MOSI set to Pin %s with polarity %d\n",pinname,atoi(phase));
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -1045,7 +1047,7 @@ static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
 
 	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
-	return 0;
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
@@ -1067,7 +1069,7 @@ static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
 		{
 			jtagcore_spi_set_miso_pin(jc, atoi(dev_index), id, atoi(phase));
 			script_printf(MSG_INFO_0,"MISO set to Pin %s with polarity %d\n",pinname,atoi(phase));
-			return 1;
+			return JTAG_CORE_NOT_FOUND;
 		}
 		else
 		{
@@ -1077,7 +1079,8 @@ static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
 	}
 
 	script_printf(MSG_ERROR,"Parameters error: %s\n",line);
-	return 0;
+
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_spi_rd_wr( jtag_core * jc, char * line)
@@ -1132,11 +1135,12 @@ static int cmd_spi_rd_wr( jtag_core * jc, char * line)
 		}
 		script_printf(MSG_NONE,"\n");
 
-		return 1;
+		return JTAG_CORE_NOT_FOUND;
 	}
 
 	script_printf(MSG_ERROR,"Parameters error: %s\n",line);
-	return 0;
+
+	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_get_pins_list( jtag_core * jc, char * line)
@@ -1336,7 +1340,7 @@ int exec_cmd( jtag_core * jc, char * command,char * line)
 		i++;
 	}
 
-	return ERROR_CMD_NOT_FOUND;
+	return JTAG_CORE_CMD_NOT_FOUND;
 }
 
 static int cmd_help( jtag_core * jc, char * line)
@@ -1355,47 +1359,100 @@ static int cmd_help( jtag_core * jc, char * line)
 	return 1;
 }
 
-int execute_line( jtag_core * jc, char * line )
+int jtagcore_execScriptLine( jtag_core * jc, char * line )
 {
 	char command[DEFAULT_BUFLEN];
+
+	command[0] = 0;
 
 	if( extract_cmd(line, command) )
 	{
 		if(strlen(command))
 		{
-			if(exec_cmd(jc,command,line) == ERROR_CMD_NOT_FOUND )
+			if(exec_cmd(jc,command,line) == JTAG_CORE_CMD_NOT_FOUND )
 			{
 				script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+
 				return 0;
 			}
 		}
+
 		return 1;
 	}
 
 	return 0;
 }
 
-int execute_script( jtag_core * jc, char * filename )
+int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
 {
+	int err;
 	FILE * f;
-	char script_line[DEFAULT_BUFLEN];
+	char line[DEFAULT_BUFLEN];
 
-	f = fopen(filename,"r");
+	err = JTAG_CORE_INTERNAL_ERROR;
+
+	f = fopen(script_path,"r");
 	if(f)
 	{
 		do
 		{
-			if(fgets(script_line,sizeof(script_line)-1,f))
-			{
-				execute_line(jc,script_line);
-			}
-		}while(!feof(f));
+			if(!fgets(line,sizeof(line),f))
+				break;
+
+			if(feof(f))
+				break;
+
+			jtagcore_execScriptLine(jc, line);
+		}while(1);
+
 		fclose(f);
+
+		err = JTAG_CORE_NOT_FOUND;
 	}
-	return 0;
+	else
+	{
+		script_printf(MSG_ERROR,"Can't open %s !",script_path);
+
+		err = JTAG_CORE_ACCESS_ERROR;
+	}
+
+	return err;
 }
 
-int savepinstate_script( jtag_core * jc, int device, char * filename )
+int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int buffersize )
+{
+	int err = 0;
+	int buffer_offset,line_offset;
+	char line[DEFAULT_BUFLEN];
+
+	buffer_offset = 0;
+	line_offset = 0;
+
+	do
+	{
+		memset(line,0,DEFAULT_BUFLEN);
+		line_offset = 0;
+		while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && script_buffer[buffer_offset]!='\n' && script_buffer[buffer_offset]!='\r' && (line_offset < DEFAULT_BUFLEN - 1))
+		{
+			line[line_offset++] = script_buffer[buffer_offset++];
+		}
+
+		while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && (script_buffer[buffer_offset]=='\n' || script_buffer[buffer_offset]=='\r') )
+		{
+			buffer_offset++;
+		}
+
+		jtagcore_execScriptLine(jc, line);
+
+		if( (buffer_offset >= buffersize) || !script_buffer[buffer_offset])
+			break;
+
+	}while(buffer_offset < buffersize);
+
+	return err;
+}
+
+int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path )
 {
 	FILE * f;
 	int number_of_pins;
@@ -1403,7 +1460,7 @@ int savepinstate_script( jtag_core * jc, int device, char * filename )
 	int i,state;
 	char pin_name[DEFAULT_BUFLEN];
 
-	f = fopen(filename,"w");
+	f = fopen(script_path,"w");
 	if(f)
 	{
 		if(jc)

@@ -229,7 +229,7 @@ int launch_server(int port)
 						}
 						else
 						{
-							execute_line(jc,fullline);
+							jtagcore_execScriptLine(jc,fullline);
 							line_index = 0;
 						}
 						i++;

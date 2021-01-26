@@ -25,9 +25,9 @@
 
 #define DEFAULT_BUFLEN 1024
 
-int execute_script( jtag_core * jc, char * filename );
-int execute_line( jtag_core * jc, char * line );
-int savepinstate_script( jtag_core * jc, int device, char * filename );
+int jtagcore_execScriptFile( jtag_core * jc, char * script_path );
+int jtagcore_execScriptLine( jtag_core * jc, char * line );
+int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path );
 
 // Output Message level
 #define MSG_NONE                         0

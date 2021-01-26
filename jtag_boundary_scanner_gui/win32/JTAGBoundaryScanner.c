@@ -924,7 +924,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 								openconsole();
 								printf("Starting %s...\n", filename);
 
-								execute_script(jc,filename);
+								jtagcore_execScriptFile(jc,filename);
 
 								printf("Press enter to exit\n");
 
@@ -936,7 +936,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							memset(filename, 0, sizeof(filename));
 							if (fileselector(hWnd, 1, 0, filename, "Select script", TEXT("*.TXT\0\0"), TEXT("TXT")))
 							{
-								savepinstate_script(jc,last_selected_dev_index,filename);
+								jtagcore_savePinsStateScript(jc,last_selected_dev_index,filename);
 							}
 						break;
 						case IDM_ABOUT:

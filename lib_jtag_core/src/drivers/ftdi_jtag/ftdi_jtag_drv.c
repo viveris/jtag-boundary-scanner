@@ -54,18 +54,20 @@ typedef struct _drv_desc
 	int ftdi_index;
 }drv_desc;
 
-#define PROBE_OLIMEX_OCD 0
+#define PROBE_GENERIC_FTDI 0
 
-static drv_desc subdrv_list[]=
+#define MAX_PROBES_FTDI 8
+
+static drv_desc subdrv_list[MAX_PROBES_FTDI]=
 {
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0},
-	{"USB_OLIMEX_ARM_OCD","USB Olimex ARM USB OCD",PROBE_OLIMEX_OCD,0}
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0},
+	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0}
 };
 
 
@@ -73,11 +75,10 @@ static HMODULE lib_handle = 0;
 
 static FT_HANDLE ftdih = NULL;
 static FT_DEVICE ftdi_device;
-static unsigned char nTRST;
-static unsigned char nTRSTnOE;
-static unsigned char nSRST;
-static unsigned char nSRSTnOE;
 
+static int trst_oe_pin, trst_state_pin;
+static int srst_oe_pin, srst_state_pin;
+static int led_pin;
 
 static unsigned char low_direction;
 static unsigned char low_polarity;
@@ -214,7 +215,7 @@ int drv_FTDI_Detect(jtag_core * jc)
 		}
 
 		i = 0;
-		while(i<numDevs)
+		while( i<numDevs && i<MAX_PROBES_FTDI )
 		{
 			status = pFT_ListDevices((PVOID)i, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_DESCRIPTION);
 			if (status != FT_OK)
@@ -239,11 +240,31 @@ int drv_FTDI_Detect(jtag_core * jc)
 			i++;
 		}
 
-
 		return numDevs;
 	}
 
 	return 0;
+}
+
+void update_gpio_state(int index,int state)
+{
+	if( index >=0 )
+	{
+		if(index < 8)
+		{
+			if(state)
+				low_output |= (0x01<<index);
+			else
+				low_output &= ~(0x01<<index);
+		}
+		else
+		{
+			if(state)
+				high_output |= (0x01<<(index - 8));
+			else
+				high_output &= ~(0x01<<(index - 8));
+		}
+	}
 }
 
 int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
@@ -335,8 +356,6 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		pFT_SetChars = (FT_SETCHARS)GetProcAddress(lib_handle, "FT_SetChars");
 		if (!pFT_SetChars)
 			goto loadliberror;
-
-
 	}
 	else
 	{
@@ -347,7 +366,6 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		// TODO : Linux lib loader.
 		return -1;
 	#endif
-
 
 	status = pFT_ListDevices(&numDevs, NULL, FT_LIST_NUMBER_ONLY);
 	if (status != FT_OK && !numDevs)
@@ -520,22 +538,24 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		}
 	}
 
-	ft2232_set_data_bits_low_byte(low_output, low_direction);
+	trst_oe_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_TRST_OE_PINNUM" );
+	trst_state_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_TRST_STATE_PINNUM" );
 
-	nTRST = 0x01;
-	nTRSTnOE = 0x4;
-	nSRST = 0x02;
-	nSRSTnOE = 0x00;// no output enable for nSRST
+	srst_oe_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_SRST_OE_PINNUM" );
+	srst_state_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_SRST_STATE_PINNUM" );
 
-	if ( 0 ) //jtag_reset_config & RESET_TRST_OPEN_DRAIN) {
-	{
-		high_output |= nTRSTnOE;
-		high_output &= ~nTRST;
-	}
-	else {
-		high_output &= ~nTRSTnOE;
-		high_output |= nTRST;
-	}
+	led_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_CONNECTION_LED_PINNUM" );
+
+	update_gpio_state(trst_oe_pin,1);
+	update_gpio_state(trst_state_pin,1);
+
+	update_gpio_state(srst_oe_pin,1);
+	update_gpio_state(srst_state_pin,1);
+
+	update_gpio_state(led_pin,0);
+
+	ft2232_set_data_bits_low_byte( (unsigned char)(low_output ^ low_polarity), low_direction);
+	ft2232_set_data_bits_high_byte( (unsigned char)(high_output ^ high_polarity), high_direction);
 
 	// Clock divisor
 	// 0x86 ValueL ValueH
@@ -563,12 +583,14 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	}
 
 	/* turn red LED on */
-	high_output |= 0x08;
+	update_gpio_state(led_pin,1);
 
-	/* Release system reset */
-	high_output |= nSRST;
+	/* Release system & jtag reset */
+	update_gpio_state(trst_state_pin,0);
+	update_gpio_state(srst_state_pin,0);
 
- 	ft2232_set_data_bits_high_byte(high_output , high_direction);
+	ft2232_set_data_bits_low_byte( (unsigned char)(low_output ^ low_polarity), low_direction);
+	ft2232_set_data_bits_high_byte( (unsigned char)(high_output ^ high_polarity), high_direction);
 
 	jtagcore_logs_printf(jc,MSG_INFO_0,"drv_FTDI_Init : Probe Driver loaded successfully...\r\n");
 

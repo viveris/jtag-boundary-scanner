@@ -21,6 +21,9 @@
     <ClCompile Include="..\..\fileselector.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\socket.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\fileselector.h">
@@ -31,6 +34,9 @@
     </ClInclude>
     <ClInclude Include="..\..\resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\socket.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

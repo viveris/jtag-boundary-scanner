@@ -4,6 +4,7 @@ EXPORTS
 	jtagcore_init @1
 	jtagcore_set_logs_callback @2
 	jtagcore_set_logs_level @3
+	setOutputFunc @4
 	jtagcore_deinit @9
 
 	jtagcore_scan_and_init_chain @10
@@ -47,3 +48,13 @@ EXPORTS
 	jtagcore_memory_set_ctrl_pin @403
 	jtagcore_memory_read @404
 	jtagcore_memory_write @405
+
+	jtagcore_setEnvVar @500
+	jtagcore_getEnvVar @501
+	jtagcore_getEnvVarValue @502
+	jtagcore_getEnvVarIndex @503
+
+	jtagcore_execScriptLine @600
+	jtagcore_execScriptFile @601
+	jtagcore_execScriptRam @602
+	jtagcore_savePinsStateScript @603

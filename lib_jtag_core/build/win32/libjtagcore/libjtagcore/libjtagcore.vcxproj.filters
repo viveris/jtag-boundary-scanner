@@ -31,6 +31,15 @@
     <Filter Include="Source Files\probes_drivers\jlink_jtag">
       <UniqueIdentifier>{b133c262-64c0-4c10-98d2-9273a0aa1823}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\script">
+      <UniqueIdentifier>{0d894a93-bc5b-44ed-b3a8-f515e210dcbd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\os_interface">
+      <UniqueIdentifier>{37845971-d551-4785-a39e-ee1fc76f7dd2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\natsort">
+      <UniqueIdentifier>{a1dd8db6-2666-4df8-af6b-ec8f74d2a5e5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
@@ -75,6 +84,24 @@
     <ClCompile Include="..\..\..\..\src\bus_over_jtag\memory_over_jtag.c">
       <Filter>Source Files\bus_over_jtag</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\src\script\env.c">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\script\script.c">
+      <Filter>Source Files\script</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os_interface\fs.c">
+      <Filter>Source Files\os_interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os_interface\network.c">
+      <Filter>Source Files\os_interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\os_interface\os_interface.c">
+      <Filter>Source Files\os_interface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\natsort\strnatcmp.c">
+      <Filter>Source Files\natsort</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\src\bsdl_parser\bsdl_loader.h">
@@ -103,6 +130,21 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\src\jtag_core.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\script\env.h">
+      <Filter>Source Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\script\script.h">
+      <Filter>Source Files\script</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\os_interface\network.h">
+      <Filter>Source Files\os_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\os_interface\os_interface.h">
+      <Filter>Source Files\os_interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\natsort\strnatcmp.h">
+      <Filter>Source Files\natsort</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

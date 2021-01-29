@@ -546,12 +546,14 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 
 	led_pin = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_SET_CONNECTION_LED_PINNUM" );
 
+	/* jtag reset */
 	update_gpio_state(trst_oe_pin,1);
 	update_gpio_state(trst_state_pin,1);
 
 	update_gpio_state(srst_oe_pin,1);
-	update_gpio_state(srst_state_pin,1);
+	update_gpio_state(srst_state_pin,0);
 
+	/* turn red LED off */
 	update_gpio_state(led_pin,0);
 
 	ft2232_set_data_bits_low_byte( (unsigned char)(low_output ^ low_polarity), low_direction);
@@ -581,6 +583,9 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_Write : Error %x !\r\n",status);
 		goto loadliberror;
 	}
+
+	/* Delay... */
+	genos_pause(jtagcore_getEnvVarValue( jc, "PROBE_FTDI_JTAG_TRST_DELAY_MS"));
 
 	/* turn red LED on */
 	update_gpio_state(led_pin,1);

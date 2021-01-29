@@ -4,6 +4,23 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.50 (2021-01-29)
+=================================================
+
+    - config.script configuration file support.
+
+    - FDTI probes settings can be now changed into
+      the configuration file.
+
+    - Pins are now naturally ordered.
+
+    - New script commands :
+        - "pause" : pause the execution during x milliseconds.
+        - "include" : include and execute another script file. (WIP)
+        - "system" : do a system call/operation. (WIP)
+
+    - Code fixes and improvements.
+
 Noteworthy changes in release v2.19 (2019-03-01)
 =================================================
 

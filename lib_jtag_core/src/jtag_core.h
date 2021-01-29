@@ -28,7 +28,7 @@ typedef void jtag_core;
 #define _jtag_core_
 #endif
 
-#define LIB_JTAG_CORE_VERSION "0.9.2.2"
+#define LIB_JTAG_CORE_VERSION "0.9.5.1"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Functions Error / return codes

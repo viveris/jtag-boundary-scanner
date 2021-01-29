@@ -1261,6 +1261,43 @@ static int cmd_print_env_var( jtag_core * jc, char * line )
 	}
 }
 
+static int cmd_call( jtag_core * jc, char * line )
+{
+	int offs;
+	char path[DEFAULT_BUFLEN];
+
+	get_param(line, 1,(char*)&path);
+
+	offs = get_param_offset(line, 1);
+
+	if(offs>=0)
+	{
+		return jtagcore_execScriptFile( jc, (char*)&path );
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+static int cmd_system( jtag_core * jc, char * line )
+{
+	int offs;
+	int ret;
+
+	offs = get_param_offset(line, 1);
+
+	if(offs>=0)
+	{
+		ret = system(&line[offs]);
+
+		if( ret != 1 )
+			return JTAG_CORE_NO_ERROR;
+		else
+			return JTAG_CORE_NOT_FOUND;
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
 cmd_list cmdlist[] =
 {
 	{"print",                   cmd_print},
@@ -1270,6 +1307,8 @@ cmd_list cmdlist[] =
 	{"pause",                   cmd_pause},
 	{"set",                     cmd_set_env_var},
 	{"print_env_var",           cmd_print_env_var},
+	{"call",                    cmd_call},
+	{"system",                  cmd_system},
 
 	{"jtag_get_probes_list",    cmd_print_probes_list},
 	{"jtag_open_probe",         cmd_open_probe},

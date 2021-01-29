@@ -43,6 +43,14 @@ set PROBE_FTDI_INTERNAL_FREQ_KHZ 60000
 set PROBE_FTDI_TCK_FREQ_KHZ 1000
 
 #
+# To enable the RTCK / adaptative clock mode set the following
+# variable to 1.
+# Warning : Need a FDTI chip supporting this mode (FT2232H,...)
+#
+
+set PROBE_FTDI_JTAG_ENABLE_RTCK 0
+
+#
 # Probe internal mapping
 #
 # Olimex ARM-USB-OCD-H JTAG signals example
@@ -140,4 +148,3 @@ set PROBE_FTDI_JTAG_TRST_DELAY_MS             200
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
-

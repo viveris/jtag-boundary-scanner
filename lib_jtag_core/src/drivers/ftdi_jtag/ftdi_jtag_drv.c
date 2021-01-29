@@ -23,11 +23,14 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
 #if !defined(WIN32)
 #include <sys/time.h>
 #endif
+
 #include "../drv_loader.h"
 #include "../../jtag_core_internal.h"
 #include "../../jtag_core.h"
@@ -35,6 +38,8 @@
 #include "../../bsdl_parser/bsdl_loader.h"
 
 #include "../../dbg_logs.h"
+
+#include "../../os_interface/os_interface.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -183,6 +188,24 @@ static int ft2232_set_data_bits_high_byte(unsigned char value, unsigned char dir
 	buf[2] = direction;	// direction
 
 	status = pFT_Write(ftdih, buf, sizeof(buf), &dw_bytes_written);
+	if (status != FT_OK) {
+		bytes_written = dw_bytes_written;
+		return -1;
+	}
+
+	return 0;
+}
+
+static int ft2232h_enable_rtck(int enable)
+{
+	FT_STATUS status;
+	DWORD dw_bytes_written = 0;
+	unsigned char buf;
+	unsigned long bytes_written;
+
+	buf = enable ? 0x96 : 0x97;
+
+	status = pFT_Write(ftdih, &buf, sizeof(buf), &dw_bytes_written);
 	if (status != FT_OK) {
 		bytes_written = dw_bytes_written;
 		return -1;
@@ -582,6 +605,11 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	if (status != FT_OK) {
 		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_Write : Error %x !\r\n",status);
 		goto loadliberror;
+	}
+
+	if(jtagcore_getEnvVarValue( jc, "PROBE_FTDI_JTAG_ENABLE_RTCK") > 0)
+	{
+		ft2232h_enable_rtck(1);
 	}
 
 	/* Delay... */

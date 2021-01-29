@@ -236,6 +236,18 @@ SOURCE=..\..\..\src\os_interface\os_interface.c
 SOURCE=..\..\..\src\os_interface\os_interface.h
 # End Source File
 # End Group
+# Begin Group "natsort"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\natsort\strnatcmp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\natsort\strnatcmp.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\dbg_logs.c

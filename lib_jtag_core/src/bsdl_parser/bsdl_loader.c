@@ -35,6 +35,8 @@
 #include "bsdl_loader.h"
 #include "bsdl_strings.h"
 
+#include "../natsort/strnatcmp.h"
+
 #include "../dbg_logs.h"
 #define DEBUG 1
 
@@ -1078,6 +1080,17 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 	}
 }
 
+static int compare_pin_name(const void *a, const void *b)
+{
+	int ret;
+	pin_ctrl const *pa = (pin_ctrl const *)a;
+	pin_ctrl const *pb = (pin_ctrl const *)b;
+
+	ret = strnatcmp(pa->pinname, pb->pinname);
+
+	return ret;
+}
+
 jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 {
 	FILE * bsdl_file;
@@ -1311,6 +1324,19 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 	if(get_jtag_chain(jc,bsdl,lines,entityname)<0)
 	{
 		jtagcore_logs_printf(jc,MSG_ERROR,"load_bsdlfile : Error during jtag chain parsing !\r\n");
+	}
+
+	if(jtagcore_getEnvVarValue( jc, "BSDL_LOADER_SORT_PINS_NAME" ) > 0)
+	{
+		// Count the pins
+		i = 0;
+		while(bsdl->pins_list[i].pinname[0])
+		{
+			i++;
+		}
+
+		// Sort them
+		qsort(bsdl->pins_list, i, sizeof bsdl->pins_list[0], compare_pin_name);
 	}
 
 	i = 0;

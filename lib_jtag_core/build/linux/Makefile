@@ -30,19 +30,20 @@ endif
 LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o script.o env.o fs.o os_interface.o network.o
 PROBES_DRIVERS = drivers_list.o jlink_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
+NATSORT = strnatcmp.o
 
 all: $(BASEDIR)/config_script.h $(EXEC)
 
-lib_jtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.a: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.a: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(AR) r $@    $^
 
-lib_jtag_core.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS)
+lib_jtag_core.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
 jtag_core.o: $(BASEDIR)/jtag_core.c
@@ -97,6 +98,9 @@ os_interface.o: $(BASEDIR)/os_interface/os_interface.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 network.o: $(BASEDIR)/os_interface/network.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+strnatcmp.o: $(BASEDIR)/natsort/strnatcmp.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 $(BASEDIR)/config_script.h: $(BASEDIR)/config.script

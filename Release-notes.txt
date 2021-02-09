@@ -4,6 +4,11 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.52 (2021-02-09)
+=================================================
+
+    - Fix the bsdl files sub-folder scan.
+
 Noteworthy changes in release v2.50 (2021-01-29)
 =================================================
 

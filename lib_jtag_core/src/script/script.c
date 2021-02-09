@@ -163,7 +163,6 @@ static int get_param(char * line, int param_offset,char * param)
 
 static int cmd_autoinit( jtag_core * jc, char * line)
 {
-	int i;
 	int number_of_devices, dev_nb;
 	int loaded_bsdl;
 	char szExecPath[MAX_PATH + 1];
@@ -185,17 +184,11 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 
 	number_of_devices = jtagcore_get_number_of_devices(jc);
 
-	script_printf(MSG_INFO_0,"%d devices found\n",number_of_devices);
+	script_printf(MSG_INFO_0,"%d device(s) found\n",number_of_devices);
 
 	// Get the bsdl_files folder path
 
 	genos_getcurrentdirectory(szExecPath,MAX_PATH);
-	i = strlen(szExecPath);
-
-	while(i && (szExecPath[i]!= DIR_SEPARATOR_CHAR) )
-		i--;
-
-	szExecPath[i] = 0;
 
 	strcpy(filename,szExecPath);
 	strcat(filename,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR);
@@ -262,7 +255,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 	}
 	else
 	{
-		script_printf(MSG_ERROR,"Can't access ."DIR_SEPARATOR"bsdl_files sub folder !\n");
+		script_printf(MSG_ERROR,"Can't access the bsdl sub folder ! : %s\n",filename);
 		return JTAG_CORE_ACCESS_ERROR;
 	}
 

@@ -148,3 +148,17 @@ set PROBE_FTDI_JTAG_TRST_DELAY_MS             200
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
+
+set PROBE_LINUXGPIO_ENABLE 0
+
+set PROBE_LINUXGPIO_BASE_FOLDER "/sys/class/gpio"
+
+set PROBE_LINUXGPIO_TMS_PIN 24
+set PROBE_LINUXGPIO_TDI_PIN 25
+set PROBE_LINUXGPIO_TDO_PIN 26
+set PROBE_LINUXGPIO_TCK_PIN 27
+
+set PROBE_LINUXGPIO_TMS_PIN_INVERT_POLARITY 0
+set PROBE_LINUXGPIO_TDI_PIN_INVERT_POLARITY 0
+set PROBE_LINUXGPIO_TDO_PIN_INVERT_POLARITY 0
+set PROBE_LINUXGPIO_TCK_PIN_INVERT_POLARITY 0

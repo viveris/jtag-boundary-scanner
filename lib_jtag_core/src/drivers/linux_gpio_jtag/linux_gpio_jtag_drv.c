@@ -28,7 +28,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#if defined(__linux__)
 #include <unistd.h>
+#endif
 
 #include "../drv_loader.h"
 #include "../../jtag_core_internal.h"
@@ -52,6 +55,7 @@ typedef struct
 	int dir;
 	int state;
 	int old_state;
+	int negate_polarity;
 	int handle;
 }io_defs;
 
@@ -62,14 +66,16 @@ typedef struct
 
 io_defs gpio_var_names[]=
 {
-	{(const char*)"PROBE_LINUXGPIO_TMS_PIN",-1,1,0,-1,-1},
-	{(const char*)"PROBE_LINUXGPIO_TDO_PIN",-1,0,0,-1,-1},
-	{(const char*)"PROBE_LINUXGPIO_TDI_PIN",-1,1,0,-1,-1},
-	{(const char*)"PROBE_LINUXGPIO_TCK_PIN",-1,1,0,-1,-1},
+	{(const char*)"PROBE_LINUXGPIO_TMS_PIN",-1,1,0,-1,0,-1},
+	{(const char*)"PROBE_LINUXGPIO_TDO_PIN",-1,0,0,-1,0,-1},
+	{(const char*)"PROBE_LINUXGPIO_TDI_PIN",-1,1,0,-1,0,-1},
+	{(const char*)"PROBE_LINUXGPIO_TCK_PIN",-1,1,0,-1,0,-1},
 	{(const char*)NULL,-1,-1,0,-1,-1}
 };
 
-int putp(int tdi, int tms, int rp)
+#if defined(__linux__)
+
+static int putp(int tdi, int tms, int rp)
 {
 	int tdo = -1;
 	int ret;
@@ -82,7 +88,7 @@ int putp(int tdi, int tms, int rp)
 
 	if( gpio_var_names[TMS_INDEX].old_state != (tms&1))
 	{
-		tmp_str[0] = '0' + (tms&1);
+		tmp_str[0] = '0' + ((tms&1) ^ gpio_var_names[TMS_INDEX].negate_polarity);
 		ret = write(gpio_var_names[TMS_INDEX].handle,tmp_str,2);
 		if(ret < 2)
 			goto wr_error;
@@ -92,7 +98,7 @@ int putp(int tdi, int tms, int rp)
 
 	if( gpio_var_names[TDI_INDEX].old_state != (tdi&1))
 	{
-		tmp_str[0] = '0' + (tdi&1);
+		tmp_str[0] = '0' + ((tdi&1) ^ gpio_var_names[TDI_INDEX].negate_polarity);
 		ret = write(gpio_var_names[TDI_INDEX].handle,tmp_str,2);
 		if(ret < 2)
 			goto wr_error;
@@ -100,17 +106,17 @@ int putp(int tdi, int tms, int rp)
 		gpio_var_names[TDI_INDEX].old_state = (tdi&1);
 	}
 
-	tmp_str[0] = '0';
+	tmp_str[0] = '0' + gpio_var_names[TCK_INDEX].negate_polarity;
 	ret = write(gpio_var_names[TCK_INDEX].handle,tmp_str,2);
 	if(ret < 2)
 		goto wr_error;
 
-	tmp_str[0] = '1';
+	tmp_str[0] = '0' + (1 ^ gpio_var_names[TCK_INDEX].negate_polarity);
 	ret = write(gpio_var_names[TCK_INDEX].handle,tmp_str,2);
 	if(ret < 2)
 		goto wr_error;
 
-	gpio_var_names[TDI_INDEX].old_state = 1;
+	gpio_var_names[TCK_INDEX].old_state = 1;
 
 	if (rp == READ_PORT)
 	{
@@ -123,7 +129,7 @@ int putp(int tdi, int tms, int rp)
 		if(rd_value >= '0' && rd_value <='1')
 		{
 			gpio_var_names[TDO_INDEX].old_state = gpio_var_names[TDO_INDEX].state;
-			tdo = rd_value - '0';
+			tdo = (rd_value - '0') ^ gpio_var_names[TDO_INDEX].negate_polarity;
 			gpio_var_names[TDO_INDEX].state = tdo;
 		}
 	}
@@ -134,9 +140,11 @@ wr_error:
 	return 0;
 
 }
+#endif
 
 int drv_LinuxGPIO_Detect(jtag_core * jc)
 {
+#if defined(__linux__)
 	char tmp_str[512];
 	FILE * f;
 
@@ -154,9 +162,11 @@ int drv_LinuxGPIO_Detect(jtag_core * jc)
 			return 3;
 		}
 	}
-
+#endif
 	return 0;
 }
+
+#if defined(__linux__)
 
 static int exportGPIO(char * path_base,int pin)
 {
@@ -204,15 +214,22 @@ static int setdirGPIO(char * path_base,int pin,int dir)
     return JTAG_CORE_NO_ERROR;
 }
 
+#endif
+
 int drv_LinuxGPIO_Init(jtag_core * jc, int sub_drv,char * params)
 {
 	int probe_detected;
-	int i;
+
+	probe_detected = 0;
 
 	if(	jtagcore_getEnvVarValue( jc, "PROBE_LINUXGPIO_ENABLE") <= 0)
 	{
 		return JTAG_CORE_NO_PROBE;
 	}
+
+#if defined(__linux__)
+	int i;
+	char tmp_str[128];
 
 	jtagcore_getEnvVar( jc, "PROBE_LINUXGPIO_BASE_FOLDER", (char*)&linux_gpio_base);
 
@@ -220,16 +237,58 @@ int drv_LinuxGPIO_Init(jtag_core * jc, int sub_drv,char * params)
 	while(gpio_var_names[i].name)
 	{
 		gpio_var_names[i].gpio_num = jtagcore_getEnvVarValue( jc, (char*)gpio_var_names[i].name);
-		exportGPIO(linux_gpio_base, gpio_var_names[i].gpio_num);
-		setdirGPIO(linux_gpio_base, gpio_var_names[i].gpio_num, gpio_var_names[i].dir);
+
+		strncpy(tmp_str,(char*)gpio_var_names[i].name,sizeof(tmp_str));
+		strncat(tmp_str,"_INVERT_POLARITY",sizeof(tmp_str));
+
+		gpio_var_names[i].negate_polarity = jtagcore_getEnvVarValue( jc, (char*)gpio_var_names[i].name);
+
+		if( exportGPIO(linux_gpio_base, gpio_var_names[i].gpio_num) != JTAG_CORE_NO_ERROR )
+			break;
+
+		if( setdirGPIO(linux_gpio_base, gpio_var_names[i].gpio_num, gpio_var_names[i].dir) != JTAG_CORE_NO_ERROR )
+			break;
+
 		i++;
 	}
 
-	// init gpio
-	putp(0, 0, IGNORE_PORT);
-	putp(0, 0, IGNORE_PORT);
+	if(!gpio_var_names[i].name)
+	{
+		probe_detected = 1;
 
-	probe_detected = 0;
+		for(i=0;i<4;i++)
+		{
+			sprintf(tmp_str,"%s/gpio%d/value",linux_gpio_base,gpio_var_names[i].gpio_num);
+
+			if(gpio_var_names[i].dir)
+				gpio_var_names[i].handle = open(tmp_str, O_WRONLY);
+			else
+				gpio_var_names[i].handle = open(tmp_str, O_RDONLY);
+
+			if(gpio_var_names[i].handle < 0)
+				break;
+		}
+
+		if( i == 4 )
+		{
+			// init gpio
+			putp(0, 0, IGNORE_PORT);
+			putp(0, 0, IGNORE_PORT);
+		}
+		else
+		{
+			probe_detected = 0;
+		}
+
+		for(i=0;i<4;i++)
+		{
+			if(gpio_var_names[i].handle >= 0)
+				close(gpio_var_names[i].handle);
+
+			gpio_var_names[i].handle = -1;
+		}
+	}
+#endif
 
 	if(probe_detected)
 	{
@@ -250,6 +309,7 @@ int drv_LinuxGPIO_DeInit(jtag_core * jc)
 
 int drv_LinuxGPIO_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char * str_in, int size)
 {
+#if defined(__linux__)
 	int i;
 	char tmp_str[512];
 
@@ -336,11 +396,13 @@ io_open_error:
 		gpio_var_names[i].handle = -1;
 	}
 
+#endif
 	return -1;
 }
 
 int drv_LinuxGPIO_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 {
+#if defined(__linux__)
 	int i;
 	char tmp_str[512];
 
@@ -393,6 +455,8 @@ io_open_error:
 
 		gpio_var_names[i].handle = -1;
 	}
+
+#endif
 
 	return -1;
 

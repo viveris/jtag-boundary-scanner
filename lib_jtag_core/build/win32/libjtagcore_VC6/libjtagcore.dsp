@@ -167,6 +167,18 @@ SOURCE=..\..\..\src\drivers\jlink_jtag\jlink_jtag_drv.c
 SOURCE=..\..\..\src\drivers\jlink_jtag\jlink_jtag_drv.h
 # End Source File
 # End Group
+# Begin Group "linux_gpio_jtag"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=..\..\..\src\drivers\linux_gpio_jtag\linux_gpio_jtag_drv.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\src\drivers\linux_gpio_jtag\linux_gpio_jtag_drv.h
+# End Source File
+# End Group
 # Begin Source File
 
 SOURCE=..\..\..\src\drivers\drivers_list.c

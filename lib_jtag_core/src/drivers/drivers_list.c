@@ -35,6 +35,10 @@
 #include "./lpt_jtag/lpt_jtag_drv.h"
 #endif 
 
+#if defined(__linux__)
+#include "./linux_gpio_jtag/linux_gpio_jtag_drv.h"
+#endif
+
 #if defined(__linux__) || defined(WIN32)
 #include "./jlink_jtag/jlink_jtag_drv.h"
 #endif
@@ -51,6 +55,9 @@ const drv_entry staticdrvs[] =
 #endif
 #if defined(__linux__) || defined(WIN32)
 	{(DRV_GETMODULEINFOS)drv_JLINK_libGetDrv,0},
+#endif
+#if defined(__linux__)
+	{(DRV_GETMODULEINFOS)drv_LinuxGPIO_libGetDrv,0},
 #endif
 	{(DRV_GETMODULEINFOS)-1,0}
 };

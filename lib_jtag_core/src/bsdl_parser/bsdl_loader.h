@@ -23,12 +23,14 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#define MAX_ELEMENT_SIZE (64+1)
+
 typedef struct _pin_ctrl
 {
-	char pinname[64];
+	char pinname[MAX_ELEMENT_SIZE];
 	int  pintype;
 
-	char physical_pin[64];
+	char physical_pin[MAX_ELEMENT_SIZE];
 
 	int ctrl_bit_number;
 	int out_bit_number;
@@ -39,13 +41,13 @@ typedef struct _jtag_chain
 {
 	int bit_index;
 
-	int bit_cell_type;     // BC_1,BC_2,...
+	int bit_cell_type;                // BC_1,BC_2,...
 
-	char pinname[64];      // Pin name.
+	char pinname[MAX_ELEMENT_SIZE];   // Pin name.
 
-	int bit_type;          // None , ctrl , in, out.
+	int bit_type;                     // None , ctrl , in, out.
 
-	int safe_state;        // Default - Safe state. (0,1,-1)
+	int safe_state;                   // Default - Safe state. (0,1,-1)
 
 	int control_bit_index; // Indicate the associated control bit. -1 if no control bit.
 	int control_disable_state;
@@ -67,11 +69,10 @@ typedef struct _jtag_bsdl
 	pin_ctrl * pins_list;
 
 	int number_of_bits_per_instruction;
-	char IDCODE_Instruction[64];
-	char EXTEST_Instruction[64];
-	char BYPASS_Instruction[64];
-	char SAMPLE_Instruction[64];
-
+	char IDCODE_Instruction[MAX_ELEMENT_SIZE];
+	char EXTEST_Instruction[MAX_ELEMENT_SIZE];
+	char BYPASS_Instruction[MAX_ELEMENT_SIZE];
+	char SAMPLE_Instruction[MAX_ELEMENT_SIZE];
 
 }jtag_bsdl;
 

@@ -480,7 +480,6 @@ int get_next_keyword(char * buffer, char * keyword)
 		i++;
 	}
 
-
 	// skip the following blank
 	while (buffer[i] && strchr("\"():, ", buffer[i]))
 	{
@@ -491,9 +490,12 @@ int get_next_keyword(char * buffer, char * keyword)
 	j = 0;
 	while (buffer[i] && !strchr("\"():;, ", buffer[i]))
 	{
-		keyword[j] = buffer[i];
+		if(j < MAX_ELEMENT_SIZE-1)
+		{
+			keyword[j] = buffer[i];
+			j++;
+		}
 		i++;
-		j++;
 	}
 
 	keyword[j] = 0;
@@ -525,9 +527,12 @@ int get_next_parameter(char * buffer, char * parameter)
 	j = 0;
 	while (buffer[i] && !strchr("\":, ;", buffer[i]))
 	{
-		parameter[j] = buffer[i];
+		if(j < MAX_ELEMENT_SIZE-1)
+		{
+			parameter[j] = buffer[i];
+			j++;
+		}
 		i++;
-		j++;
 	}
 
 	parameter[j] = 0;
@@ -778,7 +783,7 @@ int get_next_pin(char * name,int * type, char *line, int * start_index, int * en
 int get_pins_list(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines)
 {
 	int i,j,k,inc,offset, number_of_pins,vector_size;
-	char tmp_str[512];
+	char tmp_str[MAX_ELEMENT_SIZE];
 	int tmp_type,tmp_start,tmp_end;
 	i = 0;
 
@@ -849,10 +854,14 @@ int get_pins_list(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines)
 
 					for(k = 0;k < vector_size; k++)
 					{
+						snprintf((char*)&bsdl_desc->pins_list[number_of_pins].pinname,sizeof(((pin_ctrl *)0)->pinname),"%s",(char*)tmp_str);
+
 						if( vector_size > 1 )
-							sprintf((char*)&bsdl_desc->pins_list[number_of_pins].pinname,"%s(%d)",(char*)tmp_str,tmp_start);
-						else
-							sprintf((char*)&bsdl_desc->pins_list[number_of_pins].pinname,"%s",(char*)tmp_str);
+						{
+							char digistr[32];
+							snprintf((char*)digistr,sizeof(digistr),"(%d)",tmp_start);
+							strncat((char*)&bsdl_desc->pins_list[number_of_pins].pinname,digistr,sizeof(((pin_ctrl *)0)->pinname)-1);
+						}
 
 						bsdl_desc->pins_list[number_of_pins].pintype = tmp_type;
 						number_of_pins++;
@@ -876,7 +885,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 {
 	char * jtagchain_str;
 	int i,j,bit_count,end_parse;
-	char tmp_str[64];
+	char tmp_str[MAX_ELEMENT_SIZE];
 	int bit_index;
 
 	bit_count = 0;
@@ -1099,7 +1108,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 	char * bsdl_txt,*tmp_bsdl_txt;
 	char * tmp_ptr;
 	int i,number_of_bsdl_lines;
-	char entityname[512];
+	char entityname[256];
 	char * chipid_str,* instruct_str;
 	char * instruct_strchr;
 	char ** lines;
@@ -1280,7 +1289,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 
 	///////////////////////
 	// copy the entity name & the file name
-	strncpy(bsdl->entity_name,entityname,sizeof(bsdl->entity_name)-1);
+	strncpy(bsdl->entity_name,entityname,sizeof(((jtag_bsdl *)0)->entity_name) - 1);
 	i = strlen(filename);
 	while(i && filename[i] != '\\')
 	{

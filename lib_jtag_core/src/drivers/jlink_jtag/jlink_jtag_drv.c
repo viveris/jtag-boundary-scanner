@@ -80,14 +80,11 @@ typedef void (WINAPIV * JL_CLOSE)(void);
 
 #define MODULE_NAME		"./libjlinkarm.so"
 
-#if defined(__x86_64__)
-    #define __cdecl
-#endif
 #if defined(__i386__)
     #define __cdecl __attribut__((cdecl))
+#else // __x86_64__ and others...
+    #define __cdecl
 #endif
-
-
 
 typedef void* HMODULE;
 

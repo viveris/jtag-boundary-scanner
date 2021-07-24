@@ -37,7 +37,7 @@
 
 int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 {
-	char tmp_msg[1024];
+	char tmp_msg[1024+1];
 	char tmp_msg2[1024];
 	JTAGCORE_PRINT_FUNC print_callback;
 
@@ -74,7 +74,7 @@ int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 
 			vsprintf(tmp_msg2,chaine,marker);
 			strncat(tmp_msg,tmp_msg2,sizeof(tmp_msg) - ( strlen(tmp_msg) + 1 ) );
-			
+
 			print_callback(tmp_msg);
 
 			va_end( marker );

@@ -363,7 +363,7 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 			{
 				fileinfo->isdirectory = 0;
 				fileinfo->size = fileStat.st_size;
-				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),256);
+				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),sizeof(((filefoundinfo *)0)->filename) - 1);
 				return (void*)-1;
 			}
 		}

@@ -466,7 +466,7 @@ char * check_next_keyword(char * buffer, char * keyword)
 	return 0;
 }
 
-int get_next_keyword(char * buffer, char * keyword)
+int get_next_keyword(jtag_core * jc,char * buffer, char * keyword)
 {
 	int i,j;
 
@@ -500,10 +500,15 @@ int get_next_keyword(char * buffer, char * keyword)
 
 	keyword[j] = 0;
 
+	if( j >= (MAX_ELEMENT_SIZE-1) )
+	{
+		jtagcore_logs_printf(jc,MSG_WARNING,"BSDL loader / get_next_keyword : element too long / truncated : %s\r\n",keyword);
+	}
+
 	return i;
 }
 
-int get_next_parameter(char * buffer, char * parameter)
+int get_next_parameter(jtag_core * jc,char * buffer, char * parameter)
 {
 	int i,j;
 
@@ -536,6 +541,11 @@ int get_next_parameter(char * buffer, char * parameter)
 	}
 
 	parameter[j] = 0;
+
+	if( j >= (MAX_ELEMENT_SIZE-1) )
+	{
+		jtagcore_logs_printf(jc,MSG_WARNING,"BSDL loader / get_next_parameter : element too long / truncated : %s\r\n",parameter);	
+	}
 
 	return i;
 }
@@ -664,14 +674,14 @@ int get_attribut_int(char ** lines,char * name, char * entity)
 	return 0;
 }
 
-int get_next_pin(char * name,int * type, char *line, int * start_index, int * end_index )
+int get_next_pin(jtag_core * jc,char * name,int * type, char *line, int * start_index, int * end_index )
 {
 	int i;
 	int io_list_offset;
 	char tmp_str[256];
 	int line_parsed,inside_block;
 
-	i = get_next_keyword(line,name);
+	i = get_next_keyword(jc,line,name);
 
 	io_list_offset = 0;
 
@@ -693,13 +703,13 @@ int get_next_pin(char * name,int * type, char *line, int * start_index, int * en
 				return 0;
 		}
 
-		i += get_next_keyword(&line[i],(char*)&tmp_str);
+		i += get_next_keyword(jc,&line[i],(char*)&tmp_str);
 
 		string_upper(tmp_str);
 
 		*type = get_typecode(pintype_str,tmp_str);
 
-		i += get_next_keyword(&line[i],(char*)&tmp_str);
+		i += get_next_keyword(jc,&line[i],(char*)&tmp_str);
 
 		if (!strcmp_nocase("bit_vector",tmp_str))
 		{
@@ -720,12 +730,12 @@ int get_next_pin(char * name,int * type, char *line, int * start_index, int * en
 						inside_block++;
 						if(!line_parsed)
 						{
-							i += get_next_keyword(&line[i],(char*)&tmp_str);
+							i += get_next_keyword(jc,&line[i],(char*)&tmp_str);
 							*start_index = atoi(tmp_str);
 
-							i += get_next_keyword(&line[i],(char*)&tmp_str);
+							i += get_next_keyword(jc,&line[i],(char*)&tmp_str);
 
-							i += get_next_keyword(&line[i],(char*)&tmp_str);
+							i += get_next_keyword(jc,&line[i],(char*)&tmp_str);
 							*end_index = atoi(tmp_str);
 
 							line_parsed = 1;
@@ -801,7 +811,7 @@ int get_pins_list(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines)
 
 			do
 			{
-				offset = get_next_pin((char*)&tmp_str,&tmp_type, &lines[i][j], &tmp_start, &tmp_end );
+				offset = get_next_pin(jc,(char*)&tmp_str,&tmp_type, &lines[i][j], &tmp_start, &tmp_end );
 
 				if( tmp_start <=tmp_end)
 				{
@@ -837,7 +847,7 @@ int get_pins_list(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines)
 
 				do
 				{
-					offset = get_next_pin((char*)&tmp_str,&tmp_type, &lines[i][j], &tmp_start, &tmp_end );
+					offset = get_next_pin(jc,(char*)&tmp_str,&tmp_type, &lines[i][j], &tmp_start, &tmp_end );
 
 					if( tmp_start <= tmp_end )
 					{
@@ -917,7 +927,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 					jtagcore_logs_printf(jc,MSG_DEBUG,"--------------\r\n");
 
 					// Get index
-					i += get_next_keyword(&jtagchain_str[i], tmp_str);
+					i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 					bit_index = atoi(tmp_str);
 					if (bit_index >= 0  && bit_index < bsdl_desc->number_of_chainbits)
 					{
@@ -930,7 +940,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 							i++;
 
 						// Get the pin type
-						i += get_next_keyword(&jtagchain_str[i], tmp_str);
+						i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 						string_upper(tmp_str);
 						bsdl_desc->chain_list[bit_index].bit_cell_type = get_typecode(celltype_str, tmp_str);
 
@@ -943,7 +953,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 						i += j;
 
 						// Get the name
-						i += get_next_parameter(&jtagchain_str[i], bsdl_desc->chain_list[bit_index].pinname);
+						i += get_next_parameter(jc,&jtagchain_str[i], bsdl_desc->chain_list[bit_index].pinname);
 
 						jtagcore_logs_printf(jc, MSG_DEBUG, "%s\r\n", bsdl_desc->chain_list[bit_index].pinname);
 
@@ -954,7 +964,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 						i += j;
 
 						// Get the type
-						i += get_next_keyword(&jtagchain_str[i], tmp_str);
+						i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 						string_upper(tmp_str);
 						bsdl_desc->chain_list[bit_index].bit_type = get_typecode(bittype_str, tmp_str);
 
@@ -967,7 +977,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 						i += j;
 
 						// Get the default state
-						i += get_next_keyword(&jtagchain_str[i], tmp_str);
+						i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 						string_upper(tmp_str);
 						bsdl_desc->chain_list[bit_index].safe_state = get_typecode(statetype_str, tmp_str);
 
@@ -985,7 +995,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 							i += j;
 
 							// Get the control bit
-							i += get_next_keyword(&jtagchain_str[i], tmp_str);
+							i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 
 							bsdl_desc->chain_list[bit_index].control_bit_index = atoi(tmp_str);
 
@@ -995,7 +1005,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 							i += j;
 
 							// Get the polarity
-							i += get_next_keyword(&jtagchain_str[i], tmp_str);
+							i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 							string_upper(tmp_str);
 							bsdl_desc->chain_list[bit_index].control_disable_state = get_typecode(statetype_str, tmp_str);
 
@@ -1005,7 +1015,7 @@ int get_jtag_chain(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines, char * en
 							i += j;
 
 							// Get the off state
-							i += get_next_keyword(&jtagchain_str[i], tmp_str);
+							i += get_next_keyword(jc,&jtagchain_str[i], tmp_str);
 							string_upper(tmp_str);
 							bsdl_desc->chain_list[bit_index].control_disable_result = get_typecode(statetype_str, tmp_str);
 
@@ -1402,7 +1412,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 			instruct_strchr = strstr(instruct_str,"idcode");
 		if(instruct_strchr)
 		{
-			get_next_keyword(instruct_strchr, bsdl->IDCODE_Instruction);
+			get_next_keyword(jc,instruct_strchr, bsdl->IDCODE_Instruction);
 			jtagcore_logs_printf(jc,MSG_DEBUG,"IDCODE : %s\r\n",bsdl->IDCODE_Instruction);
 		}
 
@@ -1412,7 +1422,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 
 		if(instruct_strchr)
 		{
-			get_next_keyword(instruct_strchr, bsdl->EXTEST_Instruction);
+			get_next_keyword(jc,instruct_strchr, bsdl->EXTEST_Instruction);
 			jtagcore_logs_printf(jc,MSG_DEBUG,"EXTEST : %s\r\n",bsdl->EXTEST_Instruction);
 		}
 
@@ -1422,7 +1432,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 
 		if(instruct_strchr)
 		{
-			get_next_keyword(instruct_strchr, bsdl->BYPASS_Instruction);
+			get_next_keyword(jc,instruct_strchr, bsdl->BYPASS_Instruction);
 			jtagcore_logs_printf(jc,MSG_DEBUG,"BYPASS : %s\r\n",bsdl->BYPASS_Instruction);
 		}
 
@@ -1431,7 +1441,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 			instruct_strchr = strstr(instruct_str,"sample");
 		if(instruct_strchr)
 		{
-			get_next_keyword(instruct_strchr, bsdl->SAMPLE_Instruction);
+			get_next_keyword(jc,instruct_strchr, bsdl->SAMPLE_Instruction);
 			jtagcore_logs_printf(jc,MSG_DEBUG,"SAMPLE : %s\r\n",bsdl->SAMPLE_Instruction);
 		}
 	}

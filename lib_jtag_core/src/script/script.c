@@ -41,7 +41,12 @@
 
 typedef int (* CMD_FUNC)( jtag_core * jc, char * line);
 
-PRINTF_FUNC script_printf;
+int dummy_script_printf(int MSGTYPE, char * string, ... )
+{
+	return 0;
+}
+
+PRINTF_FUNC script_printf = dummy_script_printf;
 
 typedef struct cmd_list_
 {

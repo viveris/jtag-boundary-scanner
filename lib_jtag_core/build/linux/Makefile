@@ -1,5 +1,5 @@
-CC = gcc
-AR = ar
+CC ?= gcc
+AR ?= ar
 
 UNAME := $(shell uname)
 

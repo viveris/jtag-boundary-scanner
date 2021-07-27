@@ -10,7 +10,7 @@ CFLAGS=-O3 $(INCLUDES) -Wall
 
 LDFLAGS= -g -shared -lc -lm  -ldl
 
-EXEC=lib_jtag_core.so
+EXEC=libjtag_core.so
 
 ifeq ($(UNAME), Linux)
 CFLAGS += -fPIC
@@ -18,13 +18,13 @@ endif
 
 ifeq ($(findstring CYGWIN,$(shell uname)),CYGWIN)
 LDFLAGS= -g -shared -lc -lm  -ldl
-EXEC=lib_jtag_core.dll
+EXEC=libjtag_core.dll
 endif
 
 ifeq ($(UNAME), Darwin)
 CFLAGS += -arch i386 -mmacosx-version-min=10.5
-LDFLAGS +=-arch i386 -dynamiclib -current_version 2.0 -install_name @executable_path/../Frameworks/lib_jtag_core.dylib -mmacosx-version-min=10.5
-EXEC=lib_jtag_core.dylib
+LDFLAGS +=-arch i386 -dynamiclib -current_version 2.0 -install_name @executable_path/../Frameworks/libjtag_core.dylib -mmacosx-version-min=10.5
+EXEC=libjtag_core.dylib
 endif
 
 LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o script.o env.o fs.o os_interface.o network.o
@@ -34,16 +34,16 @@ NATSORT = strnatcmp.o
 
 all: $(BASEDIR)/config_script.h $(EXEC)
 
-lib_jtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
+libjtag_core.dylib: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.a: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
+libjtag_core.a: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(AR) r $@    $^
 
-lib_jtag_core.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
+libjtag_core.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
-lib_jtag_core.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
+libjtag_core.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 
 jtag_core.o: $(BASEDIR)/jtag_core.c

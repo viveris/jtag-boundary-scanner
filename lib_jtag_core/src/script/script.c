@@ -171,6 +171,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 	int number_of_devices, dev_nb;
 	int loaded_bsdl;
 	char szExecPath[MAX_PATH + 1];
+	char scanfolder[MAX_PATH + 1];
 	char filename[MAX_PATH + 1];
 	char entityname[DEFAULT_BUFLEN];
 	char file[MAX_PATH + 1];
@@ -195,10 +196,10 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 
 	genos_getcurrentdirectory(szExecPath,MAX_PATH);
 
-	strcpy(filename,szExecPath);
-	strcat(filename,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR);
+	strcpy(scanfolder,szExecPath);
+	strcat(scanfolder,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR);
 
-	h_file_find = genos_find_first_file( filename, "*.*", &fileinfo );
+	h_file_find = genos_find_first_file( scanfolder, "*.*", &fileinfo );
 
 	// Scan and check files in the folder.
 	if (h_file_find)
@@ -216,7 +217,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 				{
 					for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
 					{
-						if( chip_id == jtagcore_get_dev_id(jc, dev_nb) )
+						if( chip_id == (jtagcore_get_dev_id(jc, dev_nb) & (~0xF0000000)) )
 						{
 							if(jtagcore_get_number_of_pins(jc, dev_nb) > 0)
 							{
@@ -240,7 +241,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 					}
 				}
 			}
-		}while(genos_find_next_file( h_file_find, filename, "*.*", &fileinfo ));
+		}while(genos_find_next_file( h_file_find, scanfolder, "*.*", &fileinfo ));
 
 		genos_find_close( h_file_find );
 

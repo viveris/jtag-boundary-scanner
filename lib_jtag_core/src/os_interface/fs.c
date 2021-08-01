@@ -363,7 +363,9 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 			{
 				fileinfo->isdirectory = 0;
 				fileinfo->size = fileStat.st_size;
-				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),sizeof(((filefoundinfo *)0)->filename) - 1);
+				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),FILEFOUND_NAMESIZE - 1);
+				fileinfo->filename[FILEFOUND_NAMESIZE - 1] = 0;
+
 				return (void*)-1;
 			}
 		}
@@ -529,6 +531,7 @@ char * genos_getcurrentdirectory(char *currentdirectory,int buffersize)
 #else
 
 	#if defined (OSX)
+
 	if (_NSGetExecutablePath(currentdirectory, &buffersize) == 0)
 	{
 		if(strrchr(currentdirectory,'/'))
@@ -537,6 +540,12 @@ char * genos_getcurrentdirectory(char *currentdirectory,int buffersize)
 			return currentdirectory;
 		}
 	}
+
+	#else
+
+	strncpy(currentdirectory,"./",buffersize-1);
+	return currentdirectory;
+
 	#endif
 
 #endif

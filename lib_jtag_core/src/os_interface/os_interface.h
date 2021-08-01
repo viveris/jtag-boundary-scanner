@@ -37,6 +37,8 @@ int snprintf(char *outBuf, size_t size, const char *format, ...);
 #define DIR_SEPARATOR_CHAR '/'
 #endif
 
+#define FILEFOUND_NAMESIZE 256
+
 /////////////// Thread functions ////////////////
 
 typedef int (*THREADFUNCTION) (void* jtag_ctx,void* hw_ctx);
@@ -51,7 +53,7 @@ typedef struct threadinit_
 typedef struct filefoundinfo_
 {
 	int isdirectory;
-	char filename[256];
+	char filename[FILEFOUND_NAMESIZE];
 	int size;
 }filefoundinfo;
 

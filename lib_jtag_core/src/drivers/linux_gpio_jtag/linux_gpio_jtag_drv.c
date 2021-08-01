@@ -43,8 +43,6 @@
 
 char linux_gpio_base[512];
 
-FILE * ios_handles[8] = {NULL};
-
 #define IGNORE_PORT 0
 #define READ_PORT 1
 
@@ -86,6 +84,8 @@ static int putp(int tdi, int tms, int rp)
 	tmp_str[1] = '\n';
 	tmp_str[2] = 0;
 
+	rd_value = 0;
+
 	if( gpio_var_names[TMS_INDEX].old_state != (tms&1))
 	{
 		tmp_str[0] = '0' + ((tms&1) ^ (gpio_var_names[TMS_INDEX].negate_polarity&1));
@@ -112,12 +112,21 @@ static int putp(int tdi, int tms, int rp)
 	if(ret < 2)
 		goto wr_error;
 
+	gpio_var_names[TCK_INDEX].old_state = 0;
+
 	tmp_str[0] = '0' + (1 ^ (gpio_var_names[TCK_INDEX].negate_polarity&1));
 	ret = write(gpio_var_names[TCK_INDEX].handle,tmp_str,2);
 	if(ret < 2)
 		goto wr_error;
 
 	gpio_var_names[TCK_INDEX].old_state = 1;
+
+	tmp_str[0] = '0' + (gpio_var_names[TCK_INDEX].negate_polarity&1);
+	ret = write(gpio_var_names[TCK_INDEX].handle,tmp_str,2);
+	if(ret < 2)
+		goto wr_error;
+
+	gpio_var_names[TCK_INDEX].old_state = 0;
 
 	if (rp == READ_PORT)
 	{
@@ -261,6 +270,9 @@ int drv_LinuxGPIO_Init(jtag_core * jc, int sub_drv,char * params)
 		{
 			snprintf(tmp_str,sizeof(tmp_str),"%s/gpio%d/value",linux_gpio_base,gpio_var_names[i].gpio_num);
 
+			if(gpio_var_names[i].handle != -1)
+				close(gpio_var_names[i].handle);
+
 			if(gpio_var_names[i].dir)
 				gpio_var_names[i].handle = open(tmp_str, O_WRONLY);
 			else
@@ -279,14 +291,6 @@ int drv_LinuxGPIO_Init(jtag_core * jc, int sub_drv,char * params)
 		else
 		{
 			probe_detected = 0;
-		}
-
-		for(i=0;i<4;i++)
-		{
-			if(gpio_var_names[i].handle >= 0)
-				close(gpio_var_names[i].handle);
-
-			gpio_var_names[i].handle = -1;
 		}
 	}
 #endif
@@ -312,38 +316,21 @@ int drv_LinuxGPIO_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned 
 {
 #if defined(__linux__)
 	int i;
-	char tmp_str[1024];
-
-	for(i=0;i<4;i++)
-	{
-		snprintf(tmp_str,sizeof(tmp_str),"%s/gpio%d/value",linux_gpio_base,gpio_var_names[i].gpio_num);
-
-		if(gpio_var_names[i].dir)
-			gpio_var_names[i].handle = open(tmp_str, O_WRONLY);
-		else
-			gpio_var_names[i].handle = open(tmp_str, O_RDONLY);
-
-		if(gpio_var_names[i].handle<0)
-			goto io_open_error;
-	}
-
-	if (size)
-	{
-		if (str_out[0] & JTAG_STR_TMS)
-		{
-			gpio_var_names[TMS_INDEX].state = 1;
-		}
-		else
-		{
-			gpio_var_names[TMS_INDEX].state = 0;
-		}
-	}
 
 	i = 0;
 	if (!str_in)
 	{
 		while (i < size)
 		{
+
+			if (str_out[i] & JTAG_STR_TMS)
+			{
+				gpio_var_names[TMS_INDEX].state = 1;
+			}
+			else
+			{
+				gpio_var_names[TMS_INDEX].state = 0;
+			}
 
 			if (str_out[i] & JTAG_STR_DOUT)
 			{
@@ -363,7 +350,6 @@ int drv_LinuxGPIO_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned 
 	{
 		while (i < size)
 		{
-
 			if (str_out[i] & JTAG_STR_DOUT)
 			{
 				gpio_var_names[TDI_INDEX].state = 1;
@@ -373,29 +359,23 @@ int drv_LinuxGPIO_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned 
 				gpio_var_names[TDI_INDEX].state = 0;
 			}
 
+			if (str_out[i] & JTAG_STR_TMS)
+			{
+				gpio_var_names[TMS_INDEX].state = 1;
+			}
+			else
+			{
+				gpio_var_names[TMS_INDEX].state = 0;
+			}
+
 			str_in[i] = putp(gpio_var_names[TDI_INDEX].state, gpio_var_names[TMS_INDEX].state, READ_PORT);
 
 			i++;
 		}
-	}
 
-	for(i=0;i<4;i++)
-	{
-		close(gpio_var_names[i].handle);
-		gpio_var_names[i].handle = -1;
 	}
 
 	return 0;
-
-io_open_error:
-
-	for(i=0;i<4;i++)
-	{
-		if(gpio_var_names[i].handle >= 0)
-			close(gpio_var_names[i].handle);
-
-		gpio_var_names[i].handle = -1;
-	}
 
 #endif
 	return -1;
@@ -405,24 +385,10 @@ int drv_LinuxGPIO_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 {
 #if defined(__linux__)
 	int i;
-	char tmp_str[1024];
 
 	gpio_var_names[TDI_INDEX].state = 0;
+
 	i = 0;
-
-	for(i=0;i<4;i++)
-	{
-		snprintf(tmp_str,sizeof(tmp_str),"%s/gpio%d/value",linux_gpio_base,gpio_var_names[i].gpio_num);
-
-		if(gpio_var_names[i].dir)
-			gpio_var_names[i].handle = open(tmp_str, O_WRONLY);
-		else
-			gpio_var_names[i].handle = open(tmp_str, O_RDONLY);
-
-		if(gpio_var_names[i].handle<0)
-			goto io_open_error;
-	}
-
 	while (i < size)
 	{
 		if (str_out[i] & JTAG_STR_TMS)
@@ -439,23 +405,7 @@ int drv_LinuxGPIO_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 		i++;
 	}
 
-	for(i=0;i<4;i++)
-	{
-		close(gpio_var_names[i].handle);
-		gpio_var_names[i].handle = -1;
-	}
-
 	return 0;
-
-io_open_error:
-
-	for(i=0;i<4;i++)
-	{
-		if(gpio_var_names[i].handle >= 0)
-			close(gpio_var_names[i].handle);
-
-		gpio_var_names[i].handle = -1;
-	}
 
 #endif
 

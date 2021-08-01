@@ -86,6 +86,23 @@ static int putp(int tdi, int tms, int rp)
 
 	rd_value = 0;
 
+	if (rp == READ_PORT)
+	{
+
+		rd_value = 0;
+		lseek(gpio_var_names[TDO_INDEX].handle, 0, SEEK_SET);
+		ret = read(gpio_var_names[TDO_INDEX].handle,&rd_value,1);
+		if(ret < 1)
+			goto wr_error;
+
+		if(rd_value >= '0' && rd_value <='1')
+		{
+			gpio_var_names[TDO_INDEX].old_state = gpio_var_names[TDO_INDEX].state;
+			tdo = (rd_value - '0') ^ (gpio_var_names[TDO_INDEX].negate_polarity&1);
+			gpio_var_names[TDO_INDEX].state = tdo;
+		}
+	}
+
 	if( gpio_var_names[TMS_INDEX].old_state != (tms&1))
 	{
 		tmp_str[0] = '0' + ((tms&1) ^ (gpio_var_names[TMS_INDEX].negate_polarity&1));
@@ -127,22 +144,6 @@ static int putp(int tdi, int tms, int rp)
 		goto wr_error;
 
 	gpio_var_names[TCK_INDEX].old_state = 0;
-
-	if (rp == READ_PORT)
-	{
-		rd_value = 0;
-		lseek(gpio_var_names[TDO_INDEX].handle, 0, SEEK_SET);
-		ret = read(gpio_var_names[TDO_INDEX].handle,&rd_value,1);
-		if(ret < 1)
-			goto wr_error;
-
-		if(rd_value >= '0' && rd_value <='1')
-		{
-			gpio_var_names[TDO_INDEX].old_state = gpio_var_names[TDO_INDEX].state;
-			tdo = (rd_value - '0') ^ (gpio_var_names[TDO_INDEX].negate_polarity&1);
-			gpio_var_names[TDO_INDEX].state = tdo;
-		}
-	}
 
 	return tdo;
 
@@ -318,6 +319,7 @@ int drv_LinuxGPIO_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned 
 	int i;
 
 	i = 0;
+
 	if (!str_in)
 	{
 		while (i < size)

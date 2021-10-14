@@ -28,6 +28,11 @@ typedef void jtag_core;
 #define _jtag_core_
 #endif
 
+#ifndef _script_ctx_
+typedef void script_ctx;
+#define _script_ctx_
+#endif
+
 #define LIB_JTAG_CORE_VERSION "0.9.5.2"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,7 +290,31 @@ char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Script execution functions
 
-int jtagcore_execScriptLine( jtag_core * jc, char * line );
-int jtagcore_execScriptFile( jtag_core * jc, char * script_path );
-int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int buffersize );
+#define DEFAULT_BUFLEN 1024
+
+// Output message types/levels
+enum MSGTYPE
+{
+	MSG_NONE = 0,
+	MSG_INFO_0,
+	MSG_INFO_1,
+	MSG_WARNING,
+	MSG_ERROR,
+	MSG_DEBUG
+};
+
+#ifndef _jtag_script_printf_func_
+typedef int (* JTAG_SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+#define _jtag_script_printf_func_
+#endif
+
+script_ctx * jtagcore_initScript(jtag_core * jc);
+
+void jtagcore_setScriptOutputFunc( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf );
+int  jtagcore_execScriptLine( script_ctx * ctx, char * line );
+int  jtagcore_execScriptFile( script_ctx * ctx, char * script_path );
+int  jtagcore_execScriptRam( script_ctx * ctx, unsigned char * script_buffer, int buffersize );
+
+script_ctx * jtagcore_deinitScript( script_ctx * ctx );
+
 int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path );

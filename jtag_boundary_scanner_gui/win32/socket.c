@@ -42,7 +42,6 @@
 
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"
-#include "script/script.h"
 
 extern jtag_core * jc;
 int line_index;
@@ -125,6 +124,8 @@ int launch_server(int port)
 	char fullline[DEFAULT_BUFLEN];
 	char port_string[16];
 
+	script_ctx * ctx;
+
 	int recvbuflen = DEFAULT_BUFLEN;
 	SOCKET ListenSocket = INVALID_SOCKET;
 	struct addrinfo *result = NULL;
@@ -182,7 +183,9 @@ int launch_server(int port)
 		return 1;
 	}
 
-	setOutputFunc( Printf_socket );
+	ctx = jtagcore_initScript(jc);
+
+	jtagcore_setScriptOutputFunc( ctx, Printf_socket );
 
 	do
 	{
@@ -229,7 +232,7 @@ int launch_server(int port)
 						}
 						else
 						{
-							jtagcore_execScriptLine(jc,fullline);
+							jtagcore_execScriptLine(ctx,fullline);
 							line_index = 0;
 						}
 						i++;
@@ -237,7 +240,7 @@ int launch_server(int port)
 				}while(i < iResult);
 			}
 			else if (iResult == 0)
-				printf("Connection closing...\n");
+				printf("Closing connection...\n");
 			else  {
 				if( WSAGetLastError() == 10054 )
 					printf("Connection closed !\n");

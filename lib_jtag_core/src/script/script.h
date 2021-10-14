@@ -23,16 +23,22 @@
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
 
-#define DEFAULT_BUFLEN 1024
+#define _script_ctx_
 
-// Output Message level
-#define MSG_NONE                         0
-#define MSG_INFO_0                       1
-#define MSG_INFO_1                       2
-#define MSG_WARNING                      3
-#define MSG_ERROR                        4
-#define MSG_DEBUG                        5
+#ifndef _jtag_script_printf_func_
+typedef int (* JTAG_SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+#define _jtag_script_printf_func_
+#endif
 
-typedef int (* PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+typedef struct _script_ctx
+{
+	JTAG_SCRIPT_PRINTF_FUNC script_printf;
+	void * app_ctx;
+} script_ctx;
 
-void setOutputFunc( PRINTF_FUNC ext_printf );
+script_ctx * init_script(jtag_core * jc);
+int execute_file_script( script_ctx * ctx, char * filename );
+int execute_line_script( script_ctx * ctx, char * line );
+int execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize );
+void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf );
+script_ctx * deinit_script(script_ctx * ctx);

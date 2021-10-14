@@ -38,7 +38,6 @@
 
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"
-#include "script/script.h"
 
 #define BASE_CHECKBOX_ID 0x4000
 #define BASE_PINNAME_ID  0x3000
@@ -143,8 +142,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 
 	Debug_Mode=1;
-
-	setOutputFunc( Printf_script );
 
 	bsdl_file = 0;
 
@@ -663,7 +660,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind;
 	int bsdl_file_found;
-
 	char filename[MAX_PATH + 1];
 	char tempstring[DEFAULT_BUFLEN];
 	char idstring[DEFAULT_BUFLEN];
@@ -676,8 +672,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	SCROLLINFO si;
 	static int yPos;        // current vertical scrolling position.
 	int fwKeys, zDelta;
-
 	int nb_of_drivers,nb_of_probes;
+	script_ctx * ctx;
 
 	switch (message)
 	{
@@ -924,11 +920,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 								openconsole();
 								printf("Starting %s...\n", filename);
 
-								jtagcore_execScriptFile(jc,filename);
+								ctx = jtagcore_initScript(jc);
+
+								jtagcore_setScriptOutputFunc( ctx, Printf_script );
+
+								jtagcore_execScriptFile(ctx,filename);
 
 								printf("Press enter to exit\n");
 
 								getchar();
+
+								jtagcore_deinitScript(ctx);
+
 								closeconsole();
 							}
 						break;
@@ -1272,8 +1275,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						{
 							if (state)
 							{
-								//SetBkColor(GetDlgItem(hWnd,(BASE_CHECKBOX_ID + ((i << 2) + 2))),RGB(255,0,0));
-
 								if (!SendDlgItemMessage(hWnd, (BASE_CHECKBOX_ID + ((i << 2) + 2)), BM_GETCHECK, 0, 0))
 								{
 									SendDlgItemMessage(hWnd, (BASE_CHECKBOX_ID + ((i << 2) + 2)), BM_SETCHECK, BST_CHECKED, 0);

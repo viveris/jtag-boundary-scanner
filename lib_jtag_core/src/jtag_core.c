@@ -41,6 +41,7 @@
 jtag_core * jtagcore_init()
 {
 	jtag_core * jc;
+	script_ctx * sctx;
 
 	jc = (jtag_core *)malloc(sizeof(jtag_core));
 	if ( jc )
@@ -48,9 +49,14 @@ jtag_core * jtagcore_init()
 		memset( jc, 0, sizeof(jtag_core) );
 
 		jtagcore_setEnvVar( jc, "LIBVERSION", "v"LIB_JTAG_CORE_VERSION);
-		jtagcore_execScriptRam( jc, config_script, config_script_len );
 
-		jtagcore_execScriptFile( jc, "config.script" );
+		sctx = jtagcore_initScript(jc);
+
+		jtagcore_execScriptRam( sctx, config_script, config_script_len );
+
+		jtagcore_execScriptFile( sctx, "config.script" );
+
+		jtagcore_deinitScript(sctx);
 	}
 
 	return jc;

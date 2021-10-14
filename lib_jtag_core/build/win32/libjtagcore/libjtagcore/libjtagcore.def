@@ -58,3 +58,6 @@ EXPORTS
 	jtagcore_execScriptFile @601
 	jtagcore_execScriptRam @602
 	jtagcore_savePinsStateScript @603
+	jtagcore_initScript @604
+	jtagcore_setScriptOutputFunc @605
+	jtagcore_deinitScript @606

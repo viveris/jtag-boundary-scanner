@@ -23,13 +23,4 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
-enum MSGTYPE
-{
-	MSG_INFO_0 = 0,
-	MSG_INFO_1,
-	MSG_WARNING,
-	MSG_ERROR,
-	MSG_DEBUG
-};
-
 int jtagcore_logs_printf(jtag_core * jc, int MSGTYPE, char * chaine, ...);

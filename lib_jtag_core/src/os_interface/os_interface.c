@@ -48,9 +48,8 @@
 
 #include "../drivers/drv_loader.h"
 #include "../jtag_core_internal.h"
-#include "../jtag_core.h"
-
 #include "../script/script.h"
+#include "../jtag_core.h"
 
 #include "os_interface.h"
 

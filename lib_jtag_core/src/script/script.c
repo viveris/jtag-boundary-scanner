@@ -31,22 +31,23 @@
 
 #define MAX_PATH 256
 
+#include "../drivers/drv_loader.h"
+#include "../jtag_core_internal.h"
+#include "script.h"
 #include "../jtag_core.h"
+
 #include "../bsdl_parser/bsdl_loader.h"
 
 #include "../os_interface/os_interface.h"
 
-#include "script.h"
 #include "env.h"
 
-typedef int (* CMD_FUNC)( jtag_core * jc, char * line);
+typedef int (* CMD_FUNC)( script_ctx * ctx, char * line);
 
-int dummy_script_printf(int MSGTYPE, char * string, ... )
+static int dummy_script_printf(int MSGTYPE, char * string, ... )
 {
 	return 0;
 }
-
-PRINTF_FUNC script_printf = dummy_script_printf;
 
 typedef struct cmd_list_
 {
@@ -54,12 +55,11 @@ typedef struct cmd_list_
 	CMD_FUNC func;
 }cmd_list;
 
-void setOutputFunc( PRINTF_FUNC ext_printf )
+typedef struct label_list_
 {
-	script_printf = ext_printf;
-
-	return;
-}
+	char * label;
+	unsigned int file_offset;
+}label_list;
 
 static int is_end_line(char c)
 {
@@ -83,6 +83,25 @@ static int is_space(char c)
 	{
 		return 0;
 	}
+}
+
+static int is_label(char * command)
+{
+	int i;
+
+	i = 0;
+	while(command[i])
+	{
+		i++;
+	}
+
+	if(i>1)
+	{
+		if(command[i - 1] == ':')
+			return 1;
+	}
+
+	return 0;
 }
 
 static int get_next_word(char * line, int offset)
@@ -166,8 +185,15 @@ static int get_param(char * line, int param_offset,char * param)
 	return -1;
 }
 
-static int cmd_autoinit( jtag_core * jc, char * line)
+static int add_label( script_ctx * ctx, char * line)
 {
+
+	return 0;
+}
+
+static int cmd_autoinit( script_ctx * ctx, char * line)
+{
+	jtag_core * jc;
 	int number_of_devices, dev_nb;
 	int loaded_bsdl;
 	char szExecPath[MAX_PATH + 1];
@@ -181,6 +207,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 
 	unsigned long chip_id;
 
+	jc = (jtag_core *)ctx->app_ctx;
 	loaded_bsdl = 0;
 
 	// BSDL Auto load : check which bsdl file match with the device
@@ -190,7 +217,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 
 	number_of_devices = jtagcore_get_number_of_devices(jc);
 
-	script_printf(MSG_INFO_0,"%d device(s) found\n",number_of_devices);
+	ctx->script_printf(MSG_INFO_0,"%d device(s) found\n",number_of_devices);
 
 	// Get the bsdl_files folder path
 
@@ -222,7 +249,7 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 							if(jtagcore_get_number_of_pins(jc, dev_nb) > 0)
 							{
 								// Device already loaded !
-								script_printf(MSG_WARNING,"Device %d BSDL already loaded ! ID conflit ?\n",dev_nb);
+								ctx->script_printf(MSG_WARNING,"Device %d BSDL already loaded ! ID conflit ?\n",dev_nb);
 							}
 
 							// The BSDL ID match with the device.
@@ -231,11 +258,11 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 								entityname[0] = 0;
 								jtagcore_get_dev_name(jc, dev_nb, entityname, file);
 
-								script_printf(MSG_INFO_0,"Device %d (%.8X - %s) - BSDL Loaded : %s\n",dev_nb,chip_id,entityname,file);
+								ctx->script_printf(MSG_INFO_0,"Device %d (%.8X - %s) - BSDL Loaded : %s\n",dev_nb,chip_id,entityname,file);
 							}
 							else
 							{
-								script_printf(MSG_ERROR,"ERROR while loading %s !\n",filename);
+								ctx->script_printf(MSG_ERROR,"ERROR while loading %s !\n",filename);
 							}
 						}
 					}
@@ -255,31 +282,31 @@ static int cmd_autoinit( jtag_core * jc, char * line)
 			}
 			else
 			{
-				script_printf(MSG_WARNING,"Device %d (%.8X) - NO BSDL Loaded !\n",dev_nb,jtagcore_get_dev_id(jc, dev_nb));
+				ctx->script_printf(MSG_WARNING,"Device %d (%.8X) - NO BSDL Loaded !\n",dev_nb,jtagcore_get_dev_id(jc, dev_nb));
 			}
 		}
 	}
 	else
 	{
-		script_printf(MSG_ERROR,"Can't access the bsdl sub folder ! : %s\n",filename);
+		ctx->script_printf(MSG_ERROR,"Can't access the bsdl sub folder ! : %s\n",filename);
 		return JTAG_CORE_ACCESS_ERROR;
 	}
 
 	return loaded_bsdl;
 }
 
-static int cmd_print( jtag_core * jc, char * line)
+static int cmd_print( script_ctx * ctx, char * line)
 {
 	int i;
 
 	i = get_param_offset(line, 1);
 	if(i>=0)
-		script_printf(MSG_NONE,"%s\n",&line[i]);
+		ctx->script_printf(MSG_NONE,"%s\n",&line[i]);
 
 	return JTAG_CORE_NO_ERROR;
 }
 
-static int cmd_pause( jtag_core * jc, char * line)
+static int cmd_pause( script_ctx * ctx, char * line)
 {
 	int i;
 	char delay_str[DEFAULT_BUFLEN];
@@ -293,38 +320,44 @@ static int cmd_pause( jtag_core * jc, char * line)
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_init_and_scan( jtag_core * jc, char * line)
+static int cmd_init_and_scan( script_ctx * ctx, char * line)
 {
+	jtag_core * jc;
 	int ret;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	ret = jtagcore_scan_and_init_chain(jc);
 
 	if( ret == JTAG_CORE_NO_ERROR )
 	{
-		script_printf(MSG_INFO_0,"JTAG Scan done\n");
+		ctx->script_printf(MSG_INFO_0,"JTAG Scan done\n");
 
 		return JTAG_CORE_NO_ERROR;
 	}
 	else
 	{
-		script_printf(MSG_INFO_0,"JTAG Scan return code : %d\n",ret);
+		ctx->script_printf(MSG_INFO_0,"JTAG Scan return code : %d\n",ret);
 	}
 
 	return ret;
 }
 
-static int cmd_print_nb_dev( jtag_core * jc, char * line)
+static int cmd_print_nb_dev( script_ctx * ctx, char * line)
 {
+	jtag_core * jc;
 	int i;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = jtagcore_get_number_of_devices(jc);
 
-	script_printf(MSG_INFO_0,"%d device(s) found in chain\n",i);
+	ctx->script_printf(MSG_INFO_0,"%d device(s) found in chain\n",i);
 
 	return JTAG_CORE_NO_ERROR;
 }
@@ -353,13 +386,16 @@ static void bsdl_id_str(unsigned long id, char * str)
 	str[i] = 0;
 }
 
-static char * get_id_str( jtag_core * jc, int numberofdevice)
+static char * get_id_str( script_ctx * ctx, int numberofdevice)
 {
 	// compare passed device ID to the one returned from the ID command
+	jtag_core * jc;
 	int i;
 	unsigned int idcode = 0;
 	char * stringbuffer;
 	char tempstr[DEFAULT_BUFLEN];
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	stringbuffer = 0;
 
@@ -384,24 +420,30 @@ static char * get_id_str( jtag_core * jc, int numberofdevice)
 	return stringbuffer;
 }
 
-static int cmd_print_devs_list( jtag_core * jc, char * line)
+static int cmd_print_devs_list( script_ctx * ctx, char * line)
 {
+	jtag_core * jc;
 	int i;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = jtagcore_get_number_of_devices(jc);
 	if(i>0)
 	{
-		script_printf(MSG_INFO_0,"%s\n",get_id_str(jc,i));
+		ctx->script_printf(MSG_INFO_0,"%s\n",get_id_str(ctx,i));
 	}
 
 	return JTAG_CORE_NOT_FOUND;
 }
 
-static int cmd_print_probes_list( jtag_core * jc, char * line)
+static int cmd_print_probes_list( script_ctx * ctx, char * line)
 {
+	jtag_core * jc;
 	int i,j;
 	char probe_list[64];
 	int nb_of_drivers,nb_of_probes;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	nb_of_drivers = jtagcore_get_number_of_probes_drv(jc);
 	j = 0;
@@ -412,7 +454,7 @@ static int cmd_print_probes_list( jtag_core * jc, char * line)
 		while( i < nb_of_probes )
 		{
 			jtagcore_get_probe_name(jc, PROBE_ID(j,i), probe_list);
-			script_printf(MSG_INFO_0,"ID 0x%.8X : %s\n",PROBE_ID(j,i),probe_list);
+			ctx->script_printf(MSG_INFO_0,"ID 0x%.8X : %s\n",PROBE_ID(j,i),probe_list);
 			i++;
 		}
 		j++;
@@ -421,38 +463,44 @@ static int cmd_print_probes_list( jtag_core * jc, char * line)
 	return JTAG_CORE_NO_ERROR;
 }
 
-static int cmd_open_probe( jtag_core * jc, char * line)
+static int cmd_open_probe( script_ctx * ctx, char * line)
 {
 	int ret;
 	char probe_id[64];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	if(get_param(line, 1,probe_id)>0)
 	{
 		ret = jtagcore_select_and_open_probe(jc, strtol(probe_id, NULL, 16));
 		if(ret != JTAG_CORE_NO_ERROR)
 		{
-			script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 			return ret;
 		}
 		else
 		{
-			script_printf(MSG_INFO_0,"Probe Ok !\n");
+			ctx->script_printf(MSG_INFO_0,"Probe Ok !\n");
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 	else
 	{
-		script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+		ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 		return JTAG_CORE_BAD_PARAMETER;
 	}
 }
 
-static int cmd_load_bsdl( jtag_core * jc, char * line)
+static int cmd_load_bsdl( script_ctx * ctx, char * line)
 {
 	int i,j;
 	char dev_index[DEFAULT_BUFLEN];
 	char filename[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,filename);
 	j = get_param(line, 2,dev_index);
@@ -461,26 +509,29 @@ static int cmd_load_bsdl( jtag_core * jc, char * line)
 	{
 		if (jtagcore_loadbsdlfile(jc, filename, atoi(dev_index)) >= 0)
 		{
-			script_printf(MSG_INFO_0,"BSDL %s loaded and parsed !\n",filename);
+			ctx->script_printf(MSG_INFO_0,"BSDL %s loaded and parsed !\n",filename);
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"File open & parsing error (%s)!\n",filename);
+			ctx->script_printf(MSG_ERROR,"File open & parsing error (%s)!\n",filename);
 			return JTAG_CORE_ACCESS_ERROR;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_scan_mode( jtag_core * jc, char * line)
+static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 {
 	int i,j;
 	char dev_index[DEFAULT_BUFLEN];
 	char scan_mode[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,scan_mode);
@@ -490,7 +541,7 @@ static int cmd_set_scan_mode( jtag_core * jc, char * line)
 		if( !strcmp(scan_mode,"EXTEST") )
 		{
 			jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_EXTEST_SCANMODE);
-			script_printf(MSG_INFO_0,"EXTEST mode\n");
+			ctx->script_printf(MSG_INFO_0,"EXTEST mode\n");
 		}
 		else
 		{
@@ -498,11 +549,11 @@ static int cmd_set_scan_mode( jtag_core * jc, char * line)
 			{
 				jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_SAMPLE_SCANMODE);
 
-				script_printf(MSG_INFO_0,"SAMPLE mode\n");
+				ctx->script_printf(MSG_INFO_0,"SAMPLE mode\n");
 			}
 			else
 			{
-				script_printf(MSG_ERROR,"%s : unknown mode !\n",scan_mode);
+				ctx->script_printf(MSG_ERROR,"%s : unknown mode !\n",scan_mode);
 				return JTAG_CORE_BAD_PARAMETER;
 			}
 		}
@@ -510,36 +561,42 @@ static int cmd_set_scan_mode( jtag_core * jc, char * line)
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_push_and_pop( jtag_core * jc, char * line)
+static int cmd_push_and_pop( script_ctx * ctx, char * line)
 {
 	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	ret = jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_READ);
 
 	if(ret != JTAG_CORE_NO_ERROR)
 	{
-		script_printf(MSG_ERROR,"Code %d !\n",ret);
+		ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 		return ret;
 	}
 	else
 	{
-		script_printf(MSG_INFO_0,"JTAG chain updated\n");
+		ctx->script_printf(MSG_INFO_0,"JTAG chain updated\n");
 	}
 
 	return JTAG_CORE_NO_ERROR;
 }
 
-static int cmd_set_pin_mode( jtag_core * jc, char * line)
+static int cmd_set_pin_mode( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char mode[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -553,28 +610,31 @@ static int cmd_set_pin_mode( jtag_core * jc, char * line)
 		{
 			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OE, atoi(mode));
 
-			script_printf(MSG_INFO_0,"Pin %s mode set to %d\n",pinname,atoi(mode));
+			ctx->script_printf(MSG_INFO_0,"Pin %s mode set to %d\n",pinname,atoi(mode));
 
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_pin_state( jtag_core * jc, char * line)
+static int cmd_set_pin_state( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char state[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -588,28 +648,31 @@ static int cmd_set_pin_state( jtag_core * jc, char * line)
 		{
 			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OUTPUT, atoi(state));
 
-			script_printf(MSG_INFO_0,"Pin %s set to %d\n",pinname,atoi(state));
+			ctx->script_printf(MSG_INFO_0,"Pin %s set to %d\n",pinname,atoi(state));
 
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_get_pin_state( jtag_core * jc, char * line)
+static int cmd_get_pin_state( script_ctx * ctx, char * line)
 {
 	int i,j,k,ret,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char mode[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -623,18 +686,18 @@ static int cmd_get_pin_state( jtag_core * jc, char * line)
 		{
 			ret = jtagcore_get_pin_state(jc, atoi(dev_index), id, JTAG_CORE_INPUT);
 
-			script_printf(MSG_INFO_0,"Pin %s state : %d\n",pinname,ret);
+			ctx->script_printf(MSG_INFO_0,"Pin %s state : %d\n",pinname,ret);
 
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -643,11 +706,14 @@ static int cmd_get_pin_state( jtag_core * jc, char * line)
 // I2C Commands
 /////////////////////////////////////////////////////////////////////////////////////////
 
-static int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
+static int cmd_set_i2c_sda_pin( script_ctx * ctx, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -659,26 +725,29 @@ static int cmd_set_i2c_sda_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_i2c_set_sda_pin(jc, atoi(dev_index), id);
-			script_printf(MSG_INFO_0,"SDA set to Pin %s\n",pinname);
+			ctx->script_printf(MSG_INFO_0,"SDA set to Pin %s\n",pinname);
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
+static int cmd_set_i2c_scl_pin( script_ctx * ctx, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -690,22 +759,22 @@ static int cmd_set_i2c_scl_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_i2c_set_scl_pin(jc, atoi(dev_index), id);
-			script_printf(MSG_INFO_0,"SCL set to Pin %s\n",pinname);
+			ctx->script_printf(MSG_INFO_0,"SCL set to Pin %s\n",pinname);
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_do_i2c_wr( jtag_core * jc, char * line)
+static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 {
 	// jtag_set_do_i2c_wr E8 EAACCDD4455
 	int i, j;
@@ -714,6 +783,9 @@ static int cmd_do_i2c_wr( jtag_core * jc, char * line)
 	char data[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer2[DEFAULT_BUFLEN];
 	char tmp_buffer3[16];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,adresse);
 	j = get_param(line, 2,data);
@@ -738,11 +810,11 @@ static int cmd_do_i2c_wr( jtag_core * jc, char * line)
 		{
 			if(ret == 0)
 			{
-				script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
+				ctx->script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
 			}
 			else
 			{
-				script_printf(MSG_ERROR,"Code %d !\n",ret);
+				ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 			}
 
 			return ret;
@@ -753,18 +825,18 @@ static int cmd_do_i2c_wr( jtag_core * jc, char * line)
 			{
 				sprintf(&data[i*3]," %.2X",tmp_buffer2[i]);
 			}
-			script_printf(MSG_INFO_0,"WR I2C 0x%.2X :%s\n",i2cadr,data);
+			ctx->script_printf(MSG_INFO_0,"WR I2C 0x%.2X :%s\n",i2cadr,data);
 
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_do_i2c_rd( jtag_core * jc, char * line)
+static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 {
 	// jtag_set_do_i2c_rd 0xE8 8
 	int i,j,i2cadr,size;
@@ -774,6 +846,9 @@ static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 	char tmp_buffer2[DEFAULT_BUFLEN];
 	char tmp_buffer3[16];
 	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,adresse);
 	j = get_param(line, 2,sizebuf);
@@ -789,11 +864,11 @@ static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 		{
 			if(ret == 0)
 			{
-				script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
+				ctx->script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
 			}
 			else
 			{
-				script_printf(MSG_ERROR,"Code %d !\n",ret);
+				ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 			}
 
 			return ret;
@@ -806,13 +881,13 @@ static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 				sprintf(tmp_buffer3, " %.2X", tmp_buffer2[i]);
 				strcat(tmp_buffer, tmp_buffer3);
 			}
-			script_printf(MSG_INFO_0,"RD I2C 0x%.2X :%s\n",i2cadr,tmp_buffer);
+			ctx->script_printf(MSG_INFO_0,"RD I2C 0x%.2X :%s\n",i2cadr,tmp_buffer);
 
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -821,11 +896,14 @@ static int cmd_do_i2c_rd( jtag_core * jc, char * line)
 // MDIO Commands
 /////////////////////////////////////////////////////////////////////////////////////////
 
-static int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
+static int cmd_set_mdio_mdc_pin( script_ctx * ctx, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -837,26 +915,29 @@ static int cmd_set_mdio_mdc_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_mdio_set_mdc_pin(jc, atoi(dev_index), id);
-			script_printf(MSG_INFO_0,"MDC set to Pin %s\n",pinname);
+			ctx->script_printf(MSG_INFO_0,"MDC set to Pin %s\n",pinname);
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
+static int cmd_set_mdio_mdio_pin( script_ctx * ctx, char * line)
 {
 	int i,j,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -868,22 +949,22 @@ static int cmd_set_mdio_mdio_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_mdio_set_mdio_pin(jc, atoi(dev_index), id);
-			script_printf(MSG_INFO_0,"MDIO set to Pin %s\n",pinname);
+			ctx->script_printf(MSG_INFO_0,"MDIO set to Pin %s\n",pinname);
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_do_mdio_wr( jtag_core * jc, char * line)
+static int cmd_do_mdio_wr( script_ctx * ctx, char * line)
 {
 	// jtag_mdio_wr 01 04 EAAC
 	int i,j,k,mdioadr,regadr,datatowrite;
@@ -891,6 +972,9 @@ static int cmd_do_mdio_wr( jtag_core * jc, char * line)
 	char reg[DEFAULT_BUFLEN];
 	char data[DEFAULT_BUFLEN];
 	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,address);
 	j = get_param(line, 2,reg);
@@ -905,26 +989,29 @@ static int cmd_do_mdio_wr( jtag_core * jc, char * line)
 		ret = jtagcore_mdio_write(jc, mdioadr, regadr, datatowrite);
 		if( ret < 0 )
 		{
-			script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 			return ret;
 		}
 
-		script_printf(MSG_INFO_0,"WR MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, datatowrite);
+		ctx->script_printf(MSG_INFO_0,"WR MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, datatowrite);
 
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_do_mdio_rd( jtag_core * jc, char * line)
+static int cmd_do_mdio_rd( script_ctx * ctx, char * line)
 {
 	// jtag_mdio_rd 01 04
 	int i,j,mdioadr,regadr,dataread;
 	char address[DEFAULT_BUFLEN];
 	char reg[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,address);
 	j = get_param(line, 2,reg);
@@ -937,16 +1024,16 @@ static int cmd_do_mdio_rd( jtag_core * jc, char * line)
 		dataread = jtagcore_mdio_read(jc, mdioadr, regadr);
 		if( dataread < 0 )
 		{
-			script_printf(MSG_ERROR,"Code %d !\n",dataread);
+			ctx->script_printf(MSG_ERROR,"Code %d !\n",dataread);
 			return dataread;
 		}
 
-		script_printf(MSG_INFO_0,"RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread);
+		ctx->script_printf(MSG_INFO_0,"RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread);
 
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -954,12 +1041,15 @@ static int cmd_do_mdio_rd( jtag_core * jc, char * line)
 /////////////////////////////////////////////////////////////////////////////////////////
 // SPI Commands
 /////////////////////////////////////////////////////////////////////////////////////////
-static int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_cs_pin( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char polarity[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -972,27 +1062,30 @@ static int cmd_set_spi_cs_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_cs_pin(jc, atoi(dev_index), id, atoi(polarity));
-			script_printf(MSG_INFO_0,"CS set to Pin %s with polarity %d\n",pinname,atoi(polarity));
+			ctx->script_printf(MSG_INFO_0,"CS set to Pin %s with polarity %d\n",pinname,atoi(polarity));
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_clk_pin( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char polarity[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -1005,27 +1098,30 @@ static int cmd_set_spi_clk_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_clk_pin(jc, atoi(dev_index), id, atoi(polarity));
-			script_printf(MSG_INFO_0,"CLK set to Pin %s with polarity %d\n",pinname,atoi(polarity));
+			ctx->script_printf(MSG_INFO_0,"CLK set to Pin %s with polarity %d\n",pinname,atoi(polarity));
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_mosi_pin( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char phase[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -1038,27 +1134,30 @@ static int cmd_set_spi_mosi_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_mosi_pin(jc, atoi(dev_index), id, atoi(phase));
-			script_printf(MSG_INFO_0,"MOSI set to Pin %s with polarity %d\n",pinname,atoi(phase));
+			ctx->script_printf(MSG_INFO_0,"MOSI set to Pin %s with polarity %d\n",pinname,atoi(phase));
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
+static int cmd_set_spi_miso_pin( script_ctx * ctx, char * line)
 {
 	int i,j,k,id;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	char phase[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	j = get_param(line, 2,pinname);
@@ -1071,22 +1170,22 @@ static int cmd_set_spi_miso_pin( jtag_core * jc, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_miso_pin(jc, atoi(dev_index), id, atoi(phase));
-			script_printf(MSG_INFO_0,"MISO set to Pin %s with polarity %d\n",pinname,atoi(phase));
+			ctx->script_printf(MSG_INFO_0,"MISO set to Pin %s with polarity %d\n",pinname,atoi(phase));
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	script_printf(MSG_ERROR,"Parameters error: %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Parameters error: %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_spi_rd_wr( jtag_core * jc, char * line)
+static int cmd_spi_rd_wr( script_ctx * ctx, char * line)
 {
 	int i,j,k,size;
 	char data_out_txt[DEFAULT_BUFLEN];
@@ -1095,6 +1194,9 @@ static int cmd_spi_rd_wr( jtag_core * jc, char * line)
 	char lsbfirst[DEFAULT_BUFLEN];
 	char tmp_buffer[3];
 	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	// jtag_spi_rd_wr 00123344 1  (DATA LSBFirst)
 	i = get_param(line, 1,data_out_txt);
@@ -1120,38 +1222,41 @@ static int cmd_spi_rd_wr( jtag_core * jc, char * line)
 		ret = jtagcore_spi_write_read(jc, size,data_out,data_in, 0);
 		if( ret < 0 )
 		{
-			script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
 			return ret;
 		}
 
-		script_printf(MSG_INFO_0,"SPI TX:");
+		ctx->script_printf(MSG_INFO_0,"SPI TX:");
 		for(k = 0; k<size; k++)
 		{
-			script_printf(MSG_NONE," %.2X",data_out[k]);
+			ctx->script_printf(MSG_NONE," %.2X",data_out[k]);
 		}
-		script_printf(MSG_NONE,"\n");
+		ctx->script_printf(MSG_NONE,"\n");
 
-		script_printf(MSG_INFO_0,"SPI RX:");
+		ctx->script_printf(MSG_INFO_0,"SPI RX:");
 		for(k = 0; k<size; k++)
 		{
-			script_printf(MSG_NONE," %.2X",data_in[k]);
+			ctx->script_printf(MSG_NONE," %.2X",data_in[k]);
 		}
-		script_printf(MSG_NONE,"\n");
+		ctx->script_printf(MSG_NONE,"\n");
 
 		return JTAG_CORE_NOT_FOUND;
 	}
 
-	script_printf(MSG_ERROR,"Parameters error: %s\n",line);
+	ctx->script_printf(MSG_ERROR,"Parameters error: %s\n",line);
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_get_pins_list( jtag_core * jc, char * line)
+static int cmd_get_pins_list( script_ctx * ctx, char * line)
 {
 	int i,j,nb_of_pins;
 	char dev_index[DEFAULT_BUFLEN];
 	char pinname[DEFAULT_BUFLEN];
 	int type;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,dev_index);
 	if(i>=0)
@@ -1159,40 +1264,40 @@ static int cmd_get_pins_list( jtag_core * jc, char * line)
 		nb_of_pins = jtagcore_get_number_of_pins(jc,atoi(dev_index));
 		if(nb_of_pins>=0)
 		{
-			script_printf(MSG_INFO_0,"Device %d : %d pin(s)\n",atoi(dev_index),nb_of_pins);
+			ctx->script_printf(MSG_INFO_0,"Device %d : %d pin(s)\n",atoi(dev_index),nb_of_pins);
 			for(j = 0;j < nb_of_pins;j++)
 			{
 				if(jtagcore_get_pin_properties(jc, atoi(dev_index), j, pinname, sizeof(pinname), &type) == JTAG_CORE_NO_ERROR)
 				{
-					script_printf(MSG_NONE,"%s : ",pinname);
+					ctx->script_printf(MSG_NONE,"%s : ",pinname);
 					if(type & JTAG_CORE_PIN_IS_INPUT)
 					{
-						script_printf(MSG_NONE," in  ");
+						ctx->script_printf(MSG_NONE," in  ");
 					}
 					else
 					{
-						script_printf(MSG_NONE,"     ");
+						ctx->script_printf(MSG_NONE,"     ");
 					}
 
 					if(type & JTAG_CORE_PIN_IS_OUTPUT)
 					{
-						script_printf(MSG_NONE," out ");
+						ctx->script_printf(MSG_NONE," out ");
 					}
 					else
 					{
-						script_printf(MSG_NONE,"     ");
+						ctx->script_printf(MSG_NONE,"     ");
 					}
 
 					if(type & JTAG_CORE_PIN_IS_TRISTATES)
 					{
-						script_printf(MSG_NONE," tris");
+						ctx->script_printf(MSG_NONE," tris");
 					}
 					else
 					{
-						script_printf(MSG_NONE,"     ");
+						ctx->script_printf(MSG_NONE,"     ");
 					}
 
-					script_printf(MSG_NONE,"\n");
+					ctx->script_printf(MSG_NONE,"\n");
 
 				}
 			}
@@ -1205,20 +1310,23 @@ static int cmd_get_pins_list( jtag_core * jc, char * line)
 }
 
 
-static int cmd_help( jtag_core * jc, char * line);
+static int cmd_help( script_ctx * ctx, char * line);
 
-static int cmd_version( jtag_core * jc, char * line)
+static int cmd_version( script_ctx * ctx, char * line)
 {
-	script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
+	ctx->script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
 
 	return JTAG_CORE_NO_ERROR;
 }
 
-static int cmd_set_env_var( jtag_core * jc, char * line )
+static int cmd_set_env_var( script_ctx * ctx, char * line )
 {
 	int i,j,ret;
 	char varname[DEFAULT_BUFLEN];
 	char varvalue[DEFAULT_BUFLEN];
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	ret = JTAG_CORE_BAD_PARAMETER;
 
@@ -1233,12 +1341,15 @@ static int cmd_set_env_var( jtag_core * jc, char * line )
 	return ret;
 }
 
-static int cmd_print_env_var( jtag_core * jc, char * line )
+static int cmd_print_env_var( script_ctx * ctx, char * line )
 {
 	int i;
 	char varname[DEFAULT_BUFLEN];
 	char varvalue[DEFAULT_BUFLEN];
 	char * ptr;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	i = get_param(line, 1,varname);
 
@@ -1247,7 +1358,7 @@ static int cmd_print_env_var( jtag_core * jc, char * line )
 		ptr = jtagcore_getEnvVar( jc, (char*)&varname, (char*)&varvalue );
 		if(ptr)
 		{
-			script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
+			ctx->script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
 
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1260,7 +1371,7 @@ static int cmd_print_env_var( jtag_core * jc, char * line )
 	}
 }
 
-static int cmd_call( jtag_core * jc, char * line )
+static int cmd_call( script_ctx * ctx, char * line )
 {
 	int offs;
 	char path[DEFAULT_BUFLEN];
@@ -1271,13 +1382,13 @@ static int cmd_call( jtag_core * jc, char * line )
 
 	if(offs>=0)
 	{
-		return jtagcore_execScriptFile( jc, (char*)&path );
+		return jtagcore_execScriptFile( ctx, (char*)&path );
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_system( jtag_core * jc, char * line )
+static int cmd_system( script_ctx * ctx, char * line )
 {
 	int offs;
 	int ret;
@@ -1297,7 +1408,7 @@ static int cmd_system( jtag_core * jc, char * line )
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-cmd_list cmdlist[] =
+static cmd_list cmdlist[] =
 {
 	{"print",                   cmd_print},
 	{"help",                    cmd_help},
@@ -1346,7 +1457,7 @@ cmd_list cmdlist[] =
 	{0 , 0}
 };
 
-static int extract_cmd(char * line, char * command)
+static int extract_cmd( script_ctx * ctx, char * line, char * command)
 {
 	int offs,i;
 
@@ -1372,7 +1483,7 @@ static int extract_cmd(char * line, char * command)
 	return 0;
 }
 
-int exec_cmd( jtag_core * jc, char * command,char * line)
+static int exec_cmd( script_ctx * ctx, char * command,char * line)
 {
 	int i;
 
@@ -1381,7 +1492,7 @@ int exec_cmd( jtag_core * jc, char * command,char * line)
 	{
 		if( !strcmp(cmdlist[i].command,command) )
 		{
-			cmdlist[i].func(jc,line);
+			cmdlist[i].func(ctx,line);
 			return 1;
 		}
 
@@ -1391,37 +1502,71 @@ int exec_cmd( jtag_core * jc, char * command,char * line)
 	return JTAG_CORE_CMD_NOT_FOUND;
 }
 
-static int cmd_help( jtag_core * jc, char * line)
+static int cmd_help( script_ctx * ctx, char * line)
 {
 	int i;
 
-	script_printf(MSG_INFO_0,"Supported Commands :\n\n");
+	ctx->script_printf(MSG_INFO_0,"Supported Commands :\n\n");
 
 	i = 0;
 	while(cmdlist[i].func)
 	{
-		script_printf(MSG_NONE,"%s\n",cmdlist[i].command);
+		ctx->script_printf(MSG_NONE,"%s\n",cmdlist[i].command);
 		i++;
 	}
 
 	return JTAG_CORE_NO_ERROR;
 }
 
-int jtagcore_execScriptLine( jtag_core * jc, char * line )
+///////////////////////////////////////////////////////////////////////////////
+
+script_ctx * init_script(jtag_core * jc)
+{
+	script_ctx * ctx;
+
+	ctx = malloc(sizeof(script_ctx));
+
+	if(ctx)
+	{
+		memset(ctx,0,sizeof(script_ctx));
+
+		setOutputFunc_script( ctx, dummy_script_printf );
+
+		ctx->app_ctx = (void*)jc;
+	}
+
+	return ctx;
+}
+
+void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
+{
+	ctx->script_printf = ext_printf;
+
+	return;
+}
+
+int execute_line_script( script_ctx * ctx, char * line )
 {
 	char command[DEFAULT_BUFLEN];
 
 	command[0] = 0;
 
-	if( extract_cmd(line, command) )
+	if( extract_cmd(ctx, line, command) )
 	{
 		if(strlen(command))
 		{
-			if(exec_cmd(jc,command,line) == JTAG_CORE_CMD_NOT_FOUND )
+			if(!is_label(command))
 			{
-				script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+				if(exec_cmd(ctx,command,line) == JTAG_CORE_CMD_NOT_FOUND )
+				{
+					ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
 
-				return JTAG_CORE_CMD_NOT_FOUND;
+					return JTAG_CORE_CMD_NOT_FOUND;
+				}
+			}
+			else
+			{
+				add_label(ctx,command);
 			}
 
 			return JTAG_CORE_NO_ERROR;
@@ -1431,7 +1576,7 @@ int jtagcore_execScriptLine( jtag_core * jc, char * line )
 	return JTAG_CORE_BAD_CMD;
 }
 
-int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
+int execute_file_script( script_ctx * ctx, char * filename )
 {
 	int err;
 	FILE * f;
@@ -1439,7 +1584,7 @@ int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
 
 	err = JTAG_CORE_INTERNAL_ERROR;
 
-	f = fopen(script_path,"r");
+	f = fopen(filename,"r");
 	if(f)
 	{
 		do
@@ -1450,7 +1595,7 @@ int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
 			if(feof(f))
 				break;
 
-			jtagcore_execScriptLine(jc, line);
+			execute_line_script(ctx, line);
 		}while(1);
 
 		fclose(f);
@@ -1459,7 +1604,7 @@ int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
 	}
 	else
 	{
-		script_printf(MSG_ERROR,"Can't open %s !",script_path);
+		ctx->script_printf(MSG_ERROR,"Can't open %s !",filename);
 
 		err = JTAG_CORE_ACCESS_ERROR;
 	}
@@ -1467,7 +1612,7 @@ int jtagcore_execScriptFile( jtag_core * jc, char * script_path )
 	return err;
 }
 
-int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int buffersize )
+int execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize )
 {
 	int err = 0;
 	int buffer_offset,line_offset;
@@ -1490,7 +1635,7 @@ int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int b
 			buffer_offset++;
 		}
 
-		jtagcore_execScriptLine(jc, line);
+		execute_line_script(ctx, line);
 
 		if( (buffer_offset >= buffersize) || !script_buffer[buffer_offset])
 			break;
@@ -1498,6 +1643,64 @@ int jtagcore_execScriptRam( jtag_core * jc, unsigned char * script_buffer, int b
 	}while(buffer_offset < buffersize);
 
 	return err;
+}
+
+script_ctx * deinit_script(script_ctx * ctx)
+{
+	if(ctx)
+	{
+		free(ctx);
+	}
+
+	ctx = NULL;
+
+	return ctx;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+script_ctx * jtagcore_initScript(jtag_core * jc)
+{
+	return init_script(jc);
+}
+
+void jtagcore_setScriptOutputFunc( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
+{
+	setOutputFunc_script(ctx, ext_printf);
+}
+
+int jtagcore_execScriptLine( script_ctx * ctx, char * line )
+{
+	if(!ctx)
+		return JTAG_CORE_INTERNAL_ERROR;
+	
+	return execute_line_script( ctx, line );
+}
+
+int jtagcore_execScriptFile( script_ctx * ctx, char * script_path )
+{
+	if(!ctx)
+		return JTAG_CORE_INTERNAL_ERROR;
+	
+	return execute_file_script( ctx, script_path );
+}
+
+int jtagcore_execScriptRam( script_ctx * ctx, unsigned char * script_buffer, int buffersize )
+{
+	if(!ctx)
+		return JTAG_CORE_INTERNAL_ERROR;
+	
+	return execute_ram_script( ctx, script_buffer, buffersize );
+}
+
+script_ctx * jtagcore_deinitScript(script_ctx * ctx)
+{
+	if(!ctx)
+		return NULL;
+	
+	return deinit_script(ctx);
 }
 
 int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path )
@@ -1561,5 +1764,4 @@ int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path
 		fclose(f);
 	}
 	return 0;
-
 }

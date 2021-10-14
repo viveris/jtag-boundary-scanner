@@ -30,10 +30,29 @@ typedef int (* JTAG_SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
 #define _jtag_script_printf_func_
 #endif
 
+#define MAX_LABEL_SIZE 64
+#define MAX_LABEL 256
+
+typedef struct _script_label
+{
+	char label_name[MAX_LABEL_SIZE];
+	unsigned int offset;
+} script_label;
+
 typedef struct _script_ctx
 {
 	JTAG_SCRIPT_PRINTF_FUNC script_printf;
 	void * app_ctx;
+
+	FILE * script_file;
+
+	int cur_label_index;
+	script_label labels[MAX_LABEL];
+
+	int cur_script_offset;
+
+	int dry_run;
+
 } script_ctx;
 
 script_ctx * init_script(jtag_core * jc);

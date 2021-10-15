@@ -53,6 +53,10 @@ typedef struct _script_ctx
 
 	int dry_run;
 
+	int last_error_code;
+	int last_data_value;
+	int last_flags;
+
 } script_ctx;
 
 script_ctx * init_script(jtag_core * jc);

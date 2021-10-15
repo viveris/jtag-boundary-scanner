@@ -104,6 +104,19 @@ static int is_label(char * command)
 	return 0;
 }
 
+static int is_variable(char * command)
+{
+	if(strlen(command)>1)
+	{
+		if(command[0] == '$' && command[1] && command[1] != ' ')
+			return 1;
+		else
+			return 0;
+	}
+
+	return 0;
+}
+
 static int get_next_word(char * line, int offset)
 {
 	while( !is_end_line(line[offset]) && ( line[offset] == ' ' ) )
@@ -153,18 +166,21 @@ static int get_param_offset(char * line, int param)
 	offs = 0;
 	offs = get_next_word(line, offs);
 
-	param_cnt = 0;
-	do
+	if( param )
 	{
-		offs = copy_param(NULL, line, offs);
+		param_cnt = 0;
+		do
+		{
+			offs = copy_param(NULL, line, offs);
 
-		offs = get_next_word( line, offs );
+			offs = get_next_word( line, offs );
 
-		if(line[offs] == 0 || line[offs] == '#')
-			return -1;
+			if(line[offs] == 0 || line[offs] == '#')
+				return -1;
 
-		param_cnt++;
-	}while( param_cnt < param );
+			param_cnt++;
+		}while( param_cnt < param );
+	}
 
 	return offs;
 }
@@ -183,6 +199,99 @@ static int get_param(char * line, int param_offset,char * param)
 	}
 
 	return -1;
+}
+
+static int str_to_int(char * str)
+{
+	int value;
+
+	if(str)
+	{
+		if( strlen(str) > 2 )
+		{
+			if( str[0]=='0' && ( str[1]=='x' || str[1]=='X'))
+			{
+				value = (int)strtol(str, NULL, 0);
+			}
+			else
+			{
+				value = atoi(str);
+			}
+		}
+		else
+		{
+			value = atoi(str);
+		}
+	}
+
+	return value;
+}
+
+static int get_script_variable( script_ctx * ctx, char * varname)
+{
+	int value;
+	jtag_core * jc;
+	jc = (jtag_core *)ctx->app_ctx;
+
+	if(!strcmp(varname,"$LASTDATA"))
+	{
+		return ctx->last_data_value;
+	}
+
+	if(!strcmp(varname,"$LASTFLAGS"))
+	{
+		return ctx->last_flags;
+	}
+
+	if(!strcmp(varname,"$LASTERROR"))
+	{
+		return ctx->last_error_code;
+	}
+
+	if(varname[0] == '$')
+		value = jtagcore_getEnvVarValue( jc, (char*)&varname[1]);
+	else
+		value = str_to_int((char*)varname);
+
+	return value;
+}
+
+static void set_script_variable( script_ctx * ctx, char * varname, int value)
+{
+	jtag_core * jc;
+	char tmp_str[64];
+	
+	jc = (jtag_core *)ctx->app_ctx;
+
+
+	if(!strcmp(varname,"$LASTDATA"))
+	{
+		ctx->last_data_value = value;
+
+		return;
+	}
+
+	if(!strcmp(varname,"$LASTFLAGS"))
+	{
+		ctx->last_flags = value;
+
+		return;
+	}
+
+	if(!strcmp(varname,"$LASTERROR"))
+	{
+		ctx->last_error_code = value;
+
+		return;
+	}
+
+	if(varname[0] == '$' && varname[1])
+	{
+		sprintf(tmp_str,"0x%.8X",value);
+		jtagcore_setEnvVar( jc, (char*)&varname[1], tmp_str );
+
+		return;
+	}
 }
 
 static int add_label( script_ctx * ctx, char * label )
@@ -280,6 +389,189 @@ static int cmd_goto( script_ctx * ctx, char * line)
 	if(i>=0)
 	{
 		return goto_label( ctx, label_str );
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+static int cmd_if( script_ctx * ctx, char * line)
+{
+//"if" command example
+//if $VARIABLE > 0x2222 then goto label
+
+	int i;
+	int eval;
+	int ret;
+	int valid;
+	char params_str[5][DEFAULT_BUFLEN];
+	int value_1,value_2,tmp_val;
+	int op_offset;
+
+	ret = JTAG_CORE_BAD_PARAMETER;
+
+	eval = 0;
+
+	for(i=0;i<5;i++)
+	{
+		params_str[i][0] = 0;
+	}
+
+	valid = 0;
+	for(i=0;i<5;i++)
+	{
+		get_param(line, i,(char*)&params_str[i]);
+		if(strlen((char*)&params_str[i]))
+			valid++;
+	}
+
+	i = 0;
+	while( i < 5 && strcmp((char*)&params_str[i],"then") )
+	{
+		i++;
+	}
+
+	if( i < 5 )
+	{
+		if( i == 2)
+		{
+			value_1 = get_script_variable( ctx, params_str[1]);
+
+			if(value_1)
+				eval = 1;
+
+			ret = JTAG_CORE_NO_ERROR;
+		}
+
+		if ( i == 4 )
+		{
+			value_1 = get_script_variable( ctx, params_str[1]);
+			value_2 = get_script_variable( ctx, params_str[3]);
+
+			if(!strcmp((char*)&params_str[2],">=") && ( value_1 >= value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"<=") && ( value_1 <= value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],">") && ( value_1 > value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"<") && ( value_1 < value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"==") && ( value_1 == value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"!=") && ( value_1 != value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"&") && ( value_1 & value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"^") && ( value_1 ^ value_2 ) )
+				eval = 1;
+
+			if(!strcmp((char*)&params_str[2],"|") && ( value_1 | value_2 ) )
+				eval = 1;
+
+			tmp_val = value_1 >> value_2;
+			if(!strcmp((char*)&params_str[2],">>") && tmp_val )
+				eval = 1;
+
+			tmp_val = value_1 << value_2;
+			if(!strcmp((char*)&params_str[2],"<<") && tmp_val )
+				eval = 1;
+
+			ret = JTAG_CORE_NO_ERROR;
+		}
+
+		if( eval )
+		{
+			op_offset = get_param_offset(line, i + 1);
+
+			if(op_offset >= 0)
+			{
+				ret = execute_line_script( ctx, (char*)&line[op_offset] );
+			}
+		}
+
+		return ret;
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+static int cmd_alu( script_ctx * ctx, char * line)
+{
+	int i;
+	int valid;
+	int data_value;
+	int value_1,value_2;
+
+	char params_str[5][DEFAULT_BUFLEN];
+
+	for(i=0;i<5;i++)
+	{
+		params_str[i][0] = 0;
+	}
+
+	valid = 0;
+	for(i=0;i<5;i++)
+	{
+		get_param(line, i,(char*)&params_str[i]);
+		if(strlen((char*)&params_str[i]))
+			valid++;
+	}
+
+	data_value = 0;
+	if( ( (valid == 3) || (valid == 5) ) && params_str[1][0] == '=' && params_str[0][0] == '$')
+	{
+		value_1 = get_script_variable( ctx, params_str[2]);
+
+		if(valid == 5)
+		{
+			value_2 = get_script_variable( ctx, params_str[4]);
+
+			if(!strcmp(params_str[3],"+"))
+				data_value = value_1 + value_2;
+
+			if(!strcmp(params_str[3],"-"))
+				data_value = value_1 - value_2;
+
+			if(!strcmp(params_str[3],"*"))
+				data_value = value_1 * value_2;
+
+			if(!strcmp(params_str[3],"/") && value_2)
+				data_value = value_1 / value_2;
+
+			if(!strcmp(params_str[3],"&"))
+				data_value = value_1 & value_2;
+
+			if(!strcmp(params_str[3],"^"))
+				data_value = value_1 ^ value_2;
+
+			if(!strcmp(params_str[3],"|"))
+				data_value = value_1 | value_2;
+
+			if(!strcmp(params_str[3],">>"))
+				data_value = value_1 >> value_2;
+
+			if(!strcmp(params_str[3],"<<"))
+				data_value = value_1 << value_2;
+		}
+		else
+		{
+			data_value = value_1;
+		}
+
+		if(data_value)
+			ctx->last_flags = 1;
+		else
+			ctx->last_flags = 0;
+
+		set_script_variable( ctx, (char*)&params_str[0], data_value);
+
+		return JTAG_CORE_NO_ERROR;
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;
@@ -452,6 +744,8 @@ static int cmd_print_nb_dev( script_ctx * ctx, char * line)
 	i = jtagcore_get_number_of_devices(jc);
 
 	ctx->script_printf(MSG_INFO_0,"%d device(s) found in chain\n",i);
+
+	ctx->last_data_value = i;
 
 	return JTAG_CORE_NO_ERROR;
 }
@@ -781,6 +1075,8 @@ static int cmd_get_pin_state( script_ctx * ctx, char * line)
 			ret = jtagcore_get_pin_state(jc, atoi(dev_index), id, JTAG_CORE_INPUT);
 
 			ctx->script_printf(MSG_INFO_0,"Pin %s state : %d\n",pinname,ret);
+
+			ctx->last_data_value = ret;
 
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1121,6 +1417,8 @@ static int cmd_do_mdio_rd( script_ctx * ctx, char * line)
 			ctx->script_printf(MSG_ERROR,"Code %d !\n",dataread);
 			return dataread;
 		}
+
+		ctx->last_data_value = dataread;
 
 		ctx->script_printf(MSG_INFO_0,"RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread);
 
@@ -1515,6 +1813,7 @@ static cmd_list cmdlist[] =
 	{"system",                  cmd_system},
 
 	{"goto",                    cmd_goto},
+	{"if",                      cmd_if},
 
 	{"jtag_get_probes_list",    cmd_print_probes_list},
 	{"jtag_open_probe",         cmd_open_probe},
@@ -1657,24 +1956,39 @@ int execute_line_script( script_ctx * ctx, char * line )
 			{
 				if(!ctx->dry_run)
 				{
-					if(exec_cmd(ctx,command,line) == JTAG_CORE_CMD_NOT_FOUND )
+					if(!is_variable(command))
 					{
-						ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+						ctx->last_error_code = exec_cmd(ctx,command,line);
 
-						return JTAG_CORE_CMD_NOT_FOUND;
+						if( ctx->last_error_code == JTAG_CORE_CMD_NOT_FOUND )
+						{
+							ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+
+							return ctx->last_error_code;
+						}
+					}
+					else
+					{
+						ctx->last_error_code = cmd_alu(ctx,line);
 					}
 				}
+				else
+					ctx->last_error_code = JTAG_CORE_NO_ERROR;
 			}
 			else
 			{
 				add_label(ctx,command);
+
+				ctx->last_error_code = JTAG_CORE_NO_ERROR;
 			}
 
-			return JTAG_CORE_NO_ERROR;
+			return ctx->last_error_code;
 		}
-
 	}
-	return JTAG_CORE_BAD_CMD;
+
+	ctx->last_error_code = JTAG_CORE_BAD_CMD;
+
+	return ctx->last_error_code;
 }
 
 int execute_file_script( script_ctx * ctx, char * filename )

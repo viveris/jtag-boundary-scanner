@@ -260,7 +260,7 @@ static void set_script_variable( script_ctx * ctx, char * varname, int value)
 {
 	jtag_core * jc;
 	char tmp_str[64];
-	
+
 	jc = (jtag_core *)ctx->app_ctx;
 
 
@@ -1767,6 +1767,11 @@ static int cmd_call( script_ctx * ctx, char * line )
 {
 	int offs;
 	char path[DEFAULT_BUFLEN];
+	script_ctx * new_ctx;
+	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
 
 	get_param(line, 1,(char*)&path);
 
@@ -1774,7 +1779,26 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 	if(offs>=0)
 	{
-		return jtagcore_execScriptFile( ctx, (char*)&path );
+
+		ret = JTAG_CORE_INTERNAL_ERROR;
+
+		new_ctx = jtagcore_initScript(jc);
+
+		if(new_ctx)
+		{
+			ret = jtagcore_execScriptFile( new_ctx, (char*)&path );
+
+			if( ret == JTAG_CORE_ACCESS_ERROR )
+			{
+				ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
+			}
+
+			jtagcore_deinitScript(new_ctx);
+		}
+
+		ctx->last_error_code = ret;
+
+		return ret;
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;

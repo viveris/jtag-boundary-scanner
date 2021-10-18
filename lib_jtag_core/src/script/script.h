@@ -45,6 +45,7 @@ typedef struct _script_ctx
 	void * app_ctx;
 
 	FILE * script_file;
+	char script_file_path[1024];
 
 	int cur_label_index;
 	script_label labels[MAX_LABEL];
@@ -57,6 +58,7 @@ typedef struct _script_ctx
 	int last_data_value;
 	int last_flags;
 
+	char pre_command[1024];
 } script_ctx;
 
 script_ctx * init_script(jtag_core * jc);

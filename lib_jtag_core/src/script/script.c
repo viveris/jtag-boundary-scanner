@@ -1028,8 +1028,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 		ret = JTAG_CORE_INTERNAL_ERROR;
 
-		new_ctx = jtagcore_initScript(jc);
-
+		new_ctx = init_script((void*)jc,0x00000000,(void*)&jc->envvar);
 		if(new_ctx)
 		{
 			new_ctx->script_printf = ctx->script_printf;
@@ -1079,7 +1078,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 				}
 			}
 
-			jtagcore_deinitScript(new_ctx);
+			deinit_script(new_ctx);
 		}
 
 		ctx->last_error_code = ret;

@@ -37,17 +37,14 @@
 #include "../jtag_core.h"
 
 #include "../bsdl_parser/bsdl_loader.h"
-
 #include "../os_interface/os_interface.h"
 
 #include "env.h"
 
+#ifndef _script_cmd_func_
 typedef int (* CMD_FUNC)( script_ctx * ctx, char * line);
-
-static int dummy_script_printf(int MSGTYPE, char * string, ... )
-{
-	return 0;
-}
+#define _script_cmd_func_
+#endif
 
 typedef struct cmd_list_
 {
@@ -60,6 +57,13 @@ typedef struct label_list_
 	char * label;
 	unsigned int file_offset;
 }label_list;
+
+extern cmd_list script_commands_list[];
+
+static int dummy_script_printf(int MSGTYPE, char * string, ... )
+{
+	return 0;
+}
 
 static int is_end_line(char c)
 {
@@ -230,8 +234,6 @@ static int str_to_int(char * str)
 static int get_script_variable( script_ctx * ctx, char * varname)
 {
 	int value;
-	jtag_core * jc;
-	jc = (jtag_core *)ctx->app_ctx;
 
 	if(!strcmp(varname,"$LASTDATA"))
 	{
@@ -249,7 +251,7 @@ static int get_script_variable( script_ctx * ctx, char * varname)
 	}
 
 	if(varname[0] == '$')
-		value = jtagcore_getEnvVarValue( jc, (char*)&varname[1]);
+		value = getEnvVarValue( *((envvar_entry **)ctx->env), (char*)&varname[1]);
 	else
 		value = str_to_int((char*)varname);
 
@@ -258,11 +260,7 @@ static int get_script_variable( script_ctx * ctx, char * varname)
 
 static void set_script_variable( script_ctx * ctx, char * varname, int value)
 {
-	jtag_core * jc;
 	char tmp_str[64];
-
-	jc = (jtag_core *)ctx->app_ctx;
-
 
 	if(!strcmp(varname,"$LASTDATA"))
 	{
@@ -288,10 +286,82 @@ static void set_script_variable( script_ctx * ctx, char * varname, int value)
 	if(varname[0] == '$' && varname[1])
 	{
 		sprintf(tmp_str,"0x%.8X",value);
-		jtagcore_setEnvVar( jc, (char*)&varname[1], tmp_str );
+		*((envvar_entry **)ctx->env) = (void *)setEnvVar( *((envvar_entry **)ctx->env), (char*)&varname[1], tmp_str );
 
 		return;
 	}
+}
+
+script_ctx * init_script(void * app_ctx, unsigned int flags, void * env)
+{
+	script_ctx * ctx;
+
+	ctx = malloc(sizeof(script_ctx));
+
+	if(ctx)
+	{
+		memset(ctx,0,sizeof(script_ctx));
+
+		ctx->env = ((envvar_entry**)env);
+
+		setOutputFunc_script( ctx, dummy_script_printf );
+
+		ctx->app_ctx = (void*)app_ctx;
+		ctx->cur_label_index = 0;
+
+		ctx->cmdlist = (void*)script_commands_list;
+
+		ctx->script_file = NULL;
+	}
+
+	return ctx;
+}
+
+static int extract_cmd( script_ctx * ctx, char * line, char * command)
+{
+	int offs,i;
+
+	i = 0;
+	offs = 0;
+
+	offs = get_next_word(line, offs);
+
+	if( !is_end_line(line[offs]) )
+	{
+		while( !is_end_line(line[offs]) && !is_space(line[offs]) && i < (DEFAULT_BUFLEN - 1) )
+		{
+			command[i] = line[offs];
+			offs++;
+			i++;
+		}
+
+		command[i] = 0;
+
+		return i;
+	}
+
+	return 0;
+}
+
+static int exec_cmd( script_ctx * ctx, char * command,char * line)
+{
+	int i;
+	cmd_list * cmdlist;
+
+	cmdlist = (cmd_list*)ctx->cmdlist;
+
+	i = 0;
+	while(cmdlist[i].func)
+	{
+		if( !strcmp(cmdlist[i].command,command) )
+		{
+			return cmdlist[i].func(ctx,line);
+		}
+
+		i++;
+	}
+
+	return JTAG_CORE_CMD_NOT_FOUND;
 }
 
 static int add_label( script_ctx * ctx, char * label )
@@ -379,6 +449,286 @@ static int goto_label( script_ctx * ctx, char * label )
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+static int alu_operations( script_ctx * ctx, char * line)
+{
+	int i;
+	int valid;
+	int data_value;
+	int value_1,value_2;
+
+	char params_str[5][DEFAULT_BUFLEN];
+
+	for(i=0;i<5;i++)
+	{
+		params_str[i][0] = 0;
+	}
+
+	valid = 0;
+	for(i=0;i<5;i++)
+	{
+		get_param(line, i,(char*)&params_str[i]);
+		if(strlen((char*)&params_str[i]))
+			valid++;
+	}
+
+	data_value = 0;
+	if( ( (valid == 3) || (valid == 5) ) && params_str[1][0] == '=' && params_str[0][0] == '$')
+	{
+		value_1 = get_script_variable( ctx, params_str[2]);
+
+		if(valid == 5)
+		{
+			value_2 = get_script_variable( ctx, params_str[4]);
+
+			if(!strcmp(params_str[3],"+"))
+				data_value = value_1 + value_2;
+
+			if(!strcmp(params_str[3],"-"))
+				data_value = value_1 - value_2;
+
+			if(!strcmp(params_str[3],"*"))
+				data_value = value_1 * value_2;
+
+			if(!strcmp(params_str[3],"/") && value_2)
+				data_value = value_1 / value_2;
+
+			if(!strcmp(params_str[3],"&"))
+				data_value = value_1 & value_2;
+
+			if(!strcmp(params_str[3],"^"))
+				data_value = value_1 ^ value_2;
+
+			if(!strcmp(params_str[3],"|"))
+				data_value = value_1 | value_2;
+
+			if(!strcmp(params_str[3],">>"))
+				data_value = value_1 >> value_2;
+
+			if(!strcmp(params_str[3],"<<"))
+				data_value = value_1 << value_2;
+		}
+		else
+		{
+			data_value = value_1;
+		}
+
+		if(data_value)
+			ctx->last_flags = 1;
+		else
+			ctx->last_flags = 0;
+
+		set_script_variable( ctx, (char*)&params_str[0], data_value);
+
+		return JTAG_CORE_NO_ERROR;
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
+{
+	ctx->script_printf = ext_printf;
+
+	return;
+}
+
+int execute_line_script( script_ctx * ctx, char * line )
+{
+	char command[DEFAULT_BUFLEN];
+
+	command[0] = 0;
+
+	if( extract_cmd(ctx, line, command) )
+	{
+		if(strlen(command))
+		{
+			if(!is_label(command))
+			{
+				if(!ctx->dry_run)
+				{
+					if(!is_variable(command))
+					{
+						ctx->last_error_code = exec_cmd(ctx,command,line);
+
+						if( ctx->last_error_code == JTAG_CORE_CMD_NOT_FOUND )
+						{
+							ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+
+							return ctx->last_error_code;
+						}
+					}
+					else
+					{
+						ctx->last_error_code = alu_operations(ctx,line);
+					}
+				}
+				else
+					ctx->last_error_code = JTAG_CORE_NO_ERROR;
+			}
+			else
+			{
+				add_label(ctx,command);
+
+				ctx->last_error_code = JTAG_CORE_NO_ERROR;
+			}
+
+			return ctx->last_error_code;
+		}
+	}
+
+	ctx->last_error_code = JTAG_CORE_BAD_CMD;
+
+	return ctx->last_error_code;
+}
+
+int execute_file_script( script_ctx * ctx, char * filename )
+{
+	int err;
+	char line[DEFAULT_BUFLEN];
+
+	err = JTAG_CORE_INTERNAL_ERROR;
+
+	ctx->script_file = fopen(filename,"r");
+	if(ctx->script_file)
+	{
+		strncpy(ctx->script_file_path,filename,DEFAULT_BUFLEN);
+		ctx->script_file_path[DEFAULT_BUFLEN-1] = 0;
+
+		// Dry run -> populate the labels...
+		ctx->dry_run++;
+		do
+		{
+			if(!fgets(line,sizeof(line),ctx->script_file))
+				break;
+
+			ctx->cur_script_offset = ftell(ctx->script_file);
+
+			if(feof(ctx->script_file))
+				break;
+
+			execute_line_script(ctx, line);
+		}while(1);
+
+		fseek(ctx->script_file,0,SEEK_SET);
+		ctx->cur_script_offset = ftell(ctx->script_file);
+
+		ctx->dry_run--;
+		if(!ctx->dry_run)
+		{
+			if(strlen(ctx->pre_command))
+			{
+				err = execute_line_script(ctx, ctx->pre_command);
+				if(err != JTAG_CORE_NO_ERROR)
+				{
+					fclose(ctx->script_file);
+					return err;
+				}
+			}
+
+			do
+			{
+				if(!fgets(line,sizeof(line),ctx->script_file))
+					break;
+
+				ctx->cur_script_offset = ftell(ctx->script_file);
+
+				if(feof(ctx->script_file))
+					break;
+
+				err = execute_line_script(ctx, line);
+			}while(1);
+		}
+
+		fclose(ctx->script_file);
+
+		err = JTAG_CORE_NO_ERROR;
+	}
+	else
+	{
+		ctx->script_printf(MSG_ERROR,"Can't open %s !",filename);
+		ctx->script_file_path[0] = 0;
+
+		err = JTAG_CORE_ACCESS_ERROR;
+	}
+
+	return err;
+}
+
+int execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize )
+{
+	int err = 0;
+	int buffer_offset,line_offset;
+	char line[DEFAULT_BUFLEN];
+	int cont;
+
+	ctx->dry_run++;
+	cont = 1;
+
+	while( cont )
+	{
+		buffer_offset = 0;
+		line_offset = 0;
+		ctx->cur_script_offset = 0;
+
+		do
+		{
+			memset(line,0,DEFAULT_BUFLEN);
+			line_offset = 0;
+			while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && script_buffer[buffer_offset]!='\n' && script_buffer[buffer_offset]!='\r' && (line_offset < DEFAULT_BUFLEN - 1))
+			{
+				line[line_offset++] = script_buffer[buffer_offset++];
+			}
+
+			while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && (script_buffer[buffer_offset]=='\n' || script_buffer[buffer_offset]=='\r') )
+			{
+				buffer_offset++;
+			}
+
+			ctx->cur_script_offset = buffer_offset;
+
+			execute_line_script(ctx, line);
+
+			buffer_offset = ctx->cur_script_offset;
+
+			if( (buffer_offset >= buffersize) || !script_buffer[buffer_offset])
+				break;
+
+		}while(buffer_offset < buffersize);
+
+		if( !ctx->dry_run || (ctx->dry_run > 1) )
+		{
+			cont = 0;
+		}
+		else
+		{
+			ctx->dry_run = 0;
+
+			if(strlen(ctx->pre_command))
+				execute_line_script(ctx, ctx->pre_command);
+		}
+	}
+
+	return err;
+}
+
+script_ctx * deinit_script(script_ctx * ctx)
+{
+	if(ctx)
+	{
+		free(ctx);
+	}
+
+	ctx = NULL;
+
+	return ctx;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////// Generic commands/operations /////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
 static int cmd_goto( script_ctx * ctx, char * line)
 {
 	int i;
@@ -396,8 +746,8 @@ static int cmd_goto( script_ctx * ctx, char * line)
 
 static int cmd_if( script_ctx * ctx, char * line)
 {
-//"if" command example
-//if $VARIABLE > 0x2222 then goto label
+    //"if" command example :
+    // if $VARIABLE > 0x2222 then goto label
 
 	int i;
 	int eval;
@@ -501,81 +851,275 @@ static int cmd_if( script_ctx * ctx, char * line)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-static int cmd_alu( script_ctx * ctx, char * line)
+static int cmd_return( script_ctx * ctx, char * line )
 {
-	int i;
-	int valid;
-	int data_value;
-	int value_1,value_2;
-
-	char params_str[5][DEFAULT_BUFLEN];
-
-	for(i=0;i<5;i++)
+	if(ctx->script_file)
 	{
-		params_str[i][0] = 0;
+		fseek(ctx->script_file,0,SEEK_END);
 	}
 
-	valid = 0;
-	for(i=0;i<5;i++)
+	return JTAG_CORE_NO_ERROR;
+}
+
+static int cmd_system( script_ctx * ctx, char * line )
+{
+	int offs;
+	int ret;
+
+	offs = get_param_offset(line, 1);
+
+	if(offs>=0)
 	{
-		get_param(line, i,(char*)&params_str[i]);
-		if(strlen((char*)&params_str[i]))
-			valid++;
-	}
+		ret = system(&line[offs]);
 
-	data_value = 0;
-	if( ( (valid == 3) || (valid == 5) ) && params_str[1][0] == '=' && params_str[0][0] == '$')
-	{
-		value_1 = get_script_variable( ctx, params_str[2]);
-
-		if(valid == 5)
-		{
-			value_2 = get_script_variable( ctx, params_str[4]);
-
-			if(!strcmp(params_str[3],"+"))
-				data_value = value_1 + value_2;
-
-			if(!strcmp(params_str[3],"-"))
-				data_value = value_1 - value_2;
-
-			if(!strcmp(params_str[3],"*"))
-				data_value = value_1 * value_2;
-
-			if(!strcmp(params_str[3],"/") && value_2)
-				data_value = value_1 / value_2;
-
-			if(!strcmp(params_str[3],"&"))
-				data_value = value_1 & value_2;
-
-			if(!strcmp(params_str[3],"^"))
-				data_value = value_1 ^ value_2;
-
-			if(!strcmp(params_str[3],"|"))
-				data_value = value_1 | value_2;
-
-			if(!strcmp(params_str[3],">>"))
-				data_value = value_1 >> value_2;
-
-			if(!strcmp(params_str[3],"<<"))
-				data_value = value_1 << value_2;
-		}
+		if( ret != 1 )
+			return JTAG_CORE_NO_ERROR;
 		else
-		{
-			data_value = value_1;
-		}
-
-		if(data_value)
-			ctx->last_flags = 1;
-		else
-			ctx->last_flags = 0;
-
-		set_script_variable( ctx, (char*)&params_str[0], data_value);
-
-		return JTAG_CORE_NO_ERROR;
+			return JTAG_CORE_NOT_FOUND;
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
+
+static int cmd_print_env_var( script_ctx * ctx, char * line )
+{
+	int i;
+	char varname[DEFAULT_BUFLEN];
+	char varvalue[DEFAULT_BUFLEN];
+	char * ptr;
+
+	i = get_param(line, 1,varname);
+
+	if(i>=0)
+	{
+		ptr = getEnvVar( *((envvar_entry **)ctx->env), (char*)&varname, (char*)&varvalue );
+		if(ptr)
+		{
+			ctx->script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
+
+			return JTAG_CORE_NO_ERROR;
+		}
+
+		return JTAG_CORE_NOT_FOUND;
+	}
+	else
+	{
+		return JTAG_CORE_BAD_PARAMETER;
+	}
+}
+
+static int cmd_version( script_ctx * ctx, char * line)
+{
+	ctx->script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
+
+	return JTAG_CORE_NO_ERROR;
+}
+
+static int cmd_print( script_ctx * ctx, char * line)
+{
+	int i,j,s;
+	char tmp_str[1024];
+	char str[DEFAULT_BUFLEN];
+	char * ptr;
+
+	str[0] = 0;
+
+	j = 1;
+	do
+	{
+		ptr = NULL;
+
+		i = get_param_offset(line, j);
+		s = 0;
+
+		if(i>=0)
+		{
+			get_param(line, j,(char *)&tmp_str);
+			s = strlen(tmp_str);
+			if(s)
+			{
+				if(tmp_str[0] != '$')
+				{
+					strncat((char*)str,tmp_str,sizeof(str) - 1);
+					strncat((char*)str," ",sizeof(str) - 1);
+				}
+				else
+				{
+					ptr = getEnvVar( *((envvar_entry **)ctx->env), &tmp_str[1], NULL);
+					if( ptr )
+					{
+						strncat((char*)str,ptr,sizeof(str) - 1);
+						strncat((char*)str," ",sizeof(str) - 1);
+
+					}
+					else
+					{
+						strncat((char*)str,tmp_str,sizeof(str) - 1);
+						strncat((char*)str," ",sizeof(str) - 1);
+					}
+				}
+			}
+		}
+
+		j++;
+	}while(s);
+
+	ctx->script_printf(MSG_NONE,"%s\n",str);
+
+	return JTAG_CORE_NO_ERROR;
+}
+
+static int cmd_pause( script_ctx * ctx, char * line)
+{
+	int i;
+	char delay_str[DEFAULT_BUFLEN];
+
+	i = get_param(line, 1,delay_str);
+
+	if(i>=0)
+	{
+		genos_pause(atoi(delay_str));
+
+		return JTAG_CORE_NO_ERROR;
+	}
+
+	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+static int cmd_help( script_ctx * ctx, char * line)
+{
+	int i;
+
+	cmd_list * cmdlist;
+
+	cmdlist = (cmd_list*)ctx->cmdlist;
+
+	ctx->script_printf(MSG_INFO_0,"Supported Commands :\n\n");
+
+	i = 0;
+	while(cmdlist[i].func)
+	{
+		ctx->script_printf(MSG_NONE,"%s\n",cmdlist[i].command);
+		i++;
+	}
+
+	return JTAG_CORE_NO_ERROR;
+}
+
+static int cmd_call( script_ctx * ctx, char * line )
+{
+	int offs;
+	char path[DEFAULT_BUFLEN];
+	char function[DEFAULT_BUFLEN];
+	script_ctx * new_ctx;
+	int ret;
+	jtag_core * jc;
+
+	jc = (jtag_core *)ctx->app_ctx;
+
+	get_param(line, 1,(char*)&path);
+
+	offs = get_param_offset(line, 1);
+
+	if(offs>=0)
+	{
+
+		ret = JTAG_CORE_INTERNAL_ERROR;
+
+		new_ctx = jtagcore_initScript(jc);
+
+		if(new_ctx)
+		{
+			new_ctx->script_printf = ctx->script_printf;
+
+			function[0] = 0;
+			get_param(line, 2,(char*)&function);
+
+			if(!strcmp(path,"."))
+			{
+				if(strlen(function))
+				{
+					sprintf(new_ctx->pre_command,"goto %s",function);
+
+					ret = execute_file_script( new_ctx, (char*)&ctx->script_file_path );
+
+					new_ctx->pre_command[0] = 0;
+
+					if( ret == JTAG_CORE_ACCESS_ERROR )
+					{
+						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
+					}
+				}
+			}
+			else
+			{
+				if(strlen(function))
+				{
+					sprintf(new_ctx->pre_command,"goto %s",function);
+
+					ret = execute_file_script( new_ctx, (char*)&path );
+
+					new_ctx->pre_command[0] = 0;
+
+					if( ret == JTAG_CORE_ACCESS_ERROR )
+					{
+						ctx->script_printf(MSG_ERROR,"call : script/function not found ! : %s %s\n",path,function);
+					}
+				}
+				else
+				{
+					ret = execute_file_script( new_ctx, (char*)&path );
+
+					if( ret == JTAG_CORE_ACCESS_ERROR )
+					{
+						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
+					}
+				}
+			}
+
+			jtagcore_deinitScript(new_ctx);
+		}
+
+		ctx->last_error_code = ret;
+
+		return ret;
+	}
+
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+static int cmd_set_env_var( script_ctx * ctx, char * line )
+{
+	int i,j,ret;
+	char varname[DEFAULT_BUFLEN];
+	char varvalue[DEFAULT_BUFLEN];
+	envvar_entry * tmp_env;
+
+	ret = JTAG_CORE_BAD_PARAMETER;
+
+	i = get_param(line, 1,varname);
+	j = get_param(line, 2,varvalue);
+
+	if(i>=0 && j>=0)
+	{
+		tmp_env = setEnvVar( *((envvar_entry **)ctx->env), (char*)&varname, (char*)&varvalue );
+		if(tmp_env)
+		{
+			*((envvar_entry **)ctx->env) = tmp_env;
+			ret = JTAG_CORE_NO_ERROR;
+		}
+		else
+			ret = JTAG_CORE_MEM_ERROR;
+	}
+
+	return ret;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+/////////////////////// JTAG commands/operations //////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 static int cmd_autoinit( script_ctx * ctx, char * line)
 {
@@ -679,36 +1223,6 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 	}
 
 	return loaded_bsdl;
-}
-
-static int cmd_print( script_ctx * ctx, char * line)
-{
-	int i;
-
-	i = get_param_offset(line, 1);
-	if(i>=0)
-		ctx->script_printf(MSG_NONE,"%s\n",&line[i]);
-
-	return JTAG_CORE_NO_ERROR;
-}
-
-static int cmd_pause( script_ctx * ctx, char * line)
-{
-	int i;
-	char delay_str[DEFAULT_BUFLEN];
-
-	i = get_param(line, 1,delay_str);
-
-	if(i>=0)
-	{
-		genos_pause(atoi(delay_str));
-
-		return JTAG_CORE_NO_ERROR;
-	}
-
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
-
-	return JTAG_CORE_BAD_PARAMETER;
 }
 
 static int cmd_init_and_scan( script_ctx * ctx, char * line)
@@ -1701,181 +2215,7 @@ static int cmd_get_pins_list( script_ctx * ctx, char * line)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-
-static int cmd_help( script_ctx * ctx, char * line);
-
-static int cmd_version( script_ctx * ctx, char * line)
-{
-	ctx->script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
-
-	return JTAG_CORE_NO_ERROR;
-}
-
-static int cmd_set_env_var( script_ctx * ctx, char * line )
-{
-	int i,j,ret;
-	char varname[DEFAULT_BUFLEN];
-	char varvalue[DEFAULT_BUFLEN];
-	jtag_core * jc;
-
-	jc = (jtag_core *)ctx->app_ctx;
-
-	ret = JTAG_CORE_BAD_PARAMETER;
-
-	i = get_param(line, 1,varname);
-	j = get_param(line, 2,varvalue);
-
-	if(i>=0 && j>=0)
-	{
-		ret = jtagcore_setEnvVar( jc, (char*)&varname, (char*)&varvalue );
-	}
-
-	return ret;
-}
-
-static int cmd_print_env_var( script_ctx * ctx, char * line )
-{
-	int i;
-	char varname[DEFAULT_BUFLEN];
-	char varvalue[DEFAULT_BUFLEN];
-	char * ptr;
-	jtag_core * jc;
-
-	jc = (jtag_core *)ctx->app_ctx;
-
-	i = get_param(line, 1,varname);
-
-	if(i>=0)
-	{
-		ptr = jtagcore_getEnvVar( jc, (char*)&varname, (char*)&varvalue );
-		if(ptr)
-		{
-			ctx->script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
-
-			return JTAG_CORE_NO_ERROR;
-		}
-
-		return JTAG_CORE_NOT_FOUND;
-	}
-	else
-	{
-		return JTAG_CORE_BAD_PARAMETER;
-	}
-}
-
-static int cmd_call( script_ctx * ctx, char * line )
-{
-	int offs;
-	char path[DEFAULT_BUFLEN];
-	char function[DEFAULT_BUFLEN];
-	script_ctx * new_ctx;
-	int ret;
-	jtag_core * jc;
-
-	jc = (jtag_core *)ctx->app_ctx;
-
-	get_param(line, 1,(char*)&path);
-
-	offs = get_param_offset(line, 1);
-
-	if(offs>=0)
-	{
-
-		ret = JTAG_CORE_INTERNAL_ERROR;
-
-		new_ctx = jtagcore_initScript(jc);
-
-		if(new_ctx)
-		{
-			new_ctx->script_printf = ctx->script_printf;
-
-			function[0] = 0;
-			get_param(line, 2,(char*)&function);
-
-			if(!strcmp(path,"."))
-			{
-				if(strlen(function))
-				{
-					sprintf(new_ctx->pre_command,"goto %s",function);
-
-					ret = execute_file_script( new_ctx, (char*)&ctx->script_file_path );
-
-					new_ctx->pre_command[0] = 0;
-
-					if( ret == JTAG_CORE_ACCESS_ERROR )
-					{
-						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
-					}
-				}
-			}
-			else
-			{
-				if(strlen(function))
-				{
-					sprintf(new_ctx->pre_command,"goto %s",function);
-
-					ret = execute_file_script( new_ctx, (char*)&path );
-
-					new_ctx->pre_command[0] = 0;
-
-					if( ret == JTAG_CORE_ACCESS_ERROR )
-					{
-						ctx->script_printf(MSG_ERROR,"call : script/function not found ! : %s %s\n",path,function);
-					}
-				}
-				else
-				{
-					ret = execute_file_script( new_ctx, (char*)&path );
-
-					if( ret == JTAG_CORE_ACCESS_ERROR )
-					{
-						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
-					}
-				}
-			}
-
-			jtagcore_deinitScript(new_ctx);
-		}
-
-		ctx->last_error_code = ret;
-
-		return ret;
-	}
-
-	return JTAG_CORE_BAD_PARAMETER;
-}
-
-static int cmd_return( script_ctx * ctx, char * line )
-{
-	if(ctx->script_file)
-	{
-		fseek(ctx->script_file,0,SEEK_END);
-	}
-	
-	return JTAG_CORE_NO_ERROR;
-}
-
-static int cmd_system( script_ctx * ctx, char * line )
-{
-	int offs;
-	int ret;
-
-	offs = get_param_offset(line, 1);
-
-	if(offs>=0)
-	{
-		ret = system(&line[offs]);
-
-		if( ret != 1 )
-			return JTAG_CORE_NO_ERROR;
-		else
-			return JTAG_CORE_NOT_FOUND;
-	}
-
-	return JTAG_CORE_BAD_PARAMETER;
-}
-
-static cmd_list cmdlist[] =
+cmd_list script_commands_list[] =
 {
 	{"print",                   cmd_print},
 	{"help",                    cmd_help},
@@ -1928,293 +2268,13 @@ static cmd_list cmdlist[] =
 	{0 , 0}
 };
 
-static int extract_cmd( script_ctx * ctx, char * line, char * command)
-{
-	int offs,i;
-
-	i = 0;
-	offs = 0;
-
-	offs = get_next_word(line, offs);
-
-	if( !is_end_line(line[offs]) )
-	{
-		while( !is_end_line(line[offs]) && !is_space(line[offs]) && i < (DEFAULT_BUFLEN - 1) )
-		{
-			command[i] = line[offs];
-			offs++;
-			i++;
-		}
-
-		command[i] = 0;
-
-		return i;
-	}
-
-	return 0;
-}
-
-static int exec_cmd( script_ctx * ctx, char * command,char * line)
-{
-	int i;
-
-	i = 0;
-	while(cmdlist[i].func)
-	{
-		if( !strcmp(cmdlist[i].command,command) )
-		{
-			return cmdlist[i].func(ctx,line);
-		}
-
-		i++;
-	}
-
-	return JTAG_CORE_CMD_NOT_FOUND;
-}
-
-static int cmd_help( script_ctx * ctx, char * line)
-{
-	int i;
-
-	ctx->script_printf(MSG_INFO_0,"Supported Commands :\n\n");
-
-	i = 0;
-	while(cmdlist[i].func)
-	{
-		ctx->script_printf(MSG_NONE,"%s\n",cmdlist[i].command);
-		i++;
-	}
-
-	return JTAG_CORE_NO_ERROR;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-script_ctx * init_script(jtag_core * jc)
-{
-	script_ctx * ctx;
-
-	ctx = malloc(sizeof(script_ctx));
-
-	if(ctx)
-	{
-		memset(ctx,0,sizeof(script_ctx));
-
-		setOutputFunc_script( ctx, dummy_script_printf );
-
-		ctx->app_ctx = (void*)jc;
-		ctx->cur_label_index = 0;
-		ctx->script_file = NULL;
-	}
-
-	return ctx;
-}
-
-void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
-{
-	ctx->script_printf = ext_printf;
-
-	return;
-}
-
-int execute_line_script( script_ctx * ctx, char * line )
-{
-	char command[DEFAULT_BUFLEN];
-
-	command[0] = 0;
-
-	if( extract_cmd(ctx, line, command) )
-	{
-		if(strlen(command))
-		{
-			if(!is_label(command))
-			{
-				if(!ctx->dry_run)
-				{
-					if(!is_variable(command))
-					{
-						ctx->last_error_code = exec_cmd(ctx,command,line);
-
-						if( ctx->last_error_code == JTAG_CORE_CMD_NOT_FOUND )
-						{
-							ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
-
-							return ctx->last_error_code;
-						}
-					}
-					else
-					{
-						ctx->last_error_code = cmd_alu(ctx,line);
-					}
-				}
-				else
-					ctx->last_error_code = JTAG_CORE_NO_ERROR;
-			}
-			else
-			{
-				add_label(ctx,command);
-
-				ctx->last_error_code = JTAG_CORE_NO_ERROR;
-			}
-
-			return ctx->last_error_code;
-		}
-	}
-
-	ctx->last_error_code = JTAG_CORE_BAD_CMD;
-
-	return ctx->last_error_code;
-}
-
-int execute_file_script( script_ctx * ctx, char * filename )
-{
-	int err;
-	char line[DEFAULT_BUFLEN];
-
-	err = JTAG_CORE_INTERNAL_ERROR;
-
-	ctx->script_file = fopen(filename,"r");
-	if(ctx->script_file)
-	{
-		strncpy(ctx->script_file_path,filename,DEFAULT_BUFLEN);
-		ctx->script_file_path[DEFAULT_BUFLEN-1] = 0;
-
-		// Dry run -> populate the labels...
-		ctx->dry_run++;
-		do
-		{
-			if(!fgets(line,sizeof(line),ctx->script_file))
-				break;
-
-			ctx->cur_script_offset = ftell(ctx->script_file);
-
-			if(feof(ctx->script_file))
-				break;
-
-			execute_line_script(ctx, line);
-		}while(1);
-
-		fseek(ctx->script_file,0,SEEK_SET);
-		ctx->cur_script_offset = ftell(ctx->script_file);
-
-		ctx->dry_run--;
-		if(!ctx->dry_run)
-		{
-			if(strlen(ctx->pre_command))
-			{
-				err = execute_line_script(ctx, ctx->pre_command);
-				if(err != JTAG_CORE_NO_ERROR)
-				{
-					fclose(ctx->script_file);
-					return err;
-				}
-			}
-
-			do
-			{
-				if(!fgets(line,sizeof(line),ctx->script_file))
-					break;
-
-				ctx->cur_script_offset = ftell(ctx->script_file);
-
-				if(feof(ctx->script_file))
-					break;
-
-				err = execute_line_script(ctx, line);
-			}while(1);
-		}
-
-		fclose(ctx->script_file);
-
-		err = JTAG_CORE_NO_ERROR;
-	}
-	else
-	{
-		ctx->script_printf(MSG_ERROR,"Can't open %s !",filename);
-		ctx->script_file_path[0] = 0;
-
-		err = JTAG_CORE_ACCESS_ERROR;
-	}
-
-	return err;
-}
-
-int execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize )
-{
-	int err = 0;
-	int buffer_offset,line_offset;
-	char line[DEFAULT_BUFLEN];
-	int cont;
-
-	ctx->dry_run++;
-	cont = 1;
-
-	while( cont )
-	{
-		buffer_offset = 0;
-		line_offset = 0;
-		ctx->cur_script_offset = 0;
-
-		do
-		{
-			memset(line,0,DEFAULT_BUFLEN);
-			line_offset = 0;
-			while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && script_buffer[buffer_offset]!='\n' && script_buffer[buffer_offset]!='\r' && (line_offset < DEFAULT_BUFLEN - 1))
-			{
-				line[line_offset++] = script_buffer[buffer_offset++];
-			}
-
-			while( (buffer_offset < buffersize) && script_buffer[buffer_offset] && (script_buffer[buffer_offset]=='\n' || script_buffer[buffer_offset]=='\r') )
-			{
-				buffer_offset++;
-			}
-
-			ctx->cur_script_offset = buffer_offset;
-
-			execute_line_script(ctx, line);
-
-			buffer_offset = ctx->cur_script_offset;
-
-			if( (buffer_offset >= buffersize) || !script_buffer[buffer_offset])
-				break;
-
-		}while(buffer_offset < buffersize);
-
-		if( !ctx->dry_run || (ctx->dry_run > 1) )
-		{
-			cont = 0;
-		}
-		else
-		{
-			ctx->dry_run = 0;
-
-			if(strlen(ctx->pre_command))
-				execute_line_script(ctx, ctx->pre_command);
-		}
-	}
-
-	return err;
-}
-
-script_ctx * deinit_script(script_ctx * ctx)
-{
-	if(ctx)
-	{
-		free(ctx);
-	}
-
-	ctx = NULL;
-
-	return ctx;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 script_ctx * jtagcore_initScript(jtag_core * jc)
 {
-	return init_script(jc);
+	return init_script((void*)jc,0x00000000,(void*)&jc->envvar);
 }
 
 void jtagcore_setScriptOutputFunc( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )

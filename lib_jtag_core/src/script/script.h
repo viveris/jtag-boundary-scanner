@@ -25,9 +25,9 @@
 
 #define _script_ctx_
 
-#ifndef _jtag_script_printf_func_
-typedef int (* JTAG_SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
-#define _jtag_script_printf_func_
+#ifndef _script_printf_func_
+typedef int (* SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+#define _script_printf_func_
 #endif
 
 #define MAX_LABEL_SIZE 64
@@ -41,8 +41,12 @@ typedef struct _script_label
 
 typedef struct _script_ctx
 {
-	JTAG_SCRIPT_PRINTF_FUNC script_printf;
+	SCRIPT_PRINTF_FUNC script_printf;
 	void * app_ctx;
+
+	void * env;
+
+	void * cmdlist;
 
 	FILE * script_file;
 	char script_file_path[1024];
@@ -61,9 +65,9 @@ typedef struct _script_ctx
 	char pre_command[1024];
 } script_ctx;
 
-script_ctx * init_script(jtag_core * jc);
-int execute_file_script( script_ctx * ctx, char * filename );
-int execute_line_script( script_ctx * ctx, char * line );
-int execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize );
-void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf );
+script_ctx * init_script(void * app_ctx, unsigned int flags, void * env);
+int  execute_file_script( script_ctx * ctx, char * filename );
+int  execute_line_script( script_ctx * ctx, char * line );
+int  execute_ram_script( script_ctx * ctx, unsigned char * script_buffer, int buffersize );
+void setOutputFunc_script( script_ctx * ctx, SCRIPT_PRINTF_FUNC ext_printf );
 script_ctx * deinit_script(script_ctx * ctx);

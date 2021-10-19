@@ -31,6 +31,8 @@
 #include "jtag_core_internal.h"
 #include "jtag_core.h"
 
+#include "script/env.h"
+
 #include "bsdl_parser/bsdl_loader.h"
 #include "bsdl_parser/bsdl_strings.h"
 
@@ -1044,6 +1046,38 @@ int jtagcore_select_and_open_probe(jtag_core * jc, int probe_id)
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;
+}
+
+int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
+{
+	envvar_entry * tmp_env;
+
+	tmp_env = setEnvVar( jc->envvar, varname, varvalue );
+
+	if( tmp_env )
+	{
+		jc->envvar = tmp_env;
+		return JTAG_CORE_NO_ERROR;
+	}
+	else
+	{
+		return JTAG_CORE_MEM_ERROR;
+	}
+}
+
+char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue)
+{
+	return getEnvVar( jc->envvar, varname, varvalue);
+}
+
+char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue)
+{
+	return getEnvVarIndex( jc->envvar, index, varvalue);
+}
+
+int jtagcore_getEnvVarValue( jtag_core * jc, char * varname)
+{
+	return getEnvVarValue( jc->envvar, varname);
 }
 
 void jtagcore_deinit(jtag_core * jc)

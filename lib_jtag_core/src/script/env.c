@@ -26,37 +26,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdint.h>
-
-#include "../drivers/drv_loader.h"
-#include "../jtag_core_internal.h"
-#include "../jtag_core.h"
-#include "../bsdl_parser/bsdl_loader.h"
-
-#include "../os_interface/os_interface.h"
-
-#define MAX_CFG_STRING_SIZE 1024
 
 #include "env.h"
 
-int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
+envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * varvalue )
 {
 	int i;
 	envvar_entry * tmp_envvars;
 
 	i = 0;
 
-	tmp_envvars = (envvar_entry *)jc->envvar;
+	tmp_envvars = (envvar_entry *)env;
 
 	if(!tmp_envvars)
 	{
 		tmp_envvars = malloc(sizeof(envvar_entry) );
 		if(!tmp_envvars)
-			return -1;
+			goto alloc_error;
 
 		memset( tmp_envvars,0,sizeof(envvar_entry));
-
-		jc->envvar = (void*)tmp_envvars;
 	}
 
 	// is the variable already there
@@ -83,7 +71,7 @@ int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 			tmp_envvars[i].varvalue = malloc(strlen(varvalue)+1);
 
 			if(!tmp_envvars[i].varvalue)
-				return -1;
+				goto alloc_error;
 
 			memset(tmp_envvars[i].varvalue,0,strlen(varvalue)+1);
 			if(varvalue)
@@ -97,7 +85,7 @@ int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 		{
 			tmp_envvars[i].name = malloc(strlen(varname)+1);
 			if(!tmp_envvars[i].name)
-				return -1;
+				goto alloc_error;
 
 			memset(tmp_envvars[i].name,0,strlen(varname)+1);
 			strcpy(tmp_envvars[i].name,varname);
@@ -107,7 +95,7 @@ int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 				tmp_envvars[i].varvalue = malloc(strlen(varvalue)+1);
 
 				if(!tmp_envvars[i].varvalue)
-					return -1;
+					goto alloc_error;
 
 				memset(tmp_envvars[i].varvalue,0,strlen(varvalue)+1);
 				if(varvalue)
@@ -119,19 +107,21 @@ int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 		}
 	}
 
-	jc->envvar = (void*)tmp_envvars;
+	return tmp_envvars;
 
-	return 1;
+alloc_error:
+	return NULL;
 }
 
-char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue)
+char * getEnvVar( envvar_entry * env, char * varname, char * varvalue)
 {
 	int i;
+
 	envvar_entry * tmp_envvars;
 
 	i = 0;
 
-	tmp_envvars = (envvar_entry *)jc->envvar;
+	tmp_envvars = (envvar_entry *)env;
 	if(!tmp_envvars)
 		return NULL;
 
@@ -158,7 +148,7 @@ char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue)
 	}
 }
 
-int jtagcore_getEnvVarValue( jtag_core * jc, char * varname)
+int getEnvVarValue( envvar_entry * env, char * varname)
 {
 	int value;
 	char * str_return;
@@ -168,7 +158,7 @@ int jtagcore_getEnvVarValue( jtag_core * jc, char * varname)
 	if(!varname)
 		return 0;
 
-	str_return = jtagcore_getEnvVar( jc, varname, NULL);
+	str_return = getEnvVar( env, varname, NULL);
 
 	if(str_return)
 	{
@@ -192,14 +182,14 @@ int jtagcore_getEnvVarValue( jtag_core * jc, char * varname)
 	return value;
 }
 
-char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue)
+char * getEnvVarIndex( envvar_entry * env, int index, char * varvalue)
 {
 	int i;
 	envvar_entry * tmp_envvars;
 
 	i = 0;
 
-	tmp_envvars = (envvar_entry *)jc->envvar;
+	tmp_envvars = (envvar_entry *)env;
 	if(!tmp_envvars)
 		return NULL;
 

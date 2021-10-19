@@ -918,8 +918,8 @@ static int cmd_version( script_ctx * ctx, char * line)
 static int cmd_print( script_ctx * ctx, char * line)
 {
 	int i,j,s;
-	char tmp_str[1024];
-	char str[DEFAULT_BUFLEN];
+	char tmp_str[DEFAULT_BUFLEN];
+	char str[DEFAULT_BUFLEN*2];
 	char * ptr;
 
 	str[0] = 0;

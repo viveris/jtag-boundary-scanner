@@ -1,0 +1,130 @@
+#
+# Basic script engine test
+#
+
+# Simple print message
+
+print First message !  # This a comment !
+
+#
+# "goto" test
+#
+
+goto skip_message
+
+print This message shouldn't printed !
+
+jump_back:
+
+print goto test step 2
+
+goto end_of_goto_test
+
+skip_message:
+
+print goto test step 1
+
+goto jump_back
+
+end_of_goto_test:
+
+print goto test step 3
+
+# --------------------------------------------------------
+
+#
+# call / function test
+#
+
+call . this_is_a_function  # call "this_is_a_function" in the current file (.)
+
+print Returned from the first function call !
+
+goto skip_functions
+
+# -----------------------------
+
+this_is_a_function:
+
+print I am in the function !
+
+call . this_is_anoter_function
+
+print Returned from the second function call !
+
+return
+
+
+this_is_anoter_function:
+
+print I am in another function !
+
+return
+
+# -----------------------------
+
+skip_functions:
+
+# --------------------------------------------------------
+
+#
+# Variables operations tests
+#
+
+print LIB Version : $LIBVERSION
+
+$VARIABLE_1_TEST = 0x55AA
+$VARIABLE_2_TEST = 10
+
+print VARIABLE_1_TEST : $VARIABLE_1_TEST , VARIABLE_2_TEST : $VARIABLE_2_TEST
+
+#
+# Conditionnal test and variable operations
+#
+
+loop:
+
+print First conditionnal test and jump ! Count $VARIABLE_2_TEST
+$VARIABLE_2_TEST = $VARIABLE_2_TEST - 1
+
+if $VARIABLE_2_TEST != 0 then goto loop
+
+print First Loop done ! ( $VARIABLE_2_TEST )
+
+print Second conditionnal test and jump !
+
+second_loop:
+
+if $VARIABLE_2_TEST >= 10 then goto end_second_loop
+
+print Second conditionnal test ! Count $VARIABLE_2_TEST
+
+$VARIABLE_2_TEST = $VARIABLE_2_TEST + 1
+goto second_loop
+
+end_second_loop:
+
+#
+# Logic operations
+#
+
+$VARIABLE_TMP = $VARIABLE_1_TEST
+
+print VARIABLE_1_TEST : $VARIABLE_1_TEST , VARIABLE_TMP : $VARIABLE_TMP
+
+$VARIABLE_1_TEST = $VARIABLE_1_TEST >> 8
+$VARIABLE_1_TEST = $VARIABLE_1_TEST & 0xFF
+
+$VARIABLE_TMP = $VARIABLE_TMP << 8
+$VARIABLE_TMP = $VARIABLE_TMP & 0xFF00
+
+$VARIABLE_1_TEST = $VARIABLE_1_TEST | $VARIABLE_TMP
+
+print After bytes exchanges, VARIABLE_1_TEST : $VARIABLE_1_TEST
+
+$VARIABLE_1_TEST = $VARIABLE_1_TEST | 0x66660000
+$VARIABLE_1_TEST = $VARIABLE_1_TEST ^ 0xAAAA0000
+
+print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0x999955AA)
+
+print End of script !

@@ -241,7 +241,7 @@ static int str_to_int(char * str)
 		{
 			if( str[0]=='0' && ( str[1]=='x' || str[1]=='X'))
 			{
-				value = (int)strtol(str, NULL, 0);
+				value = (int)strtoul(str, NULL, 0);
 			}
 			else
 			{
@@ -1400,7 +1400,7 @@ static int cmd_open_probe( script_ctx * ctx, char * line)
 
 	if(get_param( ctx, line, 1, probe_id )>0)
 	{
-		ret = jtagcore_select_and_open_probe(jc, strtol(probe_id, NULL, 16));
+		ret = jtagcore_select_and_open_probe(jc, strtoul(probe_id, NULL, 16));
 		if(ret != JTAG_CORE_NO_ERROR)
 		{
 			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
@@ -1721,7 +1721,7 @@ static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		i2cadr = strtol(adresse,0,16);
+		i2cadr = strtoul(adresse,0,16);
 		size  = strlen(data);
 		size = size / 2;
 		for(i = 0; i<size; i++)
@@ -1730,7 +1730,7 @@ static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 			tmp_buffer3[1] = data[i*2 + 1];
 			tmp_buffer3[2] = 0;
 
-			tmp_buffer2[i] = (char)strtol(tmp_buffer3,0,16);
+			tmp_buffer2[i] = (char)strtoul(tmp_buffer3,0,16);
 		}
 
 		ret = jtagcore_i2c_write_read(jc, i2cadr, 0, size, tmp_buffer2, 0, 0);
@@ -1784,7 +1784,7 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		i2cadr = strtol(adresse,0,16);
+		i2cadr = strtoul(adresse,0,16);
 		size  = atoi(sizebuf);
 
 		ret = jtagcore_i2c_write_read(jc, i2cadr, 0, 0, (unsigned char*)tmp_buffer2, size, (unsigned char*)tmp_buffer2);
@@ -1911,9 +1911,9 @@ static int cmd_do_mdio_wr( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		mdioadr = strtol(address,0,16);
-		regadr = strtol(reg,0,16);
-		datatowrite = strtol(data, 0, 16);
+		mdioadr = strtoul(address,0,16);
+		regadr = strtoul(reg,0,16);
+		datatowrite = strtoul(data, 0, 16);
 
 		ret = jtagcore_mdio_write(jc, mdioadr, regadr, datatowrite);
 		if( ret < 0 )
@@ -1947,8 +1947,8 @@ static int cmd_do_mdio_rd( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		mdioadr = strtol(address,0,16);
-		regadr = strtol(reg,0,16);
+		mdioadr = strtoul(address,0,16);
+		regadr = strtoul(reg,0,16);
 
 		dataread = jtagcore_mdio_read(jc, mdioadr, regadr);
 		if( dataread < 0 )
@@ -2147,7 +2147,7 @@ static int cmd_spi_rd_wr( script_ctx * ctx, char * line)
 			tmp_buffer[0] = data_out_txt[k*2];
 			tmp_buffer[1] = data_out_txt[k*2 + 1];
 			tmp_buffer[2] = 0;
-			data_out[k] = (char)strtol(tmp_buffer,0,16);
+			data_out[k] = (unsigned char)strtoul(tmp_buffer,0,16);
 		}
 
 		ret = jtagcore_spi_write_read(jc, size,data_out,data_in, 0);

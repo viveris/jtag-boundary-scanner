@@ -125,6 +125,6 @@ print After bytes exchanges, VARIABLE_1_TEST : $VARIABLE_1_TEST
 $VARIABLE_1_TEST = $VARIABLE_1_TEST | 0x66660000
 $VARIABLE_1_TEST = $VARIABLE_1_TEST ^ 0xAAAA0000
 
-print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0x999955AA)
+print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0xCCCC55AA)
 
 print End of script !

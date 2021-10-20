@@ -189,7 +189,33 @@ static int get_param_offset(char * line, int param)
 	return offs;
 }
 
-static int get_param(char * line, int param_offset,char * param)
+static int get_param( script_ctx * ctx, char * line, int param_offset,char * param)
+{
+	int offs;
+	char var_str[DEFAULT_BUFLEN];
+
+	offs = get_param_offset(line, param_offset);
+
+	if(offs>=0)
+	{
+		if(line[offs] != '$')
+			offs = copy_param(param, line, offs);
+		else
+		{
+			copy_param(var_str, line, offs);
+			if( !getEnvVar( *((envvar_entry **)ctx->env), (char*)&var_str[1], param) )
+			{
+				copy_param(param, line, offs);
+			}
+		}
+
+		return 1;
+	}
+
+	return -1;
+}
+
+static int get_param_str( script_ctx * ctx, char * line, int param_offset,char * param)
 {
 	int offs;
 
@@ -468,7 +494,7 @@ static int alu_operations( script_ctx * ctx, char * line)
 	valid = 0;
 	for(i=0;i<5;i++)
 	{
-		get_param(line, i,(char*)&params_str[i]);
+		get_param_str( ctx, line, i, (char*)&params_str[i] );
 		if(strlen((char*)&params_str[i]))
 			valid++;
 	}
@@ -734,7 +760,7 @@ static int cmd_goto( script_ctx * ctx, char * line)
 	int i;
 	char label_str[DEFAULT_BUFLEN];
 
-	i = get_param(line, 1,label_str);
+	i = get_param( ctx, line, 1, label_str );
 
 	if(i>=0)
 	{
@@ -769,7 +795,7 @@ static int cmd_if( script_ctx * ctx, char * line)
 	valid = 0;
 	for(i=0;i<5;i++)
 	{
-		get_param(line, i,(char*)&params_str[i]);
+		get_param( ctx, line, i, (char*)&params_str[i] );
 		if(strlen((char*)&params_str[i]))
 			valid++;
 	}
@@ -888,7 +914,7 @@ static int cmd_print_env_var( script_ctx * ctx, char * line )
 	char varvalue[DEFAULT_BUFLEN];
 	char * ptr;
 
-	i = get_param(line, 1,varname);
+	i = get_param( ctx, line, 1, varname );
 
 	if(i>=0)
 	{
@@ -934,7 +960,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 
 		if(i>=0)
 		{
-			get_param(line, j,(char *)&tmp_str);
+			get_param( ctx, line, j, (char *)&tmp_str );
 			s = strlen(tmp_str);
 			if(s)
 			{
@@ -974,11 +1000,11 @@ static int cmd_pause( script_ctx * ctx, char * line)
 	int i;
 	char delay_str[DEFAULT_BUFLEN];
 
-	i = get_param(line, 1,delay_str);
+	i = get_param( ctx, line, 1, delay_str );
 
 	if(i>=0)
 	{
-		genos_pause(atoi(delay_str));
+		genos_pause(str_to_int(delay_str));
 
 		return JTAG_CORE_NO_ERROR;
 	}
@@ -1019,7 +1045,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	get_param(line, 1,(char*)&path);
+	get_param( ctx, line, 1, (char*)&path );
 
 	offs = get_param_offset(line, 1);
 
@@ -1034,7 +1060,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 			new_ctx->script_printf = ctx->script_printf;
 
 			function[0] = 0;
-			get_param(line, 2,(char*)&function);
+			get_param( ctx, line, 2, (char*)&function );
 
 			if(!strcmp(path,"."))
 			{
@@ -1098,8 +1124,8 @@ static int cmd_set_env_var( script_ctx * ctx, char * line )
 
 	ret = JTAG_CORE_BAD_PARAMETER;
 
-	i = get_param(line, 1,varname);
-	j = get_param(line, 2,varvalue);
+	i = get_param( ctx, line, 1, varname );
+	j = get_param( ctx, line, 2, varvalue );
 
 	if(i>=0 && j>=0)
 	{
@@ -1372,7 +1398,7 @@ static int cmd_open_probe( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	if(get_param(line, 1,probe_id)>0)
+	if(get_param( ctx, line, 1, probe_id )>0)
 	{
 		ret = jtagcore_select_and_open_probe(jc, strtol(probe_id, NULL, 16));
 		if(ret != JTAG_CORE_NO_ERROR)
@@ -1403,8 +1429,8 @@ static int cmd_load_bsdl( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,filename);
-	j = get_param(line, 2,dev_index);
+	i = get_param( ctx, line, 1, filename );
+	j = get_param( ctx, line, 2, dev_index );
 
 	if(i>=0 && j>=0)
 	{
@@ -1434,8 +1460,8 @@ static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,scan_mode);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, scan_mode );
 
 	if(i>=0 && j>=0)
 	{
@@ -1499,9 +1525,9 @@ static int cmd_set_pin_mode( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,mode);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, mode );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -1537,9 +1563,9 @@ static int cmd_set_pin_state( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,state);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, state );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -1575,9 +1601,9 @@ static int cmd_get_pin_state( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,mode);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, mode );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -1618,8 +1644,8 @@ static int cmd_set_i2c_sda_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
 
 	if(i>=0 && j>=0)
 	{
@@ -1652,8 +1678,8 @@ static int cmd_set_i2c_scl_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
 
 	if(i>=0 && j>=0)
 	{
@@ -1690,8 +1716,8 @@ static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,adresse);
-	j = get_param(line, 2,data);
+	i = get_param( ctx, line, 1, adresse );
+	j = get_param( ctx, line, 2, data );
 
 	if(i>=0 && j>=0)
 	{
@@ -1753,8 +1779,8 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,adresse);
-	j = get_param(line, 2,sizebuf);
+	i = get_param( ctx, line, 1, adresse );
+	j = get_param( ctx, line, 2, sizebuf );
 
 	if(i>=0 && j>=0)
 	{
@@ -1808,8 +1834,8 @@ static int cmd_set_mdio_mdc_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
 
 	if(i>=0 && j>=0)
 	{
@@ -1842,8 +1868,8 @@ static int cmd_set_mdio_mdio_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
 
 	if(i>=0 && j>=0)
 	{
@@ -1879,9 +1905,9 @@ static int cmd_do_mdio_wr( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,address);
-	j = get_param(line, 2,reg);
-	k = get_param(line, 3,data);
+	i = get_param( ctx, line, 1, address );
+	j = get_param( ctx, line, 2, reg );
+	k = get_param( ctx, line, 3, data );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -1916,8 +1942,8 @@ static int cmd_do_mdio_rd( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,address);
-	j = get_param(line, 2,reg);
+	i = get_param( ctx, line, 1, address );
+	j = get_param( ctx, line, 2, reg );
 
 	if(i>=0 && j>=0)
 	{
@@ -1956,9 +1982,9 @@ static int cmd_set_spi_cs_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,polarity);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, polarity );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -1992,9 +2018,9 @@ static int cmd_set_spi_clk_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,polarity);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, polarity );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -2028,9 +2054,9 @@ static int cmd_set_spi_mosi_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,phase);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, phase );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -2064,9 +2090,9 @@ static int cmd_set_spi_miso_pin( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
-	j = get_param(line, 2,pinname);
-	k = get_param(line, 3,phase);
+	i = get_param( ctx, line, 1, dev_index );
+	j = get_param( ctx, line, 2, pinname );
+	k = get_param( ctx, line, 3, phase );
 
 	if(i>=0 && j>=0 && k>=0)
 	{
@@ -2104,8 +2130,8 @@ static int cmd_spi_rd_wr( script_ctx * ctx, char * line)
 	jc = (jtag_core *)ctx->app_ctx;
 
 	// jtag_spi_rd_wr 00123344 1  (DATA LSBFirst)
-	i = get_param(line, 1,data_out_txt);
-	j = get_param(line, 2,lsbfirst);
+	i = get_param( ctx, line, 1, data_out_txt );
+	j = get_param( ctx, line, 2, lsbfirst );
 
 	if(i>=0)
 	{
@@ -2163,7 +2189,7 @@ static int cmd_get_pins_list( script_ctx * ctx, char * line)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	i = get_param(line, 1,dev_index);
+	i = get_param( ctx, line, 1, dev_index );
 	if(i>=0)
 	{
 		nb_of_pins = jtagcore_get_number_of_pins(jc,atoi(dev_index));

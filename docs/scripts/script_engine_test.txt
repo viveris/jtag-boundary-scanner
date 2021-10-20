@@ -48,18 +48,18 @@ goto skip_functions
 
 this_is_a_function:
 
-print I am in the function !
+	print I am in the function !
 
-call . this_is_anoter_function
+	call . this_is_anoter_function
 
-print Returned from the second function call !
+	print Returned from the second function call !
 
 return
 
 
 this_is_anoter_function:
 
-print I am in another function !
+	print I am in another function !
 
 return
 

@@ -14,6 +14,8 @@ goto skip_message
 
 print This message shouldn't printed !
 
+goto test_failed
+
 jump_back:
 
 print goto test step 2
@@ -112,6 +114,9 @@ $VARIABLE_TMP = $VARIABLE_1_TEST
 
 print VARIABLE_1_TEST : $VARIABLE_1_TEST , VARIABLE_TMP : $VARIABLE_TMP
 
+if $VARIABLE_1_TEST != 0x55AA then goto test_failed
+if $VARIABLE_TMP != 0x55AA then goto test_failed
+
 $VARIABLE_1_TEST = $VARIABLE_1_TEST >> 8
 $VARIABLE_1_TEST = $VARIABLE_1_TEST & 0xFF
 
@@ -120,11 +125,28 @@ $VARIABLE_TMP = $VARIABLE_TMP & 0xFF00
 
 $VARIABLE_1_TEST = $VARIABLE_1_TEST | $VARIABLE_TMP
 
-print After bytes exchanges, VARIABLE_1_TEST : $VARIABLE_1_TEST
+print After bytes exchanges, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0x0000AA55)
+
+if $VARIABLE_1_TEST != 0xAA55 then goto test_failed
 
 $VARIABLE_1_TEST = $VARIABLE_1_TEST | 0x66660000
+
+print Or operation , VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0x6666AA55)
+
+if $VARIABLE_1_TEST != 0x6666AA55 then goto test_failed
+
 $VARIABLE_1_TEST = $VARIABLE_1_TEST ^ 0xAAAA0000
 
-print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0xCCCC55AA)
+print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0xCCCCAA55)
 
-print End of script !
+if $VARIABLE_1_TEST != 0xCCCCAA55 then goto test_failed
+
+print End of script ( All Tests passed :) ) !
+
+return # exit the from current script
+
+test_failed:
+
+print Test failed :-(
+
+return  # exit the from current script

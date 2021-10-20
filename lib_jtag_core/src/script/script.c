@@ -112,7 +112,7 @@ static int is_variable(char * command)
 {
 	if(strlen(command)>1)
 	{
-		if(command[0] == '$' && command[1] && command[1] != ' ')
+		if(command[0] == '$' && command[1] && ( command[1] != ' ' || command[1] != '\t' ))
 			return 1;
 		else
 			return 0;
@@ -123,7 +123,7 @@ static int is_variable(char * command)
 
 static int get_next_word(char * line, int offset)
 {
-	while( !is_end_line(line[offset]) && ( line[offset] == ' ' ) )
+	while( !is_end_line(line[offset]) && ( line[offset] == ' ' || line[offset] == '\t' ) )
 	{
 		offset++;
 	}

@@ -51,7 +51,9 @@ int Printf_socket(int MSGTYPE,char * chaine, ...)
 {
 	char temp[DEFAULT_BUFLEN];
 	char textbuf[DEFAULT_BUFLEN];
-    int iSendResult,i,j;
+	int iSendResult,i,j;
+
+	textbuf[0] = 0;
 
 	if(MSGTYPE!=MSG_DEBUG)
 	{
@@ -111,7 +113,7 @@ int Printf_socket(int MSGTYPE,char * chaine, ...)
 
 		va_end( marker );
 	}
-    return 0;
+	return 0;
 }
 
 int launch_server(int port)
@@ -265,5 +267,5 @@ int launch_server(int port)
 	closesocket(ClientSocket);
 	WSACleanup();
 
-    return 0;
+	return 0;
 }

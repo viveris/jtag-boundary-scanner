@@ -19,7 +19,7 @@
 
 /**
 * @file   script.c
-* @brief  command line parser.
+* @brief  Script engine.
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
 
@@ -60,7 +60,7 @@ typedef struct label_list_
 
 extern cmd_list script_commands_list[];
 
-static int dummy_script_printf(int MSGTYPE, char * string, ... )
+static int dummy_script_printf(void * ctx, int MSGTYPE, char * string, ... )
 {
 	return 0;
 }
@@ -179,7 +179,7 @@ static int get_param_offset(char * line, int param)
 
 			offs = get_next_word( line, offs );
 
-			if(line[offs] == 0 || line[offs] == '#')
+			if(line[offs] == 0 || line[offs] == '#' || line[offs] == '\r' || line[offs] == '\n')
 				return -1;
 
 			param_cnt++;
@@ -199,10 +199,31 @@ static int get_param( script_ctx * ctx, char * line, int param_offset,char * par
 	if(offs>=0)
 	{
 		if(line[offs] != '$')
+		{
 			offs = copy_param(param, line, offs);
+		}
 		else
 		{
 			copy_param(var_str, line, offs);
+
+			if(!strcmp(var_str,"$LASTDATA"))
+			{
+				sprintf(param,"0x"LONGHEXSTR,ctx->last_data_value);
+				return 1;
+			}
+
+			if(!strcmp(var_str,"$LASTFLAGS"))
+			{
+				sprintf(param,"0x%X",ctx->last_flags);
+				return 1;
+			}
+
+			if(!strcmp(var_str,"$LASTERROR"))
+			{
+				sprintf(param,"%d",ctx->last_error_code);
+				return 1;
+			}
+
 			if( !getEnvVar( *((envvar_entry **)ctx->env), (char*)&var_str[1], param) )
 			{
 				copy_param(param, line, offs);
@@ -231,9 +252,9 @@ static int get_param_str( script_ctx * ctx, char * line, int param_offset,char *
 	return -1;
 }
 
-static int str_to_int(char * str)
+static env_var_value str_to_int(char * str)
 {
-	int value;
+	env_var_value value;
 
 	if(str)
 	{
@@ -241,7 +262,7 @@ static int str_to_int(char * str)
 		{
 			if( str[0]=='0' && ( str[1]=='x' || str[1]=='X'))
 			{
-				value = (int)strtoul(str, NULL, 0);
+				value = (env_var_value)STRTOVALUE(str, NULL, 0);
 			}
 			else
 			{
@@ -257,9 +278,9 @@ static int str_to_int(char * str)
 	return value;
 }
 
-static int get_script_variable( script_ctx * ctx, char * varname)
+static env_var_value get_script_variable( script_ctx * ctx, char * varname)
 {
-	int value;
+	env_var_value value;
 
 	if(!strcmp(varname,"$LASTDATA"))
 	{
@@ -273,7 +294,7 @@ static int get_script_variable( script_ctx * ctx, char * varname)
 
 	if(!strcmp(varname,"$LASTERROR"))
 	{
-		return ctx->last_error_code;
+		return (env_var_value)(ctx->last_error_code);
 	}
 
 	if(varname[0] == '$')
@@ -284,7 +305,7 @@ static int get_script_variable( script_ctx * ctx, char * varname)
 	return value;
 }
 
-static void set_script_variable( script_ctx * ctx, char * varname, int value)
+static void set_script_variable( script_ctx * ctx, char * varname, env_var_value value)
 {
 	char tmp_str[64];
 
@@ -311,7 +332,7 @@ static void set_script_variable( script_ctx * ctx, char * varname, int value)
 
 	if(varname[0] == '$' && varname[1])
 	{
-		sprintf(tmp_str,"0x%.8X",value);
+		sprintf(tmp_str,"0x"LONGHEXSTR,value);
 		*((envvar_entry **)ctx->env) = (void *)setEnvVar( *((envvar_entry **)ctx->env), (char*)&varname[1], tmp_str );
 
 		return;
@@ -469,7 +490,7 @@ static int goto_label( script_ctx * ctx, char * label )
 	}
 	else
 	{
-		ctx->script_printf(MSG_ERROR,"Label %s not found\n",tmp_label);
+		ctx->script_printf( ctx, MSG_ERROR, "Label %s not found\n", tmp_label );
 
 		return JTAG_CORE_NOT_FOUND;
 	}
@@ -481,8 +502,8 @@ static int alu_operations( script_ctx * ctx, char * line)
 {
 	int i;
 	int valid;
-	int data_value;
-	int value_1,value_2;
+	env_var_value data_value;
+	env_var_value value_1,value_2;
 
 	char params_str[5][DEFAULT_BUFLEN];
 
@@ -553,7 +574,7 @@ static int alu_operations( script_ctx * ctx, char * line)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-void setOutputFunc_script( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
+void setOutputFunc_script( script_ctx * ctx, SCRIPT_PRINTF_FUNC ext_printf )
 {
 	ctx->script_printf = ext_printf;
 
@@ -580,7 +601,7 @@ int execute_line_script( script_ctx * ctx, char * line )
 
 						if( ctx->last_error_code == JTAG_CORE_CMD_NOT_FOUND )
 						{
-							ctx->script_printf(MSG_ERROR,"Command not found ! : %s\n",line);
+							ctx->script_printf( ctx, MSG_ERROR, "Command not found ! : %s\n", line );
 
 							return ctx->last_error_code;
 						}
@@ -673,7 +694,7 @@ int execute_file_script( script_ctx * ctx, char * filename )
 	}
 	else
 	{
-		ctx->script_printf(MSG_ERROR,"Can't open %s !",filename);
+		ctx->script_printf( ctx, MSG_ERROR, "Can't open %s !", filename );
 		ctx->script_file_path[0] = 0;
 
 		err = JTAG_CORE_ACCESS_ERROR;
@@ -772,15 +793,15 @@ static int cmd_goto( script_ctx * ctx, char * line)
 
 static int cmd_if( script_ctx * ctx, char * line)
 {
-    //"if" command example :
-    // if $VARIABLE > 0x2222 then goto label
+	//"if" command example :
+	// if $VARIABLE > 0x2222 then goto label
 
 	int i;
 	int eval;
 	int ret;
 	int valid;
 	char params_str[5][DEFAULT_BUFLEN];
-	int value_1,value_2,tmp_val;
+	env_var_value value_1,value_2,tmp_val;
 	int op_offset;
 
 	ret = JTAG_CORE_BAD_PARAMETER;
@@ -823,16 +844,16 @@ static int cmd_if( script_ctx * ctx, char * line)
 			value_1 = get_script_variable( ctx, params_str[1]);
 			value_2 = get_script_variable( ctx, params_str[3]);
 
-			if(!strcmp((char*)&params_str[2],">=") && ( value_1 >= value_2 ) )
+			if(!strcmp((char*)&params_str[2],">=") && ( (signed_env_var_value)value_1 >= (signed_env_var_value)value_2 ) )
 				eval = 1;
 
-			if(!strcmp((char*)&params_str[2],"<=") && ( value_1 <= value_2 ) )
+			if(!strcmp((char*)&params_str[2],"<=") && ( (signed_env_var_value)value_1 <= (signed_env_var_value)value_2 ) )
 				eval = 1;
 
-			if(!strcmp((char*)&params_str[2],">") && ( value_1 > value_2 ) )
+			if(!strcmp((char*)&params_str[2],">") && ( (signed_env_var_value)value_1 > (signed_env_var_value)value_2 ) )
 				eval = 1;
 
-			if(!strcmp((char*)&params_str[2],"<") && ( value_1 < value_2 ) )
+			if(!strcmp((char*)&params_str[2],"<") && ( (signed_env_var_value)value_1 < (signed_env_var_value)value_2 ) )
 				eval = 1;
 
 			if(!strcmp((char*)&params_str[2],"==") && ( value_1 == value_2 ) )
@@ -921,7 +942,7 @@ static int cmd_print_env_var( script_ctx * ctx, char * line )
 		ptr = getEnvVar( *((envvar_entry **)ctx->env), (char*)&varname, (char*)&varvalue );
 		if(ptr)
 		{
-			ctx->script_printf(MSG_INFO_1,"%s = %s",varname,varvalue);
+			ctx->script_printf( ctx, MSG_INFO_1, "%s = %s", varname, varvalue );
 
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -936,7 +957,7 @@ static int cmd_print_env_var( script_ctx * ctx, char * line )
 
 static int cmd_version( script_ctx * ctx, char * line)
 {
-	ctx->script_printf(MSG_INFO_0,"Lib version : %s, Date : "__DATE__" "__TIME__"\n",LIB_JTAG_CORE_VERSION);
+	ctx->script_printf( ctx, MSG_INFO_0, "Lib version : %s, Date : "__DATE__" "__TIME__"\n", LIB_JTAG_CORE_VERSION );
 
 	return JTAG_CORE_NO_ERROR;
 }
@@ -990,7 +1011,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 		j++;
 	}while(s);
 
-	ctx->script_printf(MSG_NONE,"%s\n",str);
+	ctx->script_printf( ctx, MSG_NONE, "%s\n", str );
 
 	return JTAG_CORE_NO_ERROR;
 }
@@ -1009,7 +1030,7 @@ static int cmd_pause( script_ctx * ctx, char * line)
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1022,12 +1043,12 @@ static int cmd_help( script_ctx * ctx, char * line)
 
 	cmdlist = (cmd_list*)ctx->cmdlist;
 
-	ctx->script_printf(MSG_INFO_0,"Supported Commands :\n\n");
+	ctx->script_printf( ctx, MSG_INFO_0, "Supported Commands :\n\n" );
 
 	i = 0;
 	while(cmdlist[i].func)
 	{
-		ctx->script_printf(MSG_NONE,"%s\n",cmdlist[i].command);
+		ctx->script_printf( ctx, MSG_NONE, "%s\n", cmdlist[i].command );
 		i++;
 	}
 
@@ -1066,7 +1087,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 			{
 				if(strlen(function))
 				{
-					sprintf(new_ctx->pre_command,"goto %s",function);
+					snprintf(new_ctx->pre_command,sizeof(new_ctx->pre_command),"goto %s",function);
 
 					ret = execute_file_script( new_ctx, (char*)&ctx->script_file_path );
 
@@ -1074,7 +1095,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 					if( ret == JTAG_CORE_ACCESS_ERROR )
 					{
-						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
+						ctx->script_printf( ctx, MSG_ERROR, "call : script not found ! : %s\n", path );
 					}
 				}
 			}
@@ -1082,7 +1103,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 			{
 				if(strlen(function))
 				{
-					sprintf(new_ctx->pre_command,"goto %s",function);
+					snprintf(new_ctx->pre_command,sizeof(new_ctx->pre_command),"goto %s",function);
 
 					ret = execute_file_script( new_ctx, (char*)&path );
 
@@ -1090,7 +1111,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 					if( ret == JTAG_CORE_ACCESS_ERROR )
 					{
-						ctx->script_printf(MSG_ERROR,"call : script/function not found ! : %s %s\n",path,function);
+						ctx->script_printf( ctx, MSG_ERROR, "call : script/function not found ! : %s %s\n", path,function );
 					}
 				}
 				else
@@ -1099,7 +1120,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 					if( ret == JTAG_CORE_ACCESS_ERROR )
 					{
-						ctx->script_printf(MSG_ERROR,"call : script not found ! : %s\n",path);
+						ctx->script_printf( ctx, MSG_ERROR, "call : script not found ! : %s\n", path );
 					}
 				}
 			}
@@ -1142,6 +1163,155 @@ static int cmd_set_env_var( script_ctx * ctx, char * line )
 	return ret;
 }
 
+static int cmd_rand( script_ctx * ctx, char * line)
+{
+	int i;
+	uint32_t seed;
+
+	char rand_seed[DEFAULT_BUFLEN];
+
+	seed = ctx->rand_seed;
+
+	i = get_param( ctx, line, 1, rand_seed );
+	if(i>=0)
+	{
+		seed = str_to_int((char*)rand_seed);
+	}
+
+	/* Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs" */
+	seed ^= seed << 13;
+	seed ^= seed >> 17;
+	seed ^= seed << 5;
+
+	ctx->rand_seed = seed;
+
+	ctx->last_data_value = seed;
+
+	return JTAG_CORE_NO_ERROR;
+}
+
+int is_valid_hex_quartet(char c)
+{
+	if( (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f') )
+		return 1;
+	else
+		return 0;
+}
+
+int is_valid_hex_byte(char *str)
+{
+	if( is_valid_hex_quartet(str[0]) && is_valid_hex_quartet(str[1]) )
+		return 1;
+	else
+		return 0;
+}
+
+char * arrayresize(char * array, int size, unsigned char c)
+{
+	int cursize;
+	char * ptr;
+
+	if(array)
+	{
+		if( array[0] == '0' && (array[1] == 'x' || array[1] == 'X') )
+		{
+			ptr = (array + 2);
+		}
+		else
+		{
+			ptr = (array);
+		}
+	}
+	else
+	{
+		array = malloc(DEFAULT_BUFLEN);
+		if(array)
+		{
+			memset(array,0,DEFAULT_BUFLEN);
+		}
+
+		ptr = array;
+	}
+
+	if(ptr)
+	{
+		cursize = 0;
+		while(is_valid_hex_byte(&ptr[cursize*2]))
+		{
+			cursize++;
+		}
+
+		if( cursize < size  )
+		{
+			while( cursize < size )
+			{
+				sprintf(&ptr[(cursize*2) + 0],"%.2X",c);
+				//ptr[(cursize*2) + 0] = '0';
+				//ptr[(cursize*2) + 1] = '0';
+				cursize++;
+			}
+		}
+		else
+		{
+			ptr[ (size * 2) ] = 0;
+		}
+	}
+
+	return array;
+}
+
+
+static int cmd_initarray( script_ctx * ctx, char * line)
+{
+	//initarray  $VARIABLE_1_TEST $BYTES $VALUE
+
+	int i,j,ret;
+	char varname[DEFAULT_BUFLEN];
+	char varsize[DEFAULT_BUFLEN];
+	char varvalue[DEFAULT_BUFLEN];
+	char * ptr;
+	int size;
+
+	ret = JTAG_CORE_BAD_PARAMETER;
+
+	strcpy(varvalue,"0");
+
+	i = get_param_str( ctx, line, 1, varname );
+	j = get_param( ctx, line, 2, varsize );
+	get_param( ctx, line, 3, varvalue );
+
+	if(i>=0 && j>=0)
+	{
+		size = atoi(varsize);
+
+		if(size)
+		{
+			ptr = getEnvVar( *((envvar_entry **)ctx->env),(char*)&varname, NULL);
+			if(ptr)
+			{
+				arrayresize(ptr, size, (unsigned char)(str_to_int((char*)&varvalue)&0xFF));
+			}
+			else
+			{
+				ptr = malloc( DEFAULT_BUFLEN );
+				if(ptr)
+				{
+					memset(ptr,0x00, DEFAULT_BUFLEN);
+					arrayresize(ptr, size, (unsigned char)(str_to_int((char*)&varvalue)&0xFF));
+				}
+			}
+
+			if(ptr)
+				*((envvar_entry **)ctx->env) = (void *)setEnvVar( *((envvar_entry **)ctx->env), (char*)&varname[1], ptr );
+		}
+		ret = JTAG_CORE_NO_ERROR;
+	}
+
+	return ret;
+
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 /////////////////////// JTAG commands/operations //////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -1172,7 +1342,7 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 
 	number_of_devices = jtagcore_get_number_of_devices(jc);
 
-	ctx->script_printf(MSG_INFO_0,"%d device(s) found\n",number_of_devices);
+	ctx->script_printf( ctx, MSG_INFO_0, "%d device(s) found\n", number_of_devices );
 
 	// Get the bsdl_files folder path
 
@@ -1204,7 +1374,7 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 							if(jtagcore_get_number_of_pins(jc, dev_nb) > 0)
 							{
 								// Device already loaded !
-								ctx->script_printf(MSG_WARNING,"Device %d BSDL already loaded ! ID conflit ?\n",dev_nb);
+								ctx->script_printf( ctx, MSG_WARNING, "Device %d BSDL already loaded ! ID conflit ?\n", dev_nb );
 							}
 
 							// The BSDL ID match with the device.
@@ -1213,11 +1383,11 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 								entityname[0] = 0;
 								jtagcore_get_dev_name(jc, dev_nb, entityname, file);
 
-								ctx->script_printf(MSG_INFO_0,"Device %d (%.8X - %s) - BSDL Loaded : %s\n",dev_nb,chip_id,entityname,file);
+								ctx->script_printf( ctx, MSG_INFO_0, "Device %d (%.8X - %s) - BSDL Loaded : %s\n", dev_nb, chip_id, entityname, file );
 							}
 							else
 							{
-								ctx->script_printf(MSG_ERROR,"ERROR while loading %s !\n",filename);
+								ctx->script_printf( ctx, MSG_ERROR, "ERROR while loading %s !\n", filename );
 							}
 						}
 					}
@@ -1237,13 +1407,13 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 			}
 			else
 			{
-				ctx->script_printf(MSG_WARNING,"Device %d (%.8X) - NO BSDL Loaded !\n",dev_nb,jtagcore_get_dev_id(jc, dev_nb));
+				ctx->script_printf( ctx, MSG_WARNING, "Device %d (%.8X) - NO BSDL Loaded !\n", dev_nb, jtagcore_get_dev_id(jc, dev_nb ) );
 			}
 		}
 	}
 	else
 	{
-		ctx->script_printf(MSG_ERROR,"Can't access the bsdl sub folder ! : %s\n",filename);
+		ctx->script_printf( ctx, MSG_ERROR, "Can't access the bsdl sub folder ! : %s\n", filename );
 		return JTAG_CORE_ACCESS_ERROR;
 	}
 
@@ -1261,13 +1431,13 @@ static int cmd_init_and_scan( script_ctx * ctx, char * line)
 
 	if( ret == JTAG_CORE_NO_ERROR )
 	{
-		ctx->script_printf(MSG_INFO_0,"JTAG Scan done\n");
+		ctx->script_printf( ctx, MSG_INFO_0, "JTAG Scan done\n" );
 
 		return JTAG_CORE_NO_ERROR;
 	}
 	else
 	{
-		ctx->script_printf(MSG_INFO_0,"JTAG Scan return code : %d\n",ret);
+		ctx->script_printf( ctx, MSG_INFO_0, "JTAG Scan return code : %d\n", ret );
 	}
 
 	return ret;
@@ -1282,7 +1452,7 @@ static int cmd_print_nb_dev( script_ctx * ctx, char * line)
 
 	i = jtagcore_get_number_of_devices(jc);
 
-	ctx->script_printf(MSG_INFO_0,"%d device(s) found in chain\n",i);
+	ctx->script_printf( ctx, MSG_INFO_0, "%d device(s) found in chain\n", i );
 
 	ctx->last_data_value = i;
 
@@ -1357,7 +1527,7 @@ static int cmd_print_devs_list( script_ctx * ctx, char * line)
 	i = jtagcore_get_number_of_devices(jc);
 	if(i>0)
 	{
-		ctx->script_printf(MSG_INFO_0,"%s\n",get_id_str(ctx,i));
+		ctx->script_printf( ctx, MSG_INFO_0, "%s\n", get_id_str(ctx,i) );
 	}
 
 	return JTAG_CORE_NOT_FOUND;
@@ -1381,7 +1551,7 @@ static int cmd_print_probes_list( script_ctx * ctx, char * line)
 		while( i < nb_of_probes )
 		{
 			jtagcore_get_probe_name(jc, PROBE_ID(j,i), probe_list);
-			ctx->script_printf(MSG_INFO_0,"ID 0x%.8X : %s\n",PROBE_ID(j,i),probe_list);
+			ctx->script_printf( ctx, MSG_INFO_0, "ID 0x%.8X : %s\n", PROBE_ID(j,i), probe_list );
 			i++;
 		}
 		j++;
@@ -1403,18 +1573,18 @@ static int cmd_open_probe( script_ctx * ctx, char * line)
 		ret = jtagcore_select_and_open_probe(jc, strtoul(probe_id, NULL, 16));
 		if(ret != JTAG_CORE_NO_ERROR)
 		{
-			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 			return ret;
 		}
 		else
 		{
-			ctx->script_printf(MSG_INFO_0,"Probe Ok !\n");
+			ctx->script_printf( ctx, MSG_INFO_0, "Probe Ok !\n" );
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 	else
 	{
-		ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+		ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 		return JTAG_CORE_BAD_PARAMETER;
 	}
@@ -1436,17 +1606,17 @@ static int cmd_load_bsdl( script_ctx * ctx, char * line)
 	{
 		if (jtagcore_loadbsdlfile(jc, filename, atoi(dev_index)) >= 0)
 		{
-			ctx->script_printf(MSG_INFO_0,"BSDL %s loaded and parsed !\n",filename);
+			ctx->script_printf( ctx, MSG_INFO_0, "BSDL %s loaded and parsed !\n", filename );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"File open & parsing error (%s)!\n",filename);
+			ctx->script_printf( ctx, MSG_ERROR, "File open & parsing error (%s)!\n", filename );
 			return JTAG_CORE_ACCESS_ERROR;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1468,7 +1638,7 @@ static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 		if( !strcmp(scan_mode,"EXTEST") )
 		{
 			jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_EXTEST_SCANMODE);
-			ctx->script_printf(MSG_INFO_0,"EXTEST mode\n");
+			ctx->script_printf( ctx, MSG_INFO_0, "EXTEST mode\n" );
 		}
 		else
 		{
@@ -1476,11 +1646,11 @@ static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 			{
 				jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_SAMPLE_SCANMODE);
 
-				ctx->script_printf(MSG_INFO_0,"SAMPLE mode\n");
+				ctx->script_printf( ctx, MSG_INFO_0, "SAMPLE mode\n" );
 			}
 			else
 			{
-				ctx->script_printf(MSG_ERROR,"%s : unknown mode !\n",scan_mode);
+				ctx->script_printf( ctx, MSG_ERROR, "%s : unknown mode !\n", scan_mode );
 				return JTAG_CORE_BAD_PARAMETER;
 			}
 		}
@@ -1488,7 +1658,7 @@ static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1504,12 +1674,12 @@ static int cmd_push_and_pop( script_ctx * ctx, char * line)
 
 	if(ret != JTAG_CORE_NO_ERROR)
 	{
-		ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+		ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 		return ret;
 	}
 	else
 	{
-		ctx->script_printf(MSG_INFO_0,"JTAG chain updated\n");
+		ctx->script_printf( ctx, MSG_INFO_0, "JTAG chain updated\n" );
 	}
 
 	return JTAG_CORE_NO_ERROR;
@@ -1537,18 +1707,18 @@ static int cmd_set_pin_mode( script_ctx * ctx, char * line)
 		{
 			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OE, atoi(mode));
 
-			ctx->script_printf(MSG_INFO_0,"Pin %s mode set to %d\n",pinname,atoi(mode));
+			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s mode set to %d\n", pinname, atoi(mode) );
 
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1575,18 +1745,18 @@ static int cmd_set_pin_state( script_ctx * ctx, char * line)
 		{
 			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OUTPUT, atoi(state));
 
-			ctx->script_printf(MSG_INFO_0,"Pin %s set to %d\n",pinname,atoi(state));
+			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s set to %d\n", pinname, atoi(state) );
 
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1613,7 +1783,7 @@ static int cmd_get_pin_state( script_ctx * ctx, char * line)
 		{
 			ret = jtagcore_get_pin_state(jc, atoi(dev_index), id, JTAG_CORE_INPUT);
 
-			ctx->script_printf(MSG_INFO_0,"Pin %s state : %d\n",pinname,ret);
+			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s state : %d\n", pinname, ret );
 
 			ctx->last_data_value = ret;
 
@@ -1621,12 +1791,12 @@ static int cmd_get_pin_state( script_ctx * ctx, char * line)
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1654,17 +1824,17 @@ static int cmd_set_i2c_sda_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_i2c_set_sda_pin(jc, atoi(dev_index), id);
-			ctx->script_printf(MSG_INFO_0,"SDA set to Pin %s\n",pinname);
+			ctx->script_printf( ctx, MSG_INFO_0, "SDA set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1688,17 +1858,17 @@ static int cmd_set_i2c_scl_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_i2c_set_scl_pin(jc, atoi(dev_index), id);
-			ctx->script_printf(MSG_INFO_0,"SCL set to Pin %s\n",pinname);
+			ctx->script_printf( ctx, MSG_INFO_0, "SCL set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1739,11 +1909,11 @@ static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 		{
 			if(ret == 0)
 			{
-				ctx->script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
+				ctx->script_printf( ctx, MSG_WARNING, "Device Ack not detected ! 0x%.2X\n", i2cadr );
 			}
 			else
 			{
-				ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+				ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 			}
 
 			return ret;
@@ -1754,13 +1924,13 @@ static int cmd_do_i2c_wr( script_ctx * ctx, char * line)
 			{
 				sprintf(&data[i*3]," %.2X",tmp_buffer2[i]);
 			}
-			ctx->script_printf(MSG_INFO_0,"WR I2C 0x%.2X :%s\n",i2cadr,data);
+			ctx->script_printf( ctx, MSG_INFO_0, "WR I2C 0x%.2X :%s\n", i2cadr, data );
 
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1793,11 +1963,11 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 		{
 			if(ret == 0)
 			{
-				ctx->script_printf(MSG_WARNING,"Device Ack not detected ! 0x%.2X\n",i2cadr);
+				ctx->script_printf( ctx, MSG_WARNING, "Device Ack not detected ! 0x%.2X\n", i2cadr );
 			}
 			else
 			{
-				ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+				ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 			}
 
 			return ret;
@@ -1810,13 +1980,13 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 				sprintf(tmp_buffer3, " %.2X", tmp_buffer2[i]);
 				strcat(tmp_buffer, tmp_buffer3);
 			}
-			ctx->script_printf(MSG_INFO_0,"RD I2C 0x%.2X :%s\n",i2cadr,tmp_buffer);
+			ctx->script_printf( ctx, MSG_INFO_0, "RD I2C 0x%.2X :%s\n", i2cadr, tmp_buffer );
 
 			return JTAG_CORE_NO_ERROR;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1844,17 +2014,17 @@ static int cmd_set_mdio_mdc_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_mdio_set_mdc_pin(jc, atoi(dev_index), id);
-			ctx->script_printf(MSG_INFO_0,"MDC set to Pin %s\n",pinname);
+			ctx->script_printf( ctx, MSG_INFO_0, "MDC set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n",  pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1878,17 +2048,17 @@ static int cmd_set_mdio_mdio_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_mdio_set_mdio_pin(jc, atoi(dev_index), id);
-			ctx->script_printf(MSG_INFO_0,"MDIO set to Pin %s\n",pinname);
+			ctx->script_printf( ctx, MSG_INFO_0, "MDIO set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1918,16 +2088,16 @@ static int cmd_do_mdio_wr( script_ctx * ctx, char * line)
 		ret = jtagcore_mdio_write(jc, mdioadr, regadr, datatowrite);
 		if( ret < 0 )
 		{
-			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 			return ret;
 		}
 
-		ctx->script_printf(MSG_INFO_0,"WR MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, datatowrite);
+		ctx->script_printf( ctx, MSG_INFO_0, "WR MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, datatowrite );
 
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1953,18 +2123,18 @@ static int cmd_do_mdio_rd( script_ctx * ctx, char * line)
 		dataread = jtagcore_mdio_read(jc, mdioadr, regadr);
 		if( dataread < 0 )
 		{
-			ctx->script_printf(MSG_ERROR,"Code %d !\n",dataread);
+			ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", dataread );
 			return dataread;
 		}
 
 		ctx->last_data_value = dataread;
 
-		ctx->script_printf(MSG_INFO_0,"RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread);
+		ctx->script_printf( ctx, MSG_INFO_0, "RD MDIO 0x%.2X : [0x%.2X] = 0x%.4X\n", mdioadr ,regadr, dataread );
 
 		return JTAG_CORE_NO_ERROR;
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -1993,17 +2163,17 @@ static int cmd_set_spi_cs_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_cs_pin(jc, atoi(dev_index), id, atoi(polarity));
-			ctx->script_printf(MSG_INFO_0,"CS set to Pin %s with polarity %d\n",pinname,atoi(polarity));
+			ctx->script_printf( ctx, MSG_INFO_0, "CS set to Pin %s with polarity %d\n", pinname, atoi(polarity) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -2029,17 +2199,17 @@ static int cmd_set_spi_clk_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_clk_pin(jc, atoi(dev_index), id, atoi(polarity));
-			ctx->script_printf(MSG_INFO_0,"CLK set to Pin %s with polarity %d\n",pinname,atoi(polarity));
+			ctx->script_printf( ctx, MSG_INFO_0, "CLK set to Pin %s with polarity %d\n", pinname, atoi(polarity) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -2065,17 +2235,17 @@ static int cmd_set_spi_mosi_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_mosi_pin(jc, atoi(dev_index), id, atoi(phase));
-			ctx->script_printf(MSG_INFO_0,"MOSI set to Pin %s with polarity %d\n",pinname,atoi(phase));
+			ctx->script_printf( ctx, MSG_INFO_0, "MOSI set to Pin %s with polarity %d\n", pinname, atoi(phase) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Bad/Missing parameter(s) ! : %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Bad/Missing parameter(s) ! : %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -2101,17 +2271,17 @@ static int cmd_set_spi_miso_pin( script_ctx * ctx, char * line)
 		if(id>=0)
 		{
 			jtagcore_spi_set_miso_pin(jc, atoi(dev_index), id, atoi(phase));
-			ctx->script_printf(MSG_INFO_0,"MISO set to Pin %s with polarity %d\n",pinname,atoi(phase));
+			ctx->script_printf( ctx, MSG_INFO_0, "MISO set to Pin %s with polarity %d\n", pinname, atoi(phase) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
 		{
-			ctx->script_printf(MSG_ERROR,"Pin %s not found\n",pinname);
+			ctx->script_printf( ctx, MSG_ERROR, "Pin %s not found\n", pinname );
 			return JTAG_CORE_NOT_FOUND;
 		}
 	}
 
-	ctx->script_printf(MSG_ERROR,"Parameters error: %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Parameters error: %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -2153,28 +2323,28 @@ static int cmd_spi_rd_wr( script_ctx * ctx, char * line)
 		ret = jtagcore_spi_write_read(jc, size,data_out,data_in, 0);
 		if( ret < 0 )
 		{
-			ctx->script_printf(MSG_ERROR,"Code %d !\n",ret);
+			ctx->script_printf( ctx, MSG_ERROR, "Code %d !\n", ret );
 			return ret;
 		}
 
-		ctx->script_printf(MSG_INFO_0,"SPI TX:");
+		ctx->script_printf( ctx, MSG_INFO_0, "SPI TX:" );
 		for(k = 0; k<size; k++)
 		{
-			ctx->script_printf(MSG_NONE," %.2X",data_out[k]);
+			ctx->script_printf( ctx, MSG_NONE, " %.2X", data_out[k] );
 		}
-		ctx->script_printf(MSG_NONE,"\n");
+		ctx->script_printf( ctx, MSG_NONE, "\n" );
 
-		ctx->script_printf(MSG_INFO_0,"SPI RX:");
+		ctx->script_printf( ctx, MSG_INFO_0, "SPI RX:" );
 		for(k = 0; k<size; k++)
 		{
-			ctx->script_printf(MSG_NONE," %.2X",data_in[k]);
+			ctx->script_printf( ctx, MSG_NONE, " %.2X", data_in[k] );
 		}
-		ctx->script_printf(MSG_NONE,"\n");
+		ctx->script_printf( ctx, MSG_NONE, "\n" );
 
 		return JTAG_CORE_NOT_FOUND;
 	}
 
-	ctx->script_printf(MSG_ERROR,"Parameters error: %s\n",line);
+	ctx->script_printf( ctx, MSG_ERROR, "Parameters error: %s\n", line );
 
 	return JTAG_CORE_BAD_PARAMETER;
 }
@@ -2195,40 +2365,40 @@ static int cmd_get_pins_list( script_ctx * ctx, char * line)
 		nb_of_pins = jtagcore_get_number_of_pins(jc,atoi(dev_index));
 		if(nb_of_pins>=0)
 		{
-			ctx->script_printf(MSG_INFO_0,"Device %d : %d pin(s)\n",atoi(dev_index),nb_of_pins);
+			ctx->script_printf( ctx, MSG_INFO_0, "Device %d : %d pin(s)\n", atoi(dev_index), nb_of_pins );
 			for(j = 0;j < nb_of_pins;j++)
 			{
 				if(jtagcore_get_pin_properties(jc, atoi(dev_index), j, pinname, sizeof(pinname), &type) == JTAG_CORE_NO_ERROR)
 				{
-					ctx->script_printf(MSG_NONE,"%s : ",pinname);
+					ctx->script_printf( ctx, MSG_NONE, "%s : ", pinname );
 					if(type & JTAG_CORE_PIN_IS_INPUT)
 					{
-						ctx->script_printf(MSG_NONE," in  ");
+						ctx->script_printf( ctx, MSG_NONE, " in  " );
 					}
 					else
 					{
-						ctx->script_printf(MSG_NONE,"     ");
+						ctx->script_printf( ctx, MSG_NONE, "     " );
 					}
 
 					if(type & JTAG_CORE_PIN_IS_OUTPUT)
 					{
-						ctx->script_printf(MSG_NONE," out ");
+						ctx->script_printf( ctx, MSG_NONE, " out " );
 					}
 					else
 					{
-						ctx->script_printf(MSG_NONE,"     ");
+						ctx->script_printf( ctx, MSG_NONE, "     " );
 					}
 
 					if(type & JTAG_CORE_PIN_IS_TRISTATES)
 					{
-						ctx->script_printf(MSG_NONE," tris");
+						ctx->script_printf( ctx, MSG_NONE, " tris" );
 					}
 					else
 					{
-						ctx->script_printf(MSG_NONE,"     ");
+						ctx->script_printf( ctx, MSG_NONE, "     ");
 					}
 
-					ctx->script_printf(MSG_NONE,"\n");
+					ctx->script_printf( ctx, MSG_NONE, "\n");
 
 				}
 			}
@@ -2255,6 +2425,10 @@ cmd_list script_commands_list[] =
 	{"if",                      cmd_if},
 	{"goto",                    cmd_goto},
 	{"return",                  cmd_return},
+
+	{"rand",                    cmd_rand},
+
+	{"init_array",              cmd_initarray},
 
 	{"jtag_get_probes_list",    cmd_print_probes_list},
 	{"jtag_open_probe",         cmd_open_probe},
@@ -2302,7 +2476,7 @@ script_ctx * jtagcore_initScript(jtag_core * jc)
 	return init_script((void*)jc,0x00000000,(void*)&jc->envvar);
 }
 
-void jtagcore_setScriptOutputFunc( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf )
+void jtagcore_setScriptOutputFunc( script_ctx * ctx, SCRIPT_PRINTF_FUNC ext_printf )
 {
 	setOutputFunc_script(ctx, ext_printf);
 }

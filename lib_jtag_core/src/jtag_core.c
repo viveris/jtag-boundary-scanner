@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "drivers/drv_loader.h"
 #include "jtag_core_internal.h"

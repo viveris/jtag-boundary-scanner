@@ -19,9 +19,19 @@
 
 /**
 * @file   env.h
-* @brief  JTAG Boundary Scanner internal variables support header file.
+* @brief  Internal variables support header file.
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
+
+#ifdef SCRIPT_64BITS_SUPPORT
+#define env_var_value uint64_t
+#define signed_env_var_value int64_t
+#define STRTOVALUE strtoull
+#else
+#define env_var_value uint32_t
+#define signed_env_var_value int32_t
+#define STRTOVALUE strtoul
+#endif
 
 typedef struct envvar_entry_
 {
@@ -31,7 +41,7 @@ typedef struct envvar_entry_
 
 envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * varvalue);
 char * getEnvVar( envvar_entry * env, char * varname, char * varvalue);
-int getEnvVarValue( envvar_entry * env, char * varname);
+env_var_value getEnvVarValue( envvar_entry * env, char * varname);
 char * getEnvVarIndex( envvar_entry * env, int index, char * varvalue);
 envvar_entry * duplicate_env_vars(envvar_entry * src);
 void free_env_vars(envvar_entry * src);

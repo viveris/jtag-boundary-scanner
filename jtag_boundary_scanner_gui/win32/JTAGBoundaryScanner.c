@@ -80,7 +80,7 @@ int last_selected_dev_index;
 
 HWND hDlg_logs;
 
-int Printf_script(int MSGTYPE,char * chaine, ...)
+int Printf_script(void * ctx, int MSGTYPE,char * chaine, ...)
 {
 	if(MSGTYPE!=MSG_DEBUG)
 	{

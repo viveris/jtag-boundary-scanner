@@ -19,13 +19,14 @@
 
 /**
 * @file   env.c
-* @brief  JTAG Boundary Scanner internal variables support.
+* @brief  Internal variables support.
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include "env.h"
 
@@ -148,9 +149,9 @@ char * getEnvVar( envvar_entry * env, char * varname, char * varvalue)
 	}
 }
 
-int getEnvVarValue( envvar_entry * env, char * varname)
+env_var_value getEnvVarValue( envvar_entry * env, char * varname)
 {
-	int value;
+	env_var_value value;
 	char * str_return;
 
 	value = 0;
@@ -166,7 +167,7 @@ int getEnvVarValue( envvar_entry * env, char * varname)
 		{
 			if( str_return[0]=='0' && ( str_return[1]=='x' || str_return[1]=='X'))
 			{
-				value = (int)strtol(str_return, NULL, 0);
+				value = (env_var_value)STRTOVALUE(str_return, NULL, 0);
 			}
 			else
 			{

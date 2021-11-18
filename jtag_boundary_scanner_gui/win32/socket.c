@@ -47,7 +47,7 @@ extern jtag_core * jc;
 int line_index;
 SOCKET ClientSocket = INVALID_SOCKET;
 
-int Printf_socket(int MSGTYPE,char * chaine, ...)
+int Printf_socket(void * ctx, int MSGTYPE,char * chaine, ...)
 {
 	char temp[DEFAULT_BUFLEN];
 	char textbuf[DEFAULT_BUFLEN];

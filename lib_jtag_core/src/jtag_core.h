@@ -304,13 +304,13 @@ enum MSGTYPE
 };
 
 #ifndef _jtag_script_printf_func_
-typedef int (* JTAG_SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+typedef int (* SCRIPT_PRINTF_FUNC)(void * ctx, int MSGTYPE, char * string, ... );
 #define _jtag_script_printf_func_
 #endif
 
 script_ctx * jtagcore_initScript(jtag_core * jc);
 
-void jtagcore_setScriptOutputFunc( script_ctx * ctx, JTAG_SCRIPT_PRINTF_FUNC ext_printf );
+void jtagcore_setScriptOutputFunc( script_ctx * ctx, SCRIPT_PRINTF_FUNC ext_printf );
 int  jtagcore_execScriptLine( script_ctx * ctx, char * line );
 int  jtagcore_execScriptFile( script_ctx * ctx, char * script_path );
 int  jtagcore_execScriptRam( script_ctx * ctx, unsigned char * script_buffer, int buffersize );

@@ -26,8 +26,18 @@
 #define _script_ctx_
 
 #ifndef _script_printf_func_
-typedef int (* SCRIPT_PRINTF_FUNC)(int MSGTYPE, char * string, ... );
+typedef int (* SCRIPT_PRINTF_FUNC)(void * ctx, int MSGTYPE, char * string, ... );
 #define _script_printf_func_
+#endif
+
+#ifdef SCRIPT_64BITS_SUPPORT
+#define env_var_value uint64_t
+#define STRTOVALUE strtoull
+#define LONGHEXSTR "%llX"
+#else
+#define env_var_value uint32_t
+#define STRTOVALUE strtoul
+#define LONGHEXSTR "%.8X"
 #endif
 
 #define MAX_LABEL_SIZE 64
@@ -59,10 +69,13 @@ typedef struct _script_ctx
 	int dry_run;
 
 	int last_error_code;
-	int last_data_value;
+	env_var_value last_data_value;
 	int last_flags;
 
-	char pre_command[1024];
+	char pre_command[1024 + 32];
+
+	uint32_t rand_seed;
+
 } script_ctx;
 
 script_ctx * init_script(void * app_ctx, unsigned int flags, void * env);

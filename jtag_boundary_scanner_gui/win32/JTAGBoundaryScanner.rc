@@ -128,7 +128,7 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,290,189,50,14
     LTEXT           "Columns meaning :",IDC_STATIC,7,6,333,10
-    LTEXT           "O :\t[Output] :\tSet it to to turn the pin to high level. (Only effective if OE is set)",
+    LTEXT           "O :\t[Output] :\tSet it to turn the pin to high level. (Only effective if OE is set)",
                     IDC_STATIC,8,19,313,8
     LTEXT           "OE :\t[Output Enable] :Set it to turn the pin in output mode.",
                     IDC_STATIC,8,30,255,8

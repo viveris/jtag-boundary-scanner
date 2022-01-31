@@ -41,7 +41,7 @@ int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 	char tmp_msg2[1024];
 	JTAGCORE_PRINT_FUNC print_callback;
 
-	if( jc->logs_level > MSGTYPE )
+	if( jc->logs_level <= MSGTYPE )
 	{
 		if( jc->jtagcore_print_callback )
 		{

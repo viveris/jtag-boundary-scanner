@@ -61,7 +61,7 @@ jtag_core * jtagcore_init();
 void jtagcore_deinit(jtag_core * jc);
 
 #ifndef _JTAGCORE_PRINT_FUNC_
-typedef void (*JTAGCORE_PRINT_FUNC)(char * string);
+typedef void (*JTAGCORE_PRINT_FUNC)(const char * string);
 #define _JTAGCORE_PRINT_FUNC_
 #endif
 

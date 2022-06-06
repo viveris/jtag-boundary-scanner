@@ -1,6 +1,8 @@
 name: C/C++ CI
 
-on: [push]
+on: 
+  - push
+  - workflow_dispatch
 
 defaults:
   run:

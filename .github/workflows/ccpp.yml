@@ -16,3 +16,6 @@ jobs:
     - uses: actions/checkout@v1
     - name: make
       run: make
+    - name: test
+      working-directory: ./lib_jtag_core/test/linux
+      run: make

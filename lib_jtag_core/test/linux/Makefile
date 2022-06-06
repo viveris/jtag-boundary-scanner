@@ -1,4 +1,4 @@
-CC ?= gcc
+CC ?= g++
 AR ?= ar
 
 UNAME := $(shell uname)
@@ -29,7 +29,7 @@ endif
 
 all: $(EXEC)
 
-BSDLtoFloorplan: BSDLtoFloorplan.c
+BSDLtoFloorplan: BSDLtoFloorplan.cpp
 	$(CC) -o $@    $^ $(CFLAGS) "$(LIBDIR)/$(LIB)"
 
 clean:

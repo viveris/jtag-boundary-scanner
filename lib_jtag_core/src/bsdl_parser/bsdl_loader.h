@@ -22,6 +22,9 @@
  * @brief  bsdl file parser header
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define MAX_ELEMENT_SIZE (64+1)
 
@@ -78,3 +81,7 @@ typedef struct _jtag_bsdl
 
 jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename);
 void unload_bsdlfile(jtag_core * jc, jtag_bsdl * bsdl);
+
+#ifdef __cplusplus
+}
+#endif

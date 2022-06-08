@@ -27,7 +27,7 @@ LDFLAGS +=-arch i386 -dynamiclib -current_version 2.0 -install_name @executable_
 EXEC=libjtag_core.dylib
 endif
 
-LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o script.o env.o fs.o os_interface.o network.o
+LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o jtag_bsdl.o bsdl_strings.o drv_loader.o script.o env.o fs.o os_interface.o network.o
 PROBES_DRIVERS = drivers_list.o jlink_jtag_drv.o linux_gpio_jtag_drv.o #lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
 NATSORT = strnatcmp.o
@@ -53,6 +53,9 @@ dbg_logs.o: $(BASEDIR)/dbg_logs.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 bsdl_loader.o: $(BASEDIR)/bsdl_parser/bsdl_loader.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+jtag_bsdl.o: $(BASEDIR)/bsdl_parser/jtag_bsdl.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 bsdl_strings.o: $(BASEDIR)/bsdl_parser/bsdl_strings.c
@@ -113,6 +116,6 @@ clean:
 	rm -rf *.o
 
 mrproper: clean
-	rm -rf $(EXEC)
+	rm -rf $(EXEC) libjtag_core.a
 
 .PHONY: clean mrproper

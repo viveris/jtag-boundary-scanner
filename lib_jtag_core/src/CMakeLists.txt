@@ -7,4 +7,5 @@ set(JTAG_BSDL_SRC
 )
 
 add_library(jtag_bsdl ${JTAG_BSDL_SRC})
+set_property(TARGET jtag_bsdl PROPERTY POSITION_INDEPENDENT_CODE ON)
 

@@ -1,12 +1,9 @@
 #include <stddef.h>
 #include <stdio.h>
-#include "libjtag_bsdl.h"
 
 #include "epSwigHere.h"
 #include <memory>
 #include <type_traits>
-#include <vector>
-
 
 static void logger(char * string) {
     printf("%s",string);
@@ -70,3 +67,31 @@ extern long unsigned int epBSDLDeviceId(SWIGHERE_CONTEXT oContext, char * pathTo
     }
     return (long unsigned int) result;
 }
+
+extern std::vector<pin_ctrl> epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char * pathToBSDL, unsigned * pBytesPerElement) {
+    int * p=NULL;
+    std::vector<pin_ctrl> result;
+
+    if(pBytesPerElement != NULL) {
+       *pBytesPerElement = sizeof(pin_ctrl);
+    }
+    if(oContext==(SWIGHERE_CONTEXT)&garbageCollector) {
+    	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, 0, pathToBSDL);
+        if ( details != NULL ) {
+            int number_of_pins = details->number_of_pins;
+            int i = 0;
+            if(number_of_pins>0) {
+                while(i<number_of_pins) {
+                    pin_ctrl * pins_list = details->pins_list;
+                    result.push_back(pins_list[i]);
+                    i++;
+                }
+            }
+        }
+    }
+
+    return result;
+};
+
+//extern std::vector<jtag_chain> epBSDLChainSequence(SWIGHERE_CONTEXT oContext, char * pathToFile, unsigned * pBytesPerElement,unsigned * pElementCount);
+//extern std::vector<pin_ctrl>  epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char * pathToBSDL, unsigned * pBytesPerElement,unsigned * pElementCount) {

@@ -22,6 +22,7 @@ enum MSGTYPE
 #define MAX_NUMBER_OF_BSDL_LINES ( 64 * 1024 )
 
 #include "bsdl_parser/jtag_bsdl.h"
+#include "dbg_logs.h"
 
 #ifdef __cplusplus
 }

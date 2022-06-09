@@ -23,4 +23,7 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
-int jtagcore_logs_printf(jtag_core * jc, int MSGTYPE, char * chaine, ...);
+#ifndef jtagcore_logs_printf
+int dbg_logs_printf(JTAGCORE_PRINT_FUNC print_callback,int logs_level, int MSGTYPE,char * chaine, ...);
+#define jtagcore_logs_printf(jc, MSGTYPE, ...) dbg_logs_printf(jc->jtagcore_print_callback,jc->logs_level, MSGTYPE, __VA_ARGS__)
+#endif

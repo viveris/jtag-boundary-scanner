@@ -40,6 +40,7 @@
 #include "../dbg_logs.h"
 #define DEBUG 1
 
+#include "jtag_bsdl.cc"
 
 jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 {

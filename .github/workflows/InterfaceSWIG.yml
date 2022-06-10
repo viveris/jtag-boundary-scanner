@@ -1,0 +1,23 @@
+name: SWIG and CMake
+
+on:
+  - workflow_dispatch
+
+defaults:
+  run:
+    working-directory: ./lib_jtag_core
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install swig
+      run: sudo apt install swig
+    - name: build using CMakw
+      run |
+          mkdir -p cmake
+          cmake .. .
+          make
+      

@@ -76,7 +76,8 @@ extern std::vector<pin_ctrl> epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char *
        *pBytesPerElement = sizeof(pin_ctrl);
     }
     if(oContext==(SWIGHERE_CONTEXT)&garbageCollector) {
-    	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, 0, pathToBSDL);
+        const int sortPins=1;
+    	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, sortPins, pathToBSDL);
         if ( details != NULL ) {
             int number_of_pins = details->number_of_pins;
             int i = 0;
@@ -91,7 +92,30 @@ extern std::vector<pin_ctrl> epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char *
     }
 
     return result;
-};
+}
 
-//extern std::vector<jtag_chain> epBSDLChainSequence(SWIGHERE_CONTEXT oContext, char * pathToFile, unsigned * pBytesPerElement,unsigned * pElementCount);
-//extern std::vector<pin_ctrl>  epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char * pathToBSDL, unsigned * pBytesPerElement,unsigned * pElementCount) {
+extern std::vector<jtag_chain> epBSDLChainSequence(SWIGHERE_CONTEXT oContext, char * pathToBSDL, unsigned * pBytesPerElement) {
+    int * p=NULL;
+    std::vector<jtag_chain> result;
+
+    if(pBytesPerElement != NULL) {
+       *pBytesPerElement = sizeof(jtag_chain);
+    }
+    if(oContext==(SWIGHERE_CONTEXT)&garbageCollector) {
+        const int sortPins=1;
+    	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, sortPins, pathToBSDL);
+        if ( details != NULL ) {
+            int number_of_chains = details->number_of_chainbits;
+            int i = 0;
+            if(number_of_chains>0) {
+                while(i<number_of_chains) {
+                    jtag_chain * chain_list = details->chain_list;
+                    result.push_back(chain_list[i]);
+                    i++;
+                }
+            }
+        }
+    }
+
+    return result;
+}

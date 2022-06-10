@@ -3,7 +3,7 @@ name: C/C++ CI
 on: 
   push:
       paths-ignore: 
-      - ".github/workflows"
+      - .github/workflows
 
 defaults:
   run:

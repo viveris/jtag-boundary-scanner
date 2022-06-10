@@ -1,7 +1,9 @@
 name: C/C++ CI
 
 on: 
-  - push
+  - push:
+      paths-ignore: 
+      - .github/workflows
   - workflow_dispatch
 
 defaults:

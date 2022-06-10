@@ -16,8 +16,8 @@ jobs:
     - name: install swig
       run: sudo apt install swig
     - name: build using CMakw
-      run |
+      run: |
           mkdir -p cmake
           cmake .. .
-          make
+          cmake --build .
       

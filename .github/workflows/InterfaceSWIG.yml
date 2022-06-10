@@ -17,6 +17,7 @@ jobs:
     - name: build using CMakw
       run: |
           mkdir -p cmake
+          cd cmake
           cmake .. .
           cmake --build .
       

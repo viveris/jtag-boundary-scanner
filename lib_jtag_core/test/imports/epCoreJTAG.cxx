@@ -76,7 +76,7 @@ extern std::vector<pin_ctrl> epBSDLPinSequence(SWIGHERE_CONTEXT oContext, char *
        *pBytesPerElement = sizeof(pin_ctrl);
     }
     if(oContext==(SWIGHERE_CONTEXT)&garbageCollector) {
-        const int sortPins=1;
+        const int sortPins=0;
     	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, sortPins, pathToBSDL);
         if ( details != NULL ) {
             int number_of_pins = details->number_of_pins;
@@ -102,7 +102,7 @@ extern std::vector<jtag_chain> epBSDLChainSequence(SWIGHERE_CONTEXT oContext, ch
        *pBytesPerElement = sizeof(jtag_chain);
     }
     if(oContext==(SWIGHERE_CONTEXT)&garbageCollector) {
-        const int sortPins=1;
+        const int sortPins=0;
     	jtag_bsdl * details = jtag_bsdl_load_file(logger,MSG_DEBUG, sortPins, pathToBSDL);
         if ( details != NULL ) {
             int number_of_chains = details->number_of_chainbits;

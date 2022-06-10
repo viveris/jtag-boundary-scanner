@@ -14,5 +14,5 @@ jobs:
       run: |
           mkdir -p cmake
           cd cmake
-          cmake ../libjtag_core .
+          cmake -S ../libjtag_core -B .
           cmake --build .

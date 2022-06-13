@@ -2,8 +2,8 @@ name: C/C++ CI
 
 on: 
   push:
-      paths-ignore: 
-      - .github/workflows
+    paths-ignore: 
+    - '.github/workflows/*.yml'
 
 defaults:
   run:

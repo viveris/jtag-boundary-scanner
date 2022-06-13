@@ -1,6 +1,10 @@
 name: C/C++ CI
 
-on: [push]
+on: 
+  push:
+    paths-ignore: 
+    - '.github/workflows/*.yml'
+  workflow_dispatch:
 
 defaults:
   run:
@@ -13,4 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: make
+      run: make
+    - name: test
+      working-directory: ./lib_jtag_core/test/linux
       run: make

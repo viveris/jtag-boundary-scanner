@@ -22,6 +22,9 @@
  * @brief  Main jtag core library header
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #ifndef _jtag_core_
 typedef void jtag_core;
@@ -318,3 +321,7 @@ int  jtagcore_execScriptRam( script_ctx * ctx, unsigned char * script_buffer, in
 script_ctx * jtagcore_deinitScript( script_ctx * ctx );
 
 int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path );
+
+#ifdef __cplusplus
+}
+#endif

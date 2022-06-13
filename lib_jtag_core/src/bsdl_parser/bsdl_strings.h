@@ -22,6 +22,10 @@
  * @brief  bsdl file string keywords header
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef struct type_strings_
 {
@@ -75,3 +79,7 @@ extern type_strings statetype_str[];
 extern type_strings pintype_str[];
 
 int get_typecode(type_strings * typelist,char * name);
+
+#ifdef __cplusplus
+}
+#endif

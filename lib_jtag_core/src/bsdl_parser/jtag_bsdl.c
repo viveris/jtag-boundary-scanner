@@ -18,12 +18,23 @@
  */
 
 /**
- * @file   dbg_logs.c
- * @brief  logs/debug output
+ * @file   jtag_bsdl.c
+ * @brief  bsdl file parser with minimal dependencies
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
-#ifndef jtagcore_logs_printf
-int dbg_logs_printf(JTAGCORE_PRINT_FUNC print_callback,int logs_level, int MSGTYPE,char * chaine, ...);
-#define jtagcore_logs_printf(jc, MSGTYPE, ...) dbg_logs_printf(jc->jtagcore_print_callback,jc->logs_level, MSGTYPE, __VA_ARGS__)
-#endif
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#include "../libjtag_bsdl.h"
+#include "bsdl_strings.h"
+
+#include "../natsort/strnatcmp.h"
+
+#define DEBUG 1
+
+#include "jtag_bsdl.cc"

@@ -22,59 +22,19 @@
  * @brief  bsdl file parser header
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define MAX_ELEMENT_SIZE (64+1)
-
-typedef struct _pin_ctrl
-{
-	char pinname[MAX_ELEMENT_SIZE];
-	int  pintype;
-
-	char physical_pin[MAX_ELEMENT_SIZE];
-
-	int ctrl_bit_number;
-	int out_bit_number;
-	int in_bit_number;
-}pin_ctrl;
-
-typedef struct _jtag_chain
-{
-	int bit_index;
-
-	int bit_cell_type;                // BC_1,BC_2,...
-
-	char pinname[MAX_ELEMENT_SIZE];   // Pin name.
-
-	int bit_type;                     // None , ctrl , in, out.
-
-	int safe_state;                   // Default - Safe state. (0,1,-1)
-
-	int control_bit_index; // Indicate the associated control bit. -1 if no control bit.
-	int control_disable_state;
-	int control_disable_result;
-
-}jtag_chain;
-
-typedef struct _jtag_bsdl
-{
-	unsigned long chip_id;
-
-	char src_filename[512];
-	char entity_name[512];
-
-	int number_of_chainbits;
-	jtag_chain * chain_list;
-
-	int number_of_pins;
-	pin_ctrl * pins_list;
-
-	int number_of_bits_per_instruction;
-	char IDCODE_Instruction[MAX_ELEMENT_SIZE];
-	char EXTEST_Instruction[MAX_ELEMENT_SIZE];
-	char BYPASS_Instruction[MAX_ELEMENT_SIZE];
-	char SAMPLE_Instruction[MAX_ELEMENT_SIZE];
-
-}jtag_bsdl;
+#ifdef _jtag_core_
+#include "jtag_bsdl.h"
+#else
+#include "../libjtag_bsdl.h"
+#endif
 
 jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename);
 void unload_bsdlfile(jtag_core * jc, jtag_bsdl * bsdl);
+
+#ifdef __cplusplus
+}
+#endif

@@ -35,20 +35,17 @@
 
 #include "dbg_logs.h"
 
-int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
+int dbg_logs_printf(JTAGCORE_PRINT_FUNC print_callback,int logs_level, int MSGTYPE,char * chaine, ...)
 {
 	char tmp_msg[1024+1];
 	char tmp_msg2[1024];
-	JTAGCORE_PRINT_FUNC print_callback;
 
-	if( jc->logs_level > MSGTYPE )
+	if( logs_level > MSGTYPE )
 	{
-		if( jc->jtagcore_print_callback )
+		if( print_callback )
 		{
 			va_list marker;
 			va_start( marker, chaine );
-
-			print_callback = jc->jtagcore_print_callback;
 
 			switch(MSGTYPE)
 			{
@@ -82,6 +79,7 @@ int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 	}
     return 0;
 }
+
 
 int jtagcore_set_logs_callback(jtag_core * jc, JTAGCORE_PRINT_FUNC jtag_core_print)
 {

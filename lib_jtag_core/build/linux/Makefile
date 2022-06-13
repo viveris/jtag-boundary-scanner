@@ -113,6 +113,6 @@ clean:
 	rm -rf *.o
 
 mrproper: clean
-	rm -rf $(EXEC)
+	rm -rf $(EXEC) libjtag_core.a
 
 .PHONY: clean mrproper

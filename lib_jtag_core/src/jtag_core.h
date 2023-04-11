@@ -61,7 +61,7 @@ jtag_core * jtagcore_init();
 void jtagcore_deinit(jtag_core * jc);
 
 #ifndef _JTAGCORE_PRINT_FUNC_
-typedef void (*JTAGCORE_PRINT_FUNC)(char * string);
+typedef void (*JTAGCORE_PRINT_FUNC)(const char * string);
 #define _JTAGCORE_PRINT_FUNC_
 #endif
 
@@ -89,7 +89,8 @@ int jtagcore_select_and_open_probe(jtag_core * jc, int probe_id);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // JTAG Chain init functions
 
-// jtagcore_get_number_of_devices : Scan and init the chain (devices detection)
+// jtagcore_scan_and_init_chain : Scan and init the chain (devices detection)
+
 int jtagcore_scan_and_init_chain(jtag_core * jc);
 
 // jtagcore_get_number_of_devices : return "the number of devices into the chain" found by jtagcore_scan_and_init_chain
@@ -147,7 +148,7 @@ int jtagcore_get_pin_id(jtag_core * jc, int device, char * pinname);
 
 int jtagcore_get_pin_state(jtag_core * jc, int device, int pin, int type);
 
-// jtagcore_set_pin_state : Return the current pin state
+// jtagcore_set_pin_state : Set the pin state
 // "device" should be between 0 and "the number of devices into the chain" - 1
 // "pin" should be between 0 and "number of pins of a device" - 1
 // "type" should be set to JTAG_CORE_INPUT or JTAG_CORE_OUTPUT or JTAG_CORE_OE
@@ -295,12 +296,12 @@ char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue);
 // Output message types/levels
 enum MSGTYPE
 {
-	MSG_NONE = 0,
+    MSG_DEBUG = 0,
 	MSG_INFO_0,
 	MSG_INFO_1,
 	MSG_WARNING,
 	MSG_ERROR,
-	MSG_DEBUG
+    MSG_NONE,
 };
 
 #ifndef _jtag_script_printf_func_

@@ -23,6 +23,8 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#ifndef _WIN64
+
 #include <stdio.h>
 #include <string.h>
 
@@ -418,3 +420,5 @@ int drv_LPT_libGetDrv(jtag_core * jc, int sub_drv, unsigned int infotype,void * 
 			&drv_funcs
 			);
 }
+
+#endif

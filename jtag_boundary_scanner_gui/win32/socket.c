@@ -36,9 +36,6 @@
 
 #include "socket.h"
 
-// Need to link with Ws2_32.lib
-#pragma comment (lib, "Ws2_32.lib")
-// #pragma comment (lib, "Mswsock.lib")
 
 #include "jtag_core.h"
 #include "bsdl_parser/bsdl_loader.h"
@@ -63,7 +60,6 @@ int Printf_socket(void * ctx, int MSGTYPE,char * chaine, ...)
 		switch(MSGTYPE)
 		{
 			case MSG_NONE:
-				sprintf(textbuf,"");
 			break;
 			case MSG_INFO_0:
 				sprintf(textbuf,"OK : ");
@@ -159,7 +155,7 @@ int launch_server(int port)
 	// Create a SOCKET for connecting to server
 	ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (ListenSocket == INVALID_SOCKET) {
-		printf("socket failed with error: %ld\n", WSAGetLastError());
+		printf("socket failed with error: %d\n", WSAGetLastError());
 		freeaddrinfo(result);
 		WSACleanup();
 		return 1;

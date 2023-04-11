@@ -1,16 +1,33 @@
 name: C/C++ CI
 
-on: [push]
+on:
+  push:
+    paths:
+      - '**'
+  pull_request:
+    paths:
+      - '**'
 
-defaults:
-  run:
-    working-directory: ./lib_jtag_core/build/linux
+permissions:
+  contents: read
 
 jobs:
-  build:
-
+  build-linux:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: make
-      run: make
+    - uses: actions/checkout@main
+    - name: Build
+      run: cd lib_jtag_core/build/linux && make
+
+  build-windows-x86:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - name: Build
+      run: sudo apt install -q -y mingw-w64 && cd build && make TARGET=mingw32
+    - name: Package
+      run: cd build && ./windowscreatezip.sh _x86
+    - uses: actions/upload-artifact@main
+      with:
+        name: jtag-boundary-scanner-winx86-${{ github.sha }}
+        path: build/JTAGBoundaryScanner_win_x86.zip

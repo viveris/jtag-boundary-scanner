@@ -1,6 +1,5 @@
 mkdir JTAGBoundaryScanner
 mkdir JTAGBoundaryScanner/Windows$1
-cp ../hxcfloppyemulator_soft_release_notes.txt ./JTAGBoundaryScanner/ || exit 1
 cp ../LICENSE ./JTAGBoundaryScanner/ || exit 1
 cp ../README.md ./JTAGBoundaryScanner/ || exit 1
 cp ../Release-notes.txt ./JTAGBoundaryScanner/ || exit 1

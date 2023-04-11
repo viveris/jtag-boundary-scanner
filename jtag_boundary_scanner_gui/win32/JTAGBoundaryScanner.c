@@ -32,7 +32,7 @@
 #include <zmouse.h>
 
 #include "fileselector.h"
-#include "jtagboundaryscanner.h"
+#include "JTAGBoundaryScanner.h"
 
 #include "socket.h"
 

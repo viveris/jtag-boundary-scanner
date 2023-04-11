@@ -32,7 +32,7 @@ int fileselector(HWND hWnd,char rw,char multi,char * files,char * title,char* se
 {
 	OPENFILENAME sfile;
 
-	memset(&sfile,sizeof(sfile),0);
+	memset(&sfile,0,sizeof(sfile));
 	sfile.lStructSize = sizeof(OPENFILENAME);
 	sfile.hwndOwner = hWnd;
 	sfile.hInstance = GetModuleHandle(NULL);

@@ -51,6 +51,8 @@ extern "C" {
 }
 #endif
 
+#if defined(WIN32)
+
 typedef struct _drv_desc
 {
 	char drv_id[128];
@@ -161,15 +163,13 @@ static int ft2232_set_data_bits_low_byte(unsigned char value, unsigned char dire
 	FT_STATUS status;
 	DWORD dw_bytes_written = 0;
 	unsigned char buf[3];
-	unsigned long bytes_written;
 
 	buf[0] = 0x80;		// command "set data bits low byte"
 	buf[1] = value;		// value
 	buf[2] = direction;	// direction
 
 	status = pFT_Write(ftdih, buf, sizeof(buf), &dw_bytes_written);
-	if (status != FT_OK) {
-		bytes_written = dw_bytes_written;
+	if ( (status != FT_OK) || (dw_bytes_written != sizeof(buf) ) ) {
 		return -1;
 	}
 
@@ -181,15 +181,13 @@ static int ft2232_set_data_bits_high_byte(unsigned char value, unsigned char dir
 	FT_STATUS status;
 	DWORD dw_bytes_written = 0;
 	unsigned char buf[3];
-	unsigned long bytes_written;
 
 	buf[0] = 0x82;		// command "set data bits high byte"
 	buf[1] = value;		// value
 	buf[2] = direction;	// direction
 
 	status = pFT_Write(ftdih, buf, sizeof(buf), &dw_bytes_written);
-	if (status != FT_OK) {
-		bytes_written = dw_bytes_written;
+	if ( (status != FT_OK) || ( dw_bytes_written != sizeof(buf) ) ) {
 		return -1;
 	}
 
@@ -201,13 +199,11 @@ static int ft2232h_enable_rtck(int enable)
 	FT_STATUS status;
 	DWORD dw_bytes_written = 0;
 	unsigned char buf;
-	unsigned long bytes_written;
 
 	buf = enable ? 0x96 : 0x97;
 
 	status = pFT_Write(ftdih, &buf, sizeof(buf), &dw_bytes_written);
-	if (status != FT_OK) {
-		bytes_written = dw_bytes_written;
+	if ( (status != FT_OK) || ( dw_bytes_written != sizeof(buf) ) ) {
 		return -1;
 	}
 
@@ -297,12 +293,10 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	char SerialNumber[16];
 	char Description[64];
 	char tmp_str[64];
-	DWORD openex_flags = 0;
-	char *openex_string = NULL;
 	int numDevs;
 	int baseclock, divisor, tckfreq;
 	DWORD devIndex;
-	int nbRead,nbtosend;
+	DWORD nbRead,nbtosend;
 	int i;
 
 	#ifdef WIN32
@@ -646,8 +640,8 @@ int drv_FTDI_DeInit(jtag_core * jc)
 int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char * str_in, int size)
 {
 	int i,j,l,payloadsize;
-	unsigned char cur_tms_state;
-	int nbRead, nbtosend,rounded_size;
+	int rounded_size;
+	DWORD nbRead,nbtosend;
 	FT_STATUS status;
 	int read_ptr;
 
@@ -658,7 +652,6 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 	if (size)
 	{
 		i = 0;
-		cur_tms_state = 0;
 
 		nbtosend = 0;
 
@@ -683,7 +676,6 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 			if (str_out[i] & JTAG_STR_TMS)
 			{
 				ftdi_out_buf[nbtosend] |= 0x3F;
-				cur_tms_state = 1;
 			}
 
 			nbtosend++;
@@ -855,9 +847,11 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 int drv_FTDI_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 {
 	int i;
-	int nbtosend;
+	DWORD nbtosend;
 	FT_STATUS status;
 	unsigned char databyte;
+
+	status = FT_OK;
 
 	memset(ftdi_out_buf, 0, sizeof(ftdi_out_buf));
 	memset(ftdi_in_buf, 0, sizeof(ftdi_in_buf));
@@ -913,7 +907,14 @@ int drv_FTDI_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 
 	}
 
-	return 0;
+	if (status != FT_OK)
+	{
+		return -1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 int drv_FTDI_libGetDrv(jtag_core * jc,int sub_drv,unsigned int infotype,void * returnvalue)
@@ -938,3 +939,5 @@ int drv_FTDI_libGetDrv(jtag_core * jc,int sub_drv,unsigned int infotype,void * r
 			&drv_funcs
 			);
 }
+
+#endif

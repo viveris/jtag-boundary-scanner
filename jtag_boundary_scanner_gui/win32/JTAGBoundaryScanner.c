@@ -28,7 +28,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <io.h>
-#include <Commctrl.h>
+#include <commctrl.h>
 #include <zmouse.h>
 
 #include "fileselector.h"
@@ -328,8 +328,8 @@ static char * get_id_str(int numberofdevice)
 {
 	// compare passed device ID to the one returned from the ID command
 	int i;
-	unsigned long idcode = 0;
-	unsigned char * stringbuffer;
+	unsigned int idcode = 0;
+	char * stringbuffer;
 	char tempstr[DEFAULT_BUFLEN];
 
 	stringbuffer = 0;
@@ -559,8 +559,7 @@ int update_jtag_ids_menu(HWND hWnd)
 {
 	int i;
 	int number_of_devices, dev_nb;
-	int loaded_bsdl;
-	char idstring[DEFAULT_BUFLEN];
+	char idstring[DEFAULT_BUFLEN*2];
 	char szExecPath[MAX_PATH + 1];
 	char filename[MAX_PATH + 1];
 	char file[MAX_PATH + 1];
@@ -568,8 +567,6 @@ int update_jtag_ids_menu(HWND hWnd)
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind;
 	unsigned long chip_id;
-
-	loaded_bsdl = 0;
 
 	// BSDL Auto load : check which bsdl file match with the device
 	// And load it.
@@ -624,13 +621,12 @@ int update_jtag_ids_menu(HWND hWnd)
 		FindClose(hFind);
 	}
 
-	loaded_bsdl = 0;
 	// Count the loaded bsdl
 	for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
 	{
 		entityname[0] = 0;
 		jtagcore_get_dev_name(jc, dev_nb, entityname, file);
-		sprintf(idstring, "Device %d: 0x%.8X - %s (%s)", dev_nb, jtagcore_get_dev_id(jc, dev_nb),entityname,file);
+		sprintf(idstring, "Device %d: 0x%.8X - %s (%s)", dev_nb, (unsigned int)jtagcore_get_dev_id(jc, dev_nb),entityname,file);
 
 		AppendMenu(GetSubMenu(GetMenu(hWnd), 2), MF_STRING | MF_POPUP, BASE_DEV_ID + dev_nb, idstring);
 	}
@@ -654,7 +650,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent,i,j,c,cnt;
 	PAINTSTRUCT ps;
 	HPEN hPen;
-	unsigned long current_io_id;
 	HDC hdc;
 	char szExecPath[MAX_PATH + 1];
 	WIN32_FIND_DATA FindFileData;
@@ -662,7 +657,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int bsdl_file_found;
 	char filename[MAX_PATH + 1];
 	char tempstring[DEFAULT_BUFLEN];
-	char idstring[DEFAULT_BUFLEN];
+	char idstring[DEFAULT_BUFLEN*2];
 	char *tempstring2;
 	int ret,state, tmp_type;
 	unsigned long chip_id;
@@ -671,7 +666,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	SCROLLINFO si;
 	static int yPos;        // current vertical scrolling position.
-	int fwKeys, zDelta;
+	int zDelta;
+	//int fwKeys;
 	int nb_of_drivers,nb_of_probes;
 	script_ctx * ctx;
 
@@ -704,7 +700,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				case BN_CLICKED: //-> une check box a été modifiée
 					if ((wmId >= BASE_CHECKBOX_ID) && (wmId < (jtagcore_get_number_of_pins(jc, last_selected_dev_index) * 4) + BASE_CHECKBOX_ID))
 					{
-						current_io_id = (wmId - BASE_CHECKBOX_ID) >> 0x2;
 						////////////////////////////////////////////////////////////////////////////////////////
 						//output enable
 						////////////////////////////////////////////////////////////////////////////////////////
@@ -1028,7 +1023,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 							if (ret > 0)
 							{
 								tempstring2 = get_id_str(ret);
-								if (tempstring)
+								if (tempstring2)
 								{
 									MessageBox(hWnd, tempstring2, "Device ID", MB_OK);
 
@@ -1065,7 +1060,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_MOUSEWHEEL :
 			// Get mouse well event.
 
-			fwKeys = (LOWORD(wParam));
+			//fwKeys = (LOWORD(wParam));
 			zDelta = ((short)HIWORD(wParam));
 
 			// Get all the vertial scroll bar information
@@ -1423,11 +1418,12 @@ LRESULT CALLBACK DialogProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 
 LRESULT CALLBACK DialogProc_I2CTOOL(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent,number_of_pins,pin_id;
+	int wmId, number_of_pins,pin_id;
+	//int wmEvent;
 	HWND combo1,combo2;
-	unsigned char tmp_buffer[DEFAULT_BUFLEN];
+	char tmp_buffer[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer2[DEFAULT_BUFLEN];
-	unsigned char tmp_buffer3[16];
+	char tmp_buffer3[16];
 	int ItemIndex,i2cadr,size;
 	int i,ret;
 
@@ -1459,7 +1455,7 @@ LRESULT CALLBACK DialogProc_I2CTOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 		case WM_COMMAND:
 
 			wmId    = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
+			//wmEvent = HIWORD(wParam);
 
 			switch (wmId)
 			{
@@ -1601,19 +1597,19 @@ LRESULT CALLBACK DialogProc_I2CTOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 
 			break;
 	}
-    return FALSE;
+	return FALSE;
 }
-
 
 LRESULT CALLBACK DialogProc_SPITOOL(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent,number_of_pins,pin_id;
+	int wmId, number_of_pins,pin_id;
+	//int wmEvent;
 	HWND combo1,combo2,combo3,combo4;
 	LRESULT check;
-	unsigned char tmp_buffer[DEFAULT_BUFLEN];
+	char tmp_buffer[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer2[DEFAULT_BUFLEN];
 	unsigned char tmp_buffer4[DEFAULT_BUFLEN];
-	unsigned char tmp_buffer3[16];
+	char tmp_buffer3[16];
 	int ItemIndex,size;
 	int i,ret;
 
@@ -1651,7 +1647,7 @@ LRESULT CALLBACK DialogProc_SPITOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 		case WM_COMMAND:
 
 			wmId    = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
+			//wmEvent = HIWORD(wParam);
 
 			switch (wmId)
 			{
@@ -1767,10 +1763,11 @@ LRESULT CALLBACK DialogProc_SPITOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 
 LRESULT CALLBACK DialogProc_MDIOTOOL(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent, number_of_pins, pin_id;
+	int wmId, number_of_pins, pin_id;
+	//int wmEvent;
 	HWND combo1, combo2;
-	unsigned char tmp_buffer[DEFAULT_BUFLEN];
-	unsigned char tmp_buffer3[16];
+	char tmp_buffer[DEFAULT_BUFLEN];
+	char tmp_buffer3[16];
 	int ItemIndex, devadr, regadr, datatowrite, dataread;
 	int ret;
 
@@ -1802,7 +1799,7 @@ LRESULT CALLBACK DialogProc_MDIOTOOL(HWND hDlg, UINT message, WPARAM wParam, LPA
 	case WM_COMMAND:
 
 		wmId = LOWORD(wParam);
-		wmEvent = HIWORD(wParam);
+		//wmEvent = HIWORD(wParam);
 
 		switch (wmId)
 		{
@@ -2017,10 +2014,11 @@ int set_mem_pins(char * filename)
 
 LRESULT CALLBACK DialogProc_MEMTOOL(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
-	unsigned char tmp_buffer[DEFAULT_BUFLEN];
-	unsigned long tmp_buffer2[DEFAULT_BUFLEN];
-	unsigned char tmp_buffer3[16];
+	int wmId;
+	//int wmEvent;
+	char tmp_buffer[DEFAULT_BUFLEN];
+	unsigned int tmp_buffer2[DEFAULT_BUFLEN];
+	char tmp_buffer3[16];
 	char filename[DEFAULT_BUFLEN];
 	int memadr,size;
 	int i;
@@ -2034,7 +2032,7 @@ LRESULT CALLBACK DialogProc_MEMTOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 		case WM_COMMAND:
 
 			wmId    = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
+			//wmEvent = HIWORD(wParam);
 
 			switch (wmId)
 			{
@@ -2115,7 +2113,8 @@ LRESULT CALLBACK DialogProc_MEMTOOL(HWND hDlg, UINT message, WPARAM wParam, LPAR
 
 LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	int wmId, wmEvent;
+	int wmId;
+	//int wmEvent;
 
 	switch (message)
 	{
@@ -2131,7 +2130,7 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		case WM_COMMAND:
 
 			wmId    = LOWORD(wParam);
-			wmEvent = HIWORD(wParam);
+			//wmEvent = HIWORD(wParam);
 
 			switch (wmId)
 			{
@@ -2151,5 +2150,5 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 
 	}
-    return FALSE;
+	return FALSE;
 }

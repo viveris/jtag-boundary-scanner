@@ -47,7 +47,6 @@ typedef struct graph_desc_
 
 } graph_desc;
 
-char * get_id_str(int numberofdevice);
 void openconsole();
 
 #endif // _JTAGBOUNDARYSCAN_H_

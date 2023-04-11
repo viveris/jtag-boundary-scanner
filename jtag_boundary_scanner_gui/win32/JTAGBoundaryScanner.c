@@ -111,7 +111,7 @@ void AppendText(HWND hEditWnd, LPCTSTR Text)
     SendMessage(hEditWnd, EM_REPLACESEL, 0, (LPARAM)Text);
 }
 
-void logs_callback(char * string)
+void logs_callback(const char * string)
 {
 	if(hDlg_logs)
 		AppendText(GetDlgItem(hDlg_logs, IDC_EDIT1), string);
@@ -164,7 +164,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		hDlg_logs = 0;
 
 		jtagcore_set_logs_callback(jc,logs_callback);
-		jtagcore_set_logs_level(jc,4);
+		jtagcore_set_logs_level(jc,1);
 
 		// Initialize global strings
 		LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -2133,7 +2133,7 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT1),EM_SETLIMITTEXT,100000000,0);
 			SendDlgItemMessage(hDlg, IDC_SLIDER1, TBM_SETRANGE, 1, MAKELONG(0, 5));
 			SendDlgItemMessage(hDlg, IDC_SLIDER1, TBM_SETPOS, 1, 4);
-			jtagcore_set_logs_level(jc,4);
+			jtagcore_set_logs_level(jc,1);
 			return TRUE;
 			break;
 
@@ -2156,7 +2156,7 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 
 		case WM_HSCROLL:
-			jtagcore_set_logs_level(jc,SendMessage(GetDlgItem(hDlg, IDC_SLIDER1), TBM_GETPOS, 0, 0));
+			jtagcore_set_logs_level(jc,5-SendMessage(GetDlgItem(hDlg, IDC_SLIDER1), TBM_GETPOS, 0, 0));
 			break;
 
 	}

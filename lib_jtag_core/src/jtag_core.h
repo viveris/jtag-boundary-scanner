@@ -296,12 +296,12 @@ char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue);
 // Output message types/levels
 enum MSGTYPE
 {
-    MSG_DEBUG = 0,
+	MSG_DEBUG = 0,
 	MSG_INFO_0,
 	MSG_INFO_1,
 	MSG_WARNING,
 	MSG_ERROR,
-    MSG_NONE,
+	MSG_NONE
 };
 
 #ifndef _jtag_script_printf_func_

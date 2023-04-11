@@ -31,3 +31,16 @@ jobs:
       with:
         name: jtag-boundary-scanner-winx86-${{ github.sha }}
         path: build/JTAGBoundaryScanner_win_x86.zip
+
+  build-windows-x64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@main
+    - name: Build
+      run: sudo apt install -q -y mingw-w64 && cd build && make TARGET=mingw64
+    - name: Package
+      run: cd build && ./windowscreatezip.sh _x64
+    - uses: actions/upload-artifact@main
+      with:
+        name: jtag-boundary-scanner-winx64-${{ github.sha }}
+        path: build/JTAGBoundaryScanner_win_x64.zip

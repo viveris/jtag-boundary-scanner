@@ -51,6 +51,12 @@ extern "C" {
 }
 #endif
 
+#if defined(_WIN64)
+#define MACH_WORD long long
+#else
+#define MACH_WORD int
+#endif
+
 #if defined(WIN32)
 
 typedef struct _drv_desc
@@ -236,7 +242,7 @@ int drv_FTDI_Detect(jtag_core * jc)
 		i = 0;
 		while( i<numDevs && i<MAX_PROBES_FTDI )
 		{
-			status = pFT_ListDevices((PVOID)i, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_DESCRIPTION);
+			status = pFT_ListDevices((LPVOID)(MACH_WORD)i, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_DESCRIPTION);
 			if (status != FT_OK)
 			{
 				jtagcore_logs_printf(jc,MSG_ERROR,"pFT_ListDevices : Error %x !\r\n",status);
@@ -247,7 +253,7 @@ int drv_FTDI_Detect(jtag_core * jc)
 			strcpy(subdrv_list[i].drv_desc,SerialNumber);
 			strcat(subdrv_list[i].drv_desc," ");
 
-			status = pFT_ListDevices((PVOID)i, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_SERIAL_NUMBER);
+			status = pFT_ListDevices((LPVOID)(MACH_WORD)i, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_SERIAL_NUMBER);
 			if (status != FT_OK)
 			{
 				jtagcore_logs_printf(jc,MSG_ERROR,"pFT_ListDevices : Error %x !\r\n",status);
@@ -392,7 +398,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	}
 
 	devIndex = sub_drv;
-	status = pFT_ListDevices((PVOID)devIndex, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_SERIAL_NUMBER);
+	status = pFT_ListDevices((LPVOID)(MACH_WORD)devIndex, SerialNumber, FT_LIST_BY_INDEX | FT_OPEN_BY_SERIAL_NUMBER);
 	if (status != FT_OK)
 	{
 		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_ListDevices : Error %x !\r\n",status);

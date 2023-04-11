@@ -63,7 +63,7 @@ int genos_waitevent( jtag_core* jtag_ctx, int id, int timeout );
 void genos_pause( int ms );
 int genos_createthread( jtag_core* jtag_ctx, void* hwcontext, THREADFUNCTION thread, int priority );
 
-unsigned long genos_createcriticalsection( jtag_core* jtag_ctx, unsigned char id );
+uintptr_t genos_createcriticalsection( jtag_core* jtag_ctx, unsigned char id );
 void genos_entercriticalsection( jtag_core* jtag_ctx, unsigned char id );
 void genos_leavecriticalsection( jtag_core* jtag_ctx, unsigned char id );
 void genos_destroycriticalsection( jtag_core* jtag_ctx, unsigned char id );

@@ -186,12 +186,12 @@ int genos_waitevent(jtag_core* jtag_ctx,int id,int timeout)
 #endif
 }
 
-unsigned long genos_createcriticalsection(jtag_core* jtag_ctx,unsigned char id)
+uintptr_t genos_createcriticalsection(jtag_core* jtag_ctx,unsigned char id)
 {
 #ifdef WIN32
 
 	InitializeCriticalSection(&criticalsectiontab[id]);
-	return (unsigned long)&criticalsectiontab[id];
+	return (uintptr_t)&criticalsectiontab[id];
 
 #else
 	//create mutex attribute variable
@@ -211,7 +211,7 @@ unsigned long genos_createcriticalsection(jtag_core* jtag_ctx,unsigned char id)
 	// Mutex attribute can be destroy after initializing the mutex variable
 	pthread_mutexattr_destroy(&mAttr);
 
-	return (unsigned long)&criticalsectiontab[id];
+	return (uintptr_t)&criticalsectiontab[id];
 #endif
 }
 

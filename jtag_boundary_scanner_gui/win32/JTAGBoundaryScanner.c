@@ -45,6 +45,16 @@
 #define BASE_PROBE_ID    0x1800
 #define BASE_COL_NAME    0x2000
 
+#if (_MSC_VER >= 1200 && _MSC_VER <= 1900)
+#define intptr_t long
+#endif
+
+#if defined(_WIN64)
+#define MACH_WORD long long
+#else
+#define MACH_WORD int
+#endif
+
 // Global Variables:
 HINSTANCE hInst;                                       // current instance
 TCHAR szTitle[MAX_LOADSTRING];                         // The title bar text
@@ -283,13 +293,13 @@ void openconsole()
 	AllocConsole();
 
 	handle_out = GetStdHandle(STD_OUTPUT_HANDLE);
-	hCrt = _open_osfhandle((long)handle_out, _O_TEXT);
+	hCrt = _open_osfhandle((intptr_t)handle_out, _O_TEXT);
 	hf_out = _fdopen(hCrt, "w");
 	setvbuf(hf_out, NULL, _IONBF, 1);
 	*stdout = *hf_out;
 
 	handle_in = GetStdHandle(STD_INPUT_HANDLE);
-	hCrt = _open_osfhandle((long)handle_in, _O_TEXT);
+	hCrt = _open_osfhandle((intptr_t)handle_in, _O_TEXT);
 	hf_in = _fdopen(hCrt, "r");
 	setvbuf(hf_in, NULL, _IONBF, 128);
 	*stdin = *hf_in;
@@ -403,22 +413,22 @@ int build_checkbox_map(HWND hWnd,int device)
 		{
 			objlist[nb_objs++] = CreateWindowEx(
 						0, (LPCSTR)"STATIC", (LPCSTR)"O", WS_VISIBLE | WS_CHILD,
-						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (20 * 0), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_COL_NAME + 0 + (i * 4)), NULL, NULL
+						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (20 * 0), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_COL_NAME + 0 + (i * 4)), NULL, NULL
 					);
 
 			objlist[nb_objs++] = CreateWindowEx(
 						0, (LPCSTR)"STATIC", (LPCSTR)"OE", WS_VISIBLE | WS_CHILD,
-						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (15 * 1), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_COL_NAME + 1 + (i * 4)), NULL, NULL
+						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (15 * 1), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_COL_NAME + 1 + (i * 4)), NULL, NULL
 					);
 
 			objlist[nb_objs++] = CreateWindowEx(
 						0, (LPCSTR)"STATIC", (LPCSTR)"I", WS_VISIBLE | WS_CHILD,
-						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (22 * 2), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_COL_NAME + 2 + (i * 4)), NULL, NULL
+						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (22 * 2), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_COL_NAME + 2 + (i * 4)), NULL, NULL
 					);
 
 			objlist[nb_objs++] = CreateWindowEx(
 						0, (LPCSTR)"STATIC", (LPCSTR)"T", WS_VISIBLE | WS_CHILD,
-						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (21 * 3), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_COL_NAME + 3 + (i * 4)), NULL, NULL
+						0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (21 * 3), 0, NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_COL_NAME + 3 + (i * 4)), NULL, NULL
 					);
 		}
 
@@ -443,14 +453,14 @@ int build_checkbox_map(HWND hWnd,int device)
 				{
 					objlist[nb_objs++] = CreateWindowEx(
 							0, (LPCSTR)"BUTTON", 0, BS_AUTOCHECKBOX | WS_VISIBLE | WS_CHILD,
-							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 0), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_CHECKBOX_ID + ((pin_id << 2) + 0)), NULL, NULL
+							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 0), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_CHECKBOX_ID + ((pin_id << 2) + 0)), NULL, NULL
 						);
 
 					ckeckboxnb++;
 
 					objlist[nb_objs++] = CreateWindowEx(
 							0, (LPCSTR)"BUTTON", 0, BS_AUTOCHECKBOX | WS_VISIBLE | WS_CHILD,
-							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 3), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_CHECKBOX_ID + ((pin_id << 2) + 3)), NULL, NULL);
+							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 3), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_CHECKBOX_ID + ((pin_id << 2) + 3)), NULL, NULL);
 
 					ckeckboxnb++;
 				}
@@ -460,7 +470,7 @@ int build_checkbox_map(HWND hWnd,int device)
 				{
 					objlist[nb_objs++] = CreateWindowEx(
 							0, (LPCSTR)"BUTTON", 0, BS_AUTOCHECKBOX | WS_VISIBLE | WS_CHILD,
-							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 1), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_CHECKBOX_ID + ((pin_id << 2) + 1)), NULL, NULL
+							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 1), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_CHECKBOX_ID + ((pin_id << 2) + 1)), NULL, NULL
 						);
 
 					ckeckboxnb++;
@@ -471,7 +481,7 @@ int build_checkbox_map(HWND hWnd,int device)
 				{
 					objlist[nb_objs++] = CreateWindowEx(
 							0, (LPCSTR)"BUTTON", 0, BS_AUTOCHECKBOX | WS_VISIBLE | WS_CHILD,
-							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 2), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_CHECKBOX_ID + ((pin_id << 2) + 2)), NULL, NULL
+							0 + (i*graph_pin_list.NbPixPerCol) + graph_pin_list.NbPixPerPinName + (NB_PIX_PER_CHECKBOX_H * 2), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), NB_PIX_PER_CHECKBOX_H, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_CHECKBOX_ID + ((pin_id << 2) + 2)), NULL, NULL
 						);
 
 					ckeckboxnb++;
@@ -482,7 +492,7 @@ int build_checkbox_map(HWND hWnd,int device)
 				{
 					objlist[nb_objs++] = CreateWindowEx(
 							0, (LPCSTR)"STATIC", tmp_name, WS_VISIBLE | WS_CHILD,
-							0 + (i*graph_pin_list.NbPixPerCol), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), graph_pin_list.NbPixPerPinName, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(BASE_PINNAME_ID + ((pin_id << 2) + 0)), NULL, NULL
+							0 + (i*graph_pin_list.NbPixPerCol), NB_PIX_FIRST_LINE_OFFS + (j*NB_PIX_PER_CHECKBOX_V), graph_pin_list.NbPixPerPinName, NB_PIX_PER_CHECKBOX_V, hWnd, (HMENU)(MACH_WORD)(BASE_PINNAME_ID + ((pin_id << 2) + 0)), NULL, NULL
 						);
 
 					i++;

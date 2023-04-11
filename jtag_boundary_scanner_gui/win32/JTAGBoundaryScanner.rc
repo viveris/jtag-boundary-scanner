@@ -31,8 +31,8 @@ LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_JTAGTEST            ICON    DISCARDABLE     ".\\images\\JTAGBoundaryScanner.ico"
-IDI_SMALL               ICON    DISCARDABLE     ".\\images\\JTAGBoundaryScanner_small.ico"
+IDI_JTAGTEST            ICON    DISCARDABLE     "JTAGBoundaryScanner.ico"
+IDI_SMALL               ICON    DISCARDABLE     "JTAGBoundaryScanner_small.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -109,9 +109,9 @@ CAPTION "About"
 FONT 8, "System"
 BEGIN
     ICON            IDI_JTAGTEST,IDC_MYICON,7,5,20,20
-    LTEXT           "JTAG Boundary Scanner Version 2.52",IDC_STATIC,39,6,130,
+    LTEXT           "JTAG Boundary Scanner Version 2.60",IDC_STATIC,39,6,130,
                     8,SS_NOPREFIX
-    LTEXT           "Copyright (C) Viveris Technologies 2008-2021",
+    LTEXT           "Copyright (C) Viveris Technologies 2008-2023",
                     IDC_STATIC,39,16,155,10
     DEFPUSHBUTTON   "OK",IDOK,190,90,41,11,WS_GROUP
     CONTROL         137,IDC_VIVERISLOGO,"Static",SS_BITMAP | 
@@ -371,8 +371,8 @@ END
 // Bitmap
 //
 
-IDB_BITMAP1             BITMAP  DISCARDABLE     ".\\images\\viveris.bmp"
-IDB_IOBLOCK             BITMAP  DISCARDABLE     "images\\ioblock.bmp"
+IDB_BITMAP1             BITMAP  DISCARDABLE     "viveris.bmp"
+IDB_IOBLOCK             BITMAP  DISCARDABLE     "ioblock.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //

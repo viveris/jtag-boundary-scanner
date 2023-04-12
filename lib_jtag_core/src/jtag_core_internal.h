@@ -111,3 +111,43 @@ typedef struct _jtag_core
 #define JTAG_STR_DINREQ  0x20
 
 int jtagcore_loaddriver(jtag_core * jc,int id, char * parameters);
+
+// jtag device emulator
+
+#define _jtag_emu_
+
+typedef struct _jtag_emu
+{
+	jtag_core * jc;
+
+	void * bsdl_file;
+
+	unsigned char * out_boundary_scan;
+	unsigned char * in_boundary_scan;
+	unsigned char * data_register;
+	unsigned char * inst_register;
+
+	int jtag_state_machine;
+}jtag_emu;
+
+enum
+{
+	JTAG_EMU_STATE_RESET = 0,
+	JTAG_EMU_STATE_IDLE,
+
+	JTAG_EMU_STATE_SEL_DR_SCAN,
+	JTAG_EMU_STATE_CAPTURE_DR,
+	JTAG_EMU_STATE_SHIFT_DR,
+	JTAG_EMU_STATE_EXIT1_DR,
+	JTAG_EMU_STATE_PAUSE_DR,
+	JTAG_EMU_STATE_EXIT2_DR,
+	JTAG_EMU_STATE_UPDATE_DR,
+
+	JTAG_EMU_STATE_SEL_IR_SCAN,
+	JTAG_EMU_STATE_CAPTURE_IR,
+	JTAG_EMU_STATE_SHIFT_IR,
+	JTAG_EMU_STATE_EXIT1_IR,
+	JTAG_EMU_STATE_PAUSE_IR,
+	JTAG_EMU_STATE_EXIT2_IR,
+	JTAG_EMU_STATE_UPDATE_IR
+};

@@ -33,6 +33,11 @@ typedef void script_ctx;
 #define _script_ctx_
 #endif
 
+#ifndef _jtag_emu_
+typedef void jtag_emu;
+#define _jtag_emu_
+#endif
+
 #define LIB_JTAG_CORE_VERSION "0.9.5.2"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -319,3 +324,18 @@ int  jtagcore_execScriptRam( script_ctx * ctx, unsigned char * script_buffer, in
 script_ctx * jtagcore_deinitScript( script_ctx * ctx );
 
 int jtagcore_savePinsStateScript( jtag_core * jc, int device, char * script_path );
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// JTAG Emulation layer (WIP)
+
+jtag_emu * jtagemu_init(jtag_core * jc);
+
+int jtagemu_reset(jtag_emu * je);
+
+int jtagemu_tick(jtag_emu * je, unsigned char io_state);
+
+int jtagemu_get_regbit_state(jtag_emu * je, int regid, int bit);
+
+int jtagemu_loadbsdlfile(jtag_emu * je, char * path, int device);
+
+void jtagemu_deinit(jtag_emu * je);

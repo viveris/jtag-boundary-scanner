@@ -76,6 +76,122 @@ int jtagemu_tick(jtag_emu * je, unsigned char io_state)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
+void jtagemu_update_state(jtag_emu * je, unsigned char ios_state)
+{
+	switch(je->jtag_state_machine)
+	{
+		case JTAG_EMU_STATE_RESET:
+			if( !(ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_IDLE;
+		break;
+
+		case JTAG_EMU_STATE_IDLE:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_SEL_DR_SCAN;
+		break;
+
+		// ---------------------------------------------------
+
+		case JTAG_EMU_STATE_SEL_DR_SCAN:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_SEL_IR_SCAN;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_CAPTURE_DR;
+		break;
+
+		case JTAG_EMU_STATE_CAPTURE_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT1_DR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_SHIFT_DR;
+		break;
+
+		case JTAG_EMU_STATE_SHIFT_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT1_DR;
+		break;
+
+		case JTAG_EMU_STATE_EXIT1_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_UPDATE_DR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_PAUSE_DR;
+		break;
+
+		case JTAG_EMU_STATE_PAUSE_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT2_DR;
+		break;
+
+		case JTAG_EMU_STATE_EXIT2_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_UPDATE_DR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_SHIFT_DR;
+		break;
+
+		case JTAG_EMU_STATE_UPDATE_DR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_SEL_DR_SCAN;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_IDLE;
+		break;
+
+		// ---------------------------------------------------
+
+		case JTAG_EMU_STATE_SEL_IR_SCAN:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_RESET;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_CAPTURE_IR;
+		break;
+
+		case JTAG_EMU_STATE_CAPTURE_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT1_IR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_SHIFT_IR;
+		break;
+
+		case JTAG_EMU_STATE_SHIFT_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT1_IR;
+		break;
+
+		case JTAG_EMU_STATE_EXIT1_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_UPDATE_IR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_PAUSE_IR;
+		break;
+
+		case JTAG_EMU_STATE_PAUSE_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_EXIT2_IR;
+		break;
+
+		case JTAG_EMU_STATE_EXIT2_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_UPDATE_IR;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_SHIFT_IR;
+		break;
+
+		case JTAG_EMU_STATE_UPDATE_IR:
+			if( (ios_state & JTAG_STR_TMS) )
+				je->jtag_state_machine = JTAG_EMU_STATE_SEL_DR_SCAN;
+			else
+				je->jtag_state_machine = JTAG_EMU_STATE_IDLE;
+		break;
+
+		// ---------------------------------------------------
+
+		default:
+			je->jtag_state_machine = JTAG_EMU_STATE_RESET;
+		break;
+	}
+}
+
 int jtagemu_get_regbit_state(jtag_emu * je, int regid, int bit)
 {
 	if (je)
@@ -86,7 +202,7 @@ int jtagemu_get_regbit_state(jtag_emu * je, int regid, int bit)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-int jtagemu_loadbsdlfile(jtag_emu * je, char * path, int device)
+int jtagemu_loadbsdlfile(jtag_emu * je, char * path)
 {
 	int i;
 	jtag_bsdl * bsdl_file;

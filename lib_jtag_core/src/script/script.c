@@ -1535,7 +1535,7 @@ static int cmd_print_devs_list( script_ctx * ctx, char * line)
 		ptr = get_id_str(ctx,i);
 		if(ptr)
 		{
-			ctx->script_printf( ctx, MSG_INFO_0, "%s\n",  );
+			ctx->script_printf( ctx, MSG_INFO_0, "%s\n", ptr );
 			free(ptr);
 		}
 	}

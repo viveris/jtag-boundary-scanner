@@ -288,7 +288,7 @@ int jtagcore_loadbsdlfile(jtag_core * jc, char * path, int device)
 	jtag_bsdl * bsdl_file;
 	int i;
 
-	if ( (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE) || device == -1)
+	if ( (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0) || device == -1)
 	{
 		bsdl_file = load_bsdlfile(jc,path);
 		if (bsdl_file)
@@ -377,7 +377,7 @@ int jtagcore_get_dev_name(jtag_core * jc, int device, char * devname, char * bsd
 {
 	jtag_bsdl * bsdl_file;
 
-	if ( device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE )
+	if ( device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 )
 	{
 		if (jc->devices_list[device].bsdl)
 		{
@@ -416,7 +416,7 @@ int jtagcore_get_number_of_pins(jtag_core * jc, int device)
 {
 	jtag_bsdl * bsdl_file;
 
-	if ( device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE )
+	if ( device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 )
 	{
 		if (jc->devices_list[device].bsdl)
 		{
@@ -434,38 +434,43 @@ int jtagcore_get_pin_properties(jtag_core * jc, int device,int pin,char * pinnam
 	jtag_bsdl * bsdl_file;
 	int type_code;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device >= jc->nb_of_devices_in_chain ||
+		device >= MAX_NB_JTAG_DEVICE ||
+		device < 0 ||
+		pin < 0 )
 	{
-		if (jc->devices_list[device].bsdl)
+		return JTAG_CORE_BAD_PARAMETER;
+	}
+
+	if (jc->devices_list[device].bsdl)
+	{
+		bsdl_file = jc->devices_list[device].bsdl;
+
+		if (pin < bsdl_file->number_of_pins  )
 		{
-			bsdl_file = jc->devices_list[device].bsdl;
+			type_code = 0x00;
 
-			if (pin < bsdl_file->number_of_pins  )
+			if (pinname)
 			{
-				type_code = 0x00;
-
-				if (pinname)
-				{
-					strncpy(pinname, bsdl_file->pins_list[pin].pinname, maxsize - 1);
-					pinname[maxsize - 1] = '\0';
-				}
-
-				if (type)
-				{
-					if (bsdl_file->pins_list[pin].ctrl_bit_number != -1)
-						type_code |= JTAG_CORE_PIN_IS_TRISTATES;
-
-					if (bsdl_file->pins_list[pin].out_bit_number != -1)
-						type_code |= JTAG_CORE_PIN_IS_OUTPUT;
-
-					if (bsdl_file->pins_list[pin].in_bit_number != -1)
-						type_code |= JTAG_CORE_PIN_IS_INPUT;
-
-					*type = type_code;
-				}
-
-				return JTAG_CORE_NO_ERROR;
+				strncpy(pinname, bsdl_file->pins_list[pin].pinname, maxsize - 1);
+				pinname[maxsize - 1] = '\0';
 			}
+
+			if (type)
+			{
+				if (bsdl_file->pins_list[pin].ctrl_bit_number != -1)
+					type_code |= JTAG_CORE_PIN_IS_TRISTATES;
+
+				if (bsdl_file->pins_list[pin].out_bit_number != -1)
+					type_code |= JTAG_CORE_PIN_IS_OUTPUT;
+
+				if (bsdl_file->pins_list[pin].in_bit_number != -1)
+					type_code |= JTAG_CORE_PIN_IS_INPUT;
+
+				*type = type_code;
+			}
+
+			return JTAG_CORE_NO_ERROR;
 		}
 	}
 
@@ -479,7 +484,7 @@ int jtagcore_get_pin_state(jtag_core * jc, int device, int pin, int type)
 	int disable_state;
 
 	ret = JTAG_CORE_BAD_PARAMETER;
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && pin >= 0 )
 	{
 		if (jc->devices_list[device].bsdl)
 		{
@@ -581,7 +586,8 @@ int jtagcore_set_pin_state(jtag_core * jc, int device, int pin, int type,int sta
 	int disable_state;
 
 	ret = JTAG_CORE_BAD_PARAMETER;
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+
+	if ( device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && pin >= 0 )
 	{
 		if (jc->devices_list[device].bsdl)
 		{
@@ -644,7 +650,7 @@ int jtagcore_get_pin_id(jtag_core * jc, int device, char * pinname)
 	jtag_bsdl * bsdl_file;
 	int pin;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && pinname)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && pinname)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
@@ -675,7 +681,7 @@ int jtagcore_set_scan_mode(jtag_core * jc, int device, int scan_mode)
 
 	ret = JTAG_CORE_BAD_PARAMETER;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		switch (scan_mode)
 		{
@@ -1018,7 +1024,7 @@ int jtagcore_get_number_of_probes(jtag_core * jc, int probe_driver_id)
 	if (jc)
 	{
 		totalprobe = 0;
-		if( probe_driver_id < jtagcore_get_number_of_probes_drv(jc) )
+		if( probe_driver_id < jtagcore_get_number_of_probes_drv(jc) && probe_driver_id >= 0 )
 		{
 			if( staticdrvs[probe_driver_id].getinfosfunc(jc,staticdrvs[ probe_driver_id ].sub_drv_id, GET_DRV_DETECT, &totalprobe) == JTAG_CORE_NO_ERROR )
 			{
@@ -1032,7 +1038,7 @@ int jtagcore_get_number_of_probes(jtag_core * jc, int probe_driver_id)
 
 int jtagcore_get_probe_name(jtag_core * jc, int probe_id, char * name)
 {
-	if ( ( probe_id >> 8 ) < jtagcore_get_number_of_probes_drv(jc))
+	if ( ( probe_id >> 8 ) < jtagcore_get_number_of_probes_drv(jc) && probe_id >= 0 )
 	{
 		staticdrvs[ probe_id>>8 ].getinfosfunc(jc, probe_id & 0xFF, GET_DRV_DESCRIPTION, name);
 
@@ -1044,7 +1050,7 @@ int jtagcore_get_probe_name(jtag_core * jc, int probe_id, char * name)
 
 int jtagcore_select_and_open_probe(jtag_core * jc, int probe_id)
 {
-	if ( ( probe_id >> 8 ) < jtagcore_get_number_of_probes_drv(jc))
+	if ( ( probe_id >> 8 ) < jtagcore_get_number_of_probes_drv(jc) && probe_id >= 0 )
 	{
 		return jtagcore_loaddriver(jc, probe_id, NULL);
 	}
@@ -1091,4 +1097,3 @@ void jtagcore_deinit(jtag_core * jc)
 		free( jc );
 	}
 }
-

@@ -256,6 +256,8 @@ static env_var_value str_to_int(char * str)
 {
 	env_var_value value;
 
+	value = 0;
+
 	if(str)
 	{
 		if( strlen(str) > 2 )
@@ -981,6 +983,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 
 		if(i>=0)
 		{
+			tmp_str[0] = '\0';
 			get_param( ctx, line, j, (char *)&tmp_str );
 			s = strlen(tmp_str);
 			if(s)
@@ -1066,6 +1069,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 	jc = (jtag_core *)ctx->app_ctx;
 
+	path[0] = '\0';
 	get_param( ctx, line, 1, (char*)&path );
 
 	offs = get_param_offset(line, 1);
@@ -1080,7 +1084,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 		{
 			new_ctx->script_printf = ctx->script_printf;
 
-			function[0] = 0;
+			function[0] = '\0';
 			get_param( ctx, line, 2, (char*)&function );
 
 			if(!strcmp(path,"."))
@@ -1521,13 +1525,19 @@ static int cmd_print_devs_list( script_ctx * ctx, char * line)
 {
 	jtag_core * jc;
 	int i;
+	char *ptr;
 
 	jc = (jtag_core *)ctx->app_ctx;
 
 	i = jtagcore_get_number_of_devices(jc);
 	if(i>0)
 	{
-		ctx->script_printf( ctx, MSG_INFO_0, "%s\n", get_id_str(ctx,i) );
+		ptr = get_id_str(ctx,i);
+		if(ptr)
+		{
+			ctx->script_printf( ctx, MSG_INFO_0, "%s\n",  );
+			free(ptr);
+		}
 	}
 
 	return JTAG_CORE_NOT_FOUND;

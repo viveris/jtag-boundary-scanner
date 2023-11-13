@@ -106,7 +106,10 @@ void * network_connect(char * address,unsigned short port)
 		{
 #ifdef WIN32
 			WSACleanup();
+#else
+			close(tcp_stat->m_socket);
 #endif
+
 			free(tcp_stat);
 			return (void*)NULL;
 		}

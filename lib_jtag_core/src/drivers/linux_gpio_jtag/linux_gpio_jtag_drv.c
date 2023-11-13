@@ -23,6 +23,7 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -38,6 +39,8 @@
 #include "../../jtag_core.h"
 
 #include "../../bsdl_parser/bsdl_loader.h"
+
+#include "../../os_interface/os_interface.h"
 
 #include "../../dbg_logs.h"
 
@@ -163,8 +166,9 @@ int drv_LinuxGPIO_Detect(jtag_core * jc)
 	{
 		jtagcore_getEnvVar( jc, "PROBE_GPIO_LINUX_BASE_FOLDER", (char*)&linux_gpio_base);
 
-		strncpy(tmp_str,linux_gpio_base,sizeof(tmp_str)-1);
-		strncat(tmp_str,"/export",sizeof(tmp_str)-1);
+		strncpy(tmp_str,linux_gpio_base,sizeof(tmp_str));
+		genos_strndstcat(tmp_str,"/export",sizeof(tmp_str));
+		tmp_str[sizeof(tmp_str) - 1] = '\0';
 
 		f = fopen(tmp_str,"rb");
 		if(f)
@@ -207,7 +211,8 @@ static int setdirGPIO(char * path_base,int pin,int dir)
 
 	strncpy(tmp_str,path_base,sizeof(tmp_str)-1);
 	snprintf(tmp_str2,sizeof(tmp_str2)-1,"/gpio%d/direction",pin);
-	strncat(tmp_str,tmp_str2,sizeof(tmp_str)-1);
+	genos_strndstcat(tmp_str,tmp_str2,sizeof(tmp_str));
+	tmp_str[sizeof(tmp_str) - 1] = '\0';
 
 	f = fopen(tmp_str,"w");
 	if(!f)
@@ -249,8 +254,11 @@ int drv_LinuxGPIO_Init(jtag_core * jc, int sub_drv,char * params)
 	{
 		gpio_var_names[i].gpio_num = jtagcore_getEnvVarValue( jc, (char*)gpio_var_names[i].name);
 
-		strncpy(tmp_str,(char*)gpio_var_names[i].name,sizeof(tmp_str)-1);
-		strncat(tmp_str,"_INVERT_POLARITY",sizeof(tmp_str)-1);
+		strncpy(tmp_str,(char*)gpio_var_names[i].name,sizeof(tmp_str) - 1);
+		tmp_str[sizeof(tmp_str) - 1] = '\0';
+
+		genos_strndstcat(tmp_str,"_INVERT_POLARITY",sizeof(tmp_str));
+		tmp_str[sizeof(tmp_str) - 1] = '\0';
 
 		gpio_var_names[i].negate_polarity = jtagcore_getEnvVarValue( jc, (char*)tmp_str);
 

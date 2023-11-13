@@ -223,7 +223,7 @@ envvar_entry * duplicate_env_vars(envvar_entry * src)
 
 	i = 0;
 	// count entry
-	while(src[i].name)
+	while(src[i].name && i < 65536)
 	{
 		i++;
 	}

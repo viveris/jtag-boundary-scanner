@@ -22,7 +22,7 @@
  * @brief  logs/debug output
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
-
+#include <stdint.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -32,6 +32,8 @@
 #include "./drivers/drv_loader.h"
 #include "jtag_core_internal.h"
 #include "jtag_core.h"
+
+#include "./os_interface/os_interface.h"
 
 #include "dbg_logs.h"
 
@@ -73,7 +75,8 @@ int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 			}
 
 			vsprintf(tmp_msg2,chaine,marker);
-			strncat(tmp_msg,tmp_msg2,sizeof(tmp_msg) - ( strlen(tmp_msg) + 1 ) );
+			genos_strndstcat(tmp_msg, tmp_msg2, sizeof(tmp_msg) );
+			tmp_msg[sizeof(tmp_msg) - 1] = '\0';
 
 			print_callback(tmp_msg);
 

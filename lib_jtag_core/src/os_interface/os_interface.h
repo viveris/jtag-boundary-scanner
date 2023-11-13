@@ -75,6 +75,7 @@ void genos_destroycriticalsection( jtag_core* jtag_ctx, unsigned char id );
 #endif
 char * genos_strupper( char * str );
 char * genos_strlower( char * str );
+char * genos_strndstcat( char *dest, const char *src, size_t maxdestsize );
 
 /////////////// File functions ////////////////
 

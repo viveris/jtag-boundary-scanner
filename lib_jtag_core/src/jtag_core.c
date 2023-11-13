@@ -445,7 +445,10 @@ int jtagcore_get_pin_properties(jtag_core * jc, int device,int pin,char * pinnam
 				type_code = 0x00;
 
 				if (pinname)
+				{
 					strncpy(pinname, bsdl_file->pins_list[pin].pinname, maxsize);
+					pinname[maxsize - 1] = '\0';
+				}
 
 				if (type)
 				{

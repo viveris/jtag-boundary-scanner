@@ -971,7 +971,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 	char str[DEFAULT_BUFLEN*2];
 	char * ptr;
 
-	str[0] = 0;
+	str[0] = '\0';
 
 	j = 1;
 	do
@@ -990,23 +990,24 @@ static int cmd_print( script_ctx * ctx, char * line)
 			{
 				if(tmp_str[0] != '$')
 				{
-					strncat((char*)str,tmp_str,sizeof(str) - 1);
-					strncat((char*)str," ",sizeof(str) - 1);
+					genos_strndstcat((char*)str,tmp_str,sizeof(str));
+					genos_strndstcat((char*)str," ",sizeof(str));
+					str[sizeof(str) - 1] = '\0'; 
 				}
 				else
 				{
 					ptr = getEnvVar( *((envvar_entry **)ctx->env), &tmp_str[1], NULL);
 					if( ptr )
 					{
-						strncat((char*)str,ptr,sizeof(str) - 1);
-						strncat((char*)str," ",sizeof(str) - 1);
-
+						genos_strndstcat((char*)str,ptr,sizeof(str));
+						genos_strndstcat((char*)str," ",sizeof(str)); 
 					}
 					else
 					{
-						strncat((char*)str,tmp_str,sizeof(str) - 1);
-						strncat((char*)str," ",sizeof(str) - 1);
+						genos_strndstcat((char*)str,tmp_str,sizeof(str));
+						genos_strndstcat((char*)str," ",sizeof(str));
 					}
+					str[sizeof(str) - 1] = '\0';
 				}
 			}
 		}

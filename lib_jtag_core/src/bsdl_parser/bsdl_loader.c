@@ -23,6 +23,7 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#include <stdint.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +37,8 @@
 #include "bsdl_strings.h"
 
 #include "../natsort/strnatcmp.h"
+
+#include "../os_interface/os_interface.h"
 
 #include "../dbg_logs.h"
 #define DEBUG 1
@@ -870,8 +873,9 @@ int get_pins_list(jtag_core * jc,jtag_bsdl * bsdl_desc,char ** lines)
 						{
 							char digistr[32];
 							snprintf((char*)digistr,sizeof(digistr),"(%d)",tmp_start);
-							strncat((char*)&bsdl_desc->pins_list[number_of_pins].pinname,digistr,sizeof(((pin_ctrl *)0)->pinname)-1);
+							genos_strndstcat((char*)&bsdl_desc->pins_list[number_of_pins].pinname,digistr,sizeof(((pin_ctrl *)0)->pinname));
 						}
+						bsdl_desc->pins_list[number_of_pins].pinname[sizeof(((pin_ctrl *)0)->pinname)-1] = '\0';
 
 						bsdl_desc->pins_list[number_of_pins].pintype = tmp_type;
 						number_of_pins++;
@@ -1299,7 +1303,9 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 
 	///////////////////////
 	// copy the entity name & the file name
-	strncpy(bsdl->entity_name,entityname,sizeof(((jtag_bsdl *)0)->entity_name) - 1);
+	strncpy(bsdl->entity_name,entityname,sizeof(((jtag_bsdl *)0)->entity_name));
+	bsdl->entity_name[ sizeof(((jtag_bsdl *)0)->entity_name) - 1 ] = '\0';
+
 	i = strlen(filename);
 	while(i && filename[i] != '\\')
 	{
@@ -1309,7 +1315,8 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 	if(filename[i] == '\\')
 		i++;
 
-	strncpy(bsdl->src_filename,&filename[i],sizeof(bsdl->src_filename)-1);
+	strncpy(bsdl->src_filename,&filename[i],sizeof(bsdl->src_filename));
+	bsdl->src_filename[ sizeof(bsdl->src_filename) - 1 ] = '0';
 
 	///////////////////////
 	// Extract the chip ID

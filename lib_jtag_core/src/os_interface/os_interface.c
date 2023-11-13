@@ -320,7 +320,7 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 	//threadinitptr->hwcontext=hwcontext;
 
 	print_callback = jtag_ctx->jtagcore_print_callback;
-	
+
 	ret = pthread_create(&threadid, &threadattrib,ThreadProc, threadinitptr);
 	if(ret)
 	{
@@ -544,6 +544,10 @@ int genos_checkfileext(char * path,char *ext,int type)
 
 	if(path && ext)
 	{
+		pathext[0] = '\0';
+		srcext[0] = ' ';
+		srcext[1] = '\0';
+
 		if( ( strlen(genos_getfilenameext(path,0,type)) < 16 )  && ( strlen(ext) < 16 ))
 		{
 			genos_getfilenameext(path,(char*)&pathext,type);
@@ -621,3 +625,27 @@ int snprintf(char *s, size_t n, const char *fmt, ...)
 #endif
 
 #endif
+
+char * genos_strndstcat( char *dest, const char *src, size_t maxdestsize )
+{
+	int i,j;
+
+	i = 0;
+	while( ( i < maxdestsize ) && dest[i] )
+	{
+		i++;
+	}
+
+	if( !dest[i] )
+	{
+		j = 0;
+		while( ( i < maxdestsize ) && src[j] )
+		{
+			dest[i] = src[j];
+			i++;
+			j++;
+		}
+	}
+
+	return dest;
+}

@@ -237,13 +237,15 @@ envvar_entry * duplicate_env_vars(envvar_entry * src)
 			if(src[j].name)
 			{
 				tmp_envvars[j].name = malloc(strlen(src[j].name) + 1);
-				strcpy(tmp_envvars[j].name,src[j].name);
+				if(tmp_envvars[j].name)
+					strcpy(tmp_envvars[j].name,src[j].name);
 			}
 
 			if(src[j].varvalue)
 			{
 				tmp_envvars[j].varvalue = malloc(strlen(src[j].varvalue) + 1);
-				strcpy(tmp_envvars[j].varvalue,src[j].varvalue);
+				if(tmp_envvars[j].varvalue)
+					strcpy(tmp_envvars[j].varvalue,src[j].varvalue);
 			}
 		}
 	}

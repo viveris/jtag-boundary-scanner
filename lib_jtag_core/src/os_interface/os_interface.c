@@ -269,24 +269,26 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 #ifdef WIN32
 	DWORD sit;
 	HANDLE thread_handle;
-
 	threadinit *threadinitptr;
 
+	sit = 0;
+
 	threadinitptr=(threadinit*)malloc(sizeof(threadinit));
-	threadinitptr->thread=thread;
-	threadinitptr->jtag_ctx=jtag_ctx;
-	threadinitptr->hwcontext=hwcontext;
-
-	thread_handle = CreateThread(NULL,8*1024,&ThreadProc,threadinitptr,0,&sit);
-
-	if(!thread_handle)
+	if( threadinitptr )
 	{
-//		jtag_ctx->jtagcore_print_callback(MSG_ERROR,"genos_createthread : CreateThread failed -> 0x.8X", GetLastError());
-	}
+		threadinitptr->thread=thread;
+		threadinitptr->jtag_ctx=jtag_ctx;
+		threadinitptr->hwcontext=hwcontext;
 
+		thread_handle = CreateThread(NULL,8*1024,&ThreadProc,threadinitptr,0,&sit);
+
+		if(!thread_handle)
+		{
+	//		jtag_ctx->jtagcore_print_callback(MSG_ERROR,"genos_createthread : CreateThread failed -> 0x.8X", GetLastError());
+		}
+	}
 	return sit;
 #else
-
 	unsigned long sit;
 	int ret;
 	pthread_t threadid;
@@ -314,17 +316,24 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 	/* set the new scheduling param */
 	pthread_attr_setschedparam (&threadattrib, &param);
 
-	threadinitptr=(threadinit *)malloc(sizeof(threadinit));
-	threadinitptr->thread=thread;
-	threadinitptr->jtag_ctx=jtag_ctx;
-	//threadinitptr->hwcontext=hwcontext;
-
 	print_callback = jtag_ctx->jtagcore_print_callback;
-
-	ret = pthread_create(&threadid, &threadattrib,ThreadProc, threadinitptr);
-	if(ret)
+	
+	threadinitptr=(threadinit *)malloc(sizeof(threadinit));
+	if(threadinitptr)
 	{
-		print_callback("genos_createthread : pthread_create failed");
+		threadinitptr->thread=thread;
+		threadinitptr->jtag_ctx=jtag_ctx;
+		//threadinitptr->hwcontext=hwcontext;
+
+		ret = pthread_create(&threadid, &threadattrib,ThreadProc, threadinitptr);
+		if(ret)
+		{
+			print_callback("genos_createthread : pthread_create failed !");
+		}
+	}
+	else
+	{
+		print_callback("genos_createthread : memory allocation failed !");		
 	}
 
 	return sit;

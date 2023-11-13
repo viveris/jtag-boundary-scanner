@@ -182,7 +182,7 @@ FILE *genos_fopen (const char *filename, const char *mode)
 			}
 		}
 
-		fd = genos_open (filename, rwflags|oflags, 0666);
+		fd = genos_open (filename, rwflags|oflags, (unsigned int)(0666));
 		if(fd==-1)
 			return NULL;
 
@@ -408,10 +408,11 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 			closedir (dir);
 			dir=0;
 
+			return (void*)dir;
 		}
 
 		closedir (dir);
-		dir=0;;
+		dir=0;
 	}
 	else
 	{

@@ -642,7 +642,7 @@ int execute_file_script( script_ctx * ctx, char * filename )
 	ctx->script_file = fopen(filename,"r");
 	if(ctx->script_file)
 	{
-		strncpy(ctx->script_file_path,filename,DEFAULT_BUFLEN);
+		strncpy(ctx->script_file_path,filename,DEFAULT_BUFLEN - 1);
 		ctx->script_file_path[DEFAULT_BUFLEN-1] = 0;
 
 		// Dry run -> populate the labels...

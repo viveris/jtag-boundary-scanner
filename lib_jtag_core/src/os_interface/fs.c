@@ -363,7 +363,7 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 			{
 				fileinfo->isdirectory = 0;
 				fileinfo->size = fileStat.st_size;
-				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),FILEFOUND_NAMESIZE);
+				strncpy(fileinfo->filename,genos_getfilenamebase(folder,NULL,SYS_PATH_TYPE),FILEFOUND_NAMESIZE - 1);
 				fileinfo->filename[FILEFOUND_NAMESIZE - 1] = 0;
 
 				return (void*)-1;
@@ -395,7 +395,7 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 
 					fileinfo->size=fileStat.st_size;
 
-					strncpy(fileinfo->filename,d->d_name,FILEFOUND_NAMESIZE);
+					strncpy(fileinfo->filename,d->d_name,FILEFOUND_NAMESIZE - 1);
 					fileinfo->filename[FILEFOUND_NAMESIZE - 1] = '\0';
 
 					free(tmpstr);
@@ -482,7 +482,7 @@ int genos_find_next_file(void* handleff, char *folder, char *file, filefoundinfo
 					fileinfo->isdirectory=0;
 
 				fileinfo->size=fileStat.st_size;
-				strncpy(fileinfo->filename,d->d_name,FILEFOUND_NAMESIZE);
+				strncpy(fileinfo->filename,d->d_name,FILEFOUND_NAMESIZE - 1);
 				fileinfo->filename[FILEFOUND_NAMESIZE - 1] = '\0';
 
 				ret = 1;
@@ -545,8 +545,7 @@ char * genos_getcurrentdirectory(char *currentdirectory,int buffersize)
 
 	#else
 
-
-	strncpy(currentdirectory,"./",buffersize);
+	strncpy(currentdirectory,"./",buffersize - 1);
 	currentdirectory[buffersize-1] = '\0';
 
 	return currentdirectory;

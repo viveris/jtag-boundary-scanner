@@ -166,7 +166,7 @@ int drv_LinuxGPIO_Detect(jtag_core * jc)
 	{
 		jtagcore_getEnvVar( jc, "PROBE_GPIO_LINUX_BASE_FOLDER", (char*)&linux_gpio_base);
 
-		strncpy(tmp_str,linux_gpio_base,sizeof(tmp_str));
+		strncpy(tmp_str, linux_gpio_base, sizeof(tmp_str) - 1);
 		genos_strndstcat(tmp_str,"/export",sizeof(tmp_str));
 		tmp_str[sizeof(tmp_str) - 1] = '\0';
 

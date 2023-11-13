@@ -1303,7 +1303,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 
 	///////////////////////
 	// copy the entity name & the file name
-	strncpy(bsdl->entity_name,entityname,sizeof(((jtag_bsdl *)0)->entity_name));
+	strncpy(bsdl->entity_name,entityname,sizeof(((jtag_bsdl *)0)->entity_name) - 1);
 	bsdl->entity_name[ sizeof(((jtag_bsdl *)0)->entity_name) - 1 ] = '\0';
 
 	i = strlen(filename);

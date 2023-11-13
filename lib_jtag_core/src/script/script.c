@@ -1353,8 +1353,9 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 
 	genos_getcurrentdirectory(szExecPath,MAX_PATH);
 
-	strcpy(scanfolder,szExecPath);
-	strcat(scanfolder,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR);
+	strncpy(scanfolder, szExecPath, sizeof(scanfolder) );
+	genos_strndstcat(scanfolder, DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR,  sizeof(scanfolder) - 1 );
+	scanfolder[sizeof(scanfolder) - 1] = '\0';
 
 	h_file_find = genos_find_first_file( scanfolder, "*.*", &fileinfo );
 

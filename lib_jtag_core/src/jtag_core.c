@@ -398,12 +398,12 @@ int jtagcore_get_dev_name(jtag_core * jc, int device, char * devname, char * bsd
 
 		if(devname)
 		{
-			devname[0] = 0;
+			devname[0] = '\0';
 		}
 
 		if(bsdlpath)
 		{
-			bsdlpath[0] = 0;
+			bsdlpath[0] = '\0';
 		}
 
 		return JTAG_CORE_NO_ERROR;

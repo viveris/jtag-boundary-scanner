@@ -1315,7 +1315,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 	if(filename[i] == '\\')
 		i++;
 
-	strncpy(bsdl->src_filename,&filename[i],sizeof(bsdl->src_filename));
+	strncpy(bsdl->src_filename,&filename[i],sizeof(bsdl->src_filename) - 1);
 	bsdl->src_filename[ sizeof(bsdl->src_filename) - 1 ] = '0';
 
 	///////////////////////

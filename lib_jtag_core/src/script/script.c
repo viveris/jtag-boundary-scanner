@@ -1232,6 +1232,7 @@ char * arrayresize(char * array, int size, unsigned char c)
 		array = malloc(DEFAULT_BUFLEN);
 		if(array)
 		{
+			size = DEFAULT_BUFLEN / 2;
 			memset(array,0,DEFAULT_BUFLEN);
 		}
 
@@ -1258,7 +1259,7 @@ char * arrayresize(char * array, int size, unsigned char c)
 		}
 		else
 		{
-			ptr[ (size * 2) ] = 0;
+			ptr[ (size * 2) - 1 ] = 0;
 		}
 	}
 

@@ -38,7 +38,7 @@ typedef void jtag_emu;
 #define _jtag_emu_
 #endif
 
-#define LIB_JTAG_CORE_VERSION "0.9.5.2"
+#define LIB_JTAG_CORE_VERSION "0.9.6.1"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Functions Error / return codes

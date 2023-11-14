@@ -1289,7 +1289,7 @@ static int cmd_initarray( script_ctx * ctx, char * line)
 	{
 		size = atoi(varsize);
 
-		if(size)
+		if(size >= 0)
 		{
 			ptr = getEnvVar( *((envvar_entry **)ctx->env),(char*)&varname, NULL);
 			if(ptr)

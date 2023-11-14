@@ -452,22 +452,27 @@ void preprocess_line(char * line)
 	}
 };
 
-char * check_next_keyword(char * buffer, char * keyword)
+char * check_next_keyword(char * buffer, char * keyword, char sep)
 {
 	int i;
+	char sep_list[16];
+
+	sep_list[0] = sep;
+	sep_list[1] = '\0';
+	strcat((char*)sep_list,"\"() ");
 
 	if( !buffer )
 		return 0;
 
 	// skip the current word
 	i = 0;
-	while (buffer[i] && !strchr("\"() ", buffer[i]) )
+	while (buffer[i] && !strchr(sep_list, buffer[i]) )
 	{
 		i++;
 	}
 
 	// skip the following blank
-	while (buffer[i] && strchr("\"() ", buffer[i]) )
+	while (buffer[i] && strchr(sep_list, buffer[i]) )
 	{
 		i++;
 	}
@@ -606,8 +611,8 @@ char * get_attribut(char ** lines,char * name, char * entity)
 		{
 			if(!strncmp(&lines[i][10],name,strlen(name)))
 			{
-				ptr = check_next_keyword(&lines[i][10], "of");
-				ptr = check_next_keyword(ptr, entity);
+				ptr = check_next_keyword(&lines[i][10], "of", '\0');
+				ptr = check_next_keyword(ptr, entity, ':');
 
 				if( ptr )
 				{
@@ -619,21 +624,20 @@ char * get_attribut(char ** lines,char * name, char * entity)
 
 					if( ptr[j] == ':' )
 					{
-						ptr = check_next_keyword(&ptr[j], "entity");
-						ptr = check_next_keyword(ptr, "is");
+						ptr = check_next_keyword(&ptr[j], "entity", ':');
+						ptr = check_next_keyword(ptr, "is", '\0');
 
 						return ptr;
-
 					}
 				}
 
-				return 0;
+				return NULL;
 			}
 		}
 		i++;
 	}while( lines[i] );
 
-	return 0;
+	return NULL;
 }
 
 char * get_attribut_txt(char ** lines,char * name, char * entity)

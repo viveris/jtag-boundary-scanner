@@ -84,6 +84,14 @@ int getnextvalidline(char *buffer,int buffersize,int * offset)
 			l_offset++;
 		}
 
+		// End of buffer reached ?
+		if(l_offset == buffersize)
+		{
+			*offset = l_offset;
+
+			return 1;
+		}
+
 		// Is it a return or comment ?
 		if( buffer[l_offset] != '\r' && buffer[l_offset] != '\n' && (buffer[l_offset] != '-' ||  buffer[l_offset+1] != '-'))
 		{
@@ -107,19 +115,22 @@ int getnextvalidline(char *buffer,int buffersize,int * offset)
 		if( buffer[l_offset] == '\r' || buffer[l_offset] == '\n')
 		{
 			l_offset++;
-			if( buffer[l_offset] == '\n' )
+
+			if(l_offset < buffersize)
 			{
-				l_offset++;
+				if( buffer[l_offset] == '\n' )
+				{
+					l_offset++;
+				}
 			}
 
 			current_line_offset = l_offset;
 		}
-	}while ( buffer[l_offset] );
+	}while ( (l_offset < buffersize) && buffer[l_offset] );
 
 	*offset = l_offset;
 
 	return 1;
-
 }
 
 char getnextchar(char *buffer,int buffersize,int * offset)
@@ -547,7 +558,7 @@ int get_next_parameter(jtag_core * jc,char * buffer, char * parameter)
 
 	if( j >= (MAX_ELEMENT_SIZE-1) )
 	{
-		jtagcore_logs_printf(jc,MSG_WARNING,"BSDL loader / get_next_parameter : element too long / truncated : %s\r\n",parameter);	
+		jtagcore_logs_printf(jc,MSG_WARNING,"BSDL loader / get_next_parameter : element too long / truncated : %s\r\n",parameter);
 	}
 
 	return i;

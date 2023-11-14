@@ -45,13 +45,13 @@ int jtagcore_i2c_set_scl_pin(jtag_core * jc, int device, int pin)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->i2c_scl_pin = pin;
 				jc->i2c_scl_device = device;
@@ -74,13 +74,13 @@ int jtagcore_i2c_set_sda_pin(jtag_core * jc, int device, int pin)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->i2c_sda_pin = pin;
 				jc->i2c_sda_device = device;

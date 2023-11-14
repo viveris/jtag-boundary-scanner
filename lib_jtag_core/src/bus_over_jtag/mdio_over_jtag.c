@@ -44,13 +44,13 @@ int jtagcore_mdio_set_mdc_pin(jtag_core * jc, int device, int pin)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->mdio_mdc_pin = pin;
 				jc->mdio_mdc_device = device;
@@ -66,13 +66,13 @@ int jtagcore_mdio_set_mdio_pin(jtag_core * jc, int device, int pin)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >=0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->mdio_mdio_pin = pin;
 				jc->mdio_mdio_device = device;

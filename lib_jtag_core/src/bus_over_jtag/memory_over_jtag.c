@@ -66,13 +66,13 @@ int jtagcore_memory_set_address_pin(jtag_core * jc, int address_bit, int device,
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE  && address_bit < MAX_BUS_WIDTH)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && address_bit < MAX_BUS_WIDTH)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if ( pin < bsdl_file->number_of_pins )
+			if ( pin < bsdl_file->number_of_pins && pin >= 0 )
 			{
 				jc->ram_address_pin[address_bit] = pin;
 				jc->ram_address_device[address_bit] = device;
@@ -88,13 +88,13 @@ int jtagcore_memory_set_data_pin(jtag_core * jc, int data_bit, int device, int p
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && data_bit < MAX_BUS_WIDTH)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && data_bit < MAX_BUS_WIDTH)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if ( pin < bsdl_file->number_of_pins )
+			if ( pin < bsdl_file->number_of_pins && pin >= 0 )
 			{
 				jc->ram_data_pin[data_bit] = pin;
 				jc->ram_data_device[data_bit] = device;
@@ -110,13 +110,13 @@ int jtagcore_memory_set_ctrl_pin(jtag_core * jc, int ctrl, int polarity, int dev
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && ctrl < 16)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0 && ctrl < 16)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if ( pin < bsdl_file->number_of_pins )
+			if ( pin < bsdl_file->number_of_pins && pin >= 0 )
 			{
 				jc->ram_ctrl_pin[ctrl] = pin;
 				jc->ram_ctrl_pin_pol[ctrl] = polarity;

@@ -44,13 +44,13 @@ int jtagcore_spi_set_mosi_pin(jtag_core * jc, int device, int pin, int sample_cl
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->spi_mosi_pin = pin;
 				if(sample_clk_phase)
@@ -70,13 +70,13 @@ int jtagcore_spi_set_miso_pin(jtag_core * jc, int device, int pin, int sample_cl
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->spi_miso_pin = pin;
 				if(sample_clk_phase)
@@ -96,13 +96,13 @@ int jtagcore_spi_set_clk_pin(jtag_core * jc, int device, int pin, int polarity)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->spi_clk_pin = pin;
 				if(polarity)
@@ -122,13 +122,13 @@ int jtagcore_spi_set_cs_pin(jtag_core * jc, int device, int pin, int polarity)
 {
 	jtag_bsdl * bsdl_file;
 
-	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE)
+	if (device < jc->nb_of_devices_in_chain && device < MAX_NB_JTAG_DEVICE && device >= 0)
 	{
 		if (jc->devices_list[device].bsdl)
 		{
 			bsdl_file = jc->devices_list[device].bsdl;
 
-			if (pin < bsdl_file->number_of_pins)
+			if (pin < bsdl_file->number_of_pins && pin >= 0)
 			{
 				jc->spi_cs_pin = pin;
 				if(polarity)
@@ -283,9 +283,8 @@ int jtagcore_spi_write_read(jtag_core * jc, int wr_size,unsigned char * wr_buffe
 
 		jtagcore_push_and_pop_chain(jc, JTAG_CORE_WRITE_ONLY);
 
-		return JTAG_CORE_NO_ERROR;	
+		return JTAG_CORE_NO_ERROR;
 	}
 
 	return JTAG_CORE_BAD_PARAMETER;
-
 }

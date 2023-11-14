@@ -237,7 +237,6 @@ int jtagcore_i2c_write_read(jtag_core * jc, int address, int address10bits,int w
 
 		if(wr_size)
 		{
-
 			for(i=0;i<wr_size;i++)
 			{
 				for(j=0;j<8;j++)

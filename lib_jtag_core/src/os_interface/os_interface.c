@@ -317,7 +317,7 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 	pthread_attr_setschedparam (&threadattrib, &param);
 
 	print_callback = jtag_ctx->jtagcore_print_callback;
-	
+
 	threadinitptr=(threadinit *)malloc(sizeof(threadinit));
 	if(threadinitptr)
 	{
@@ -333,7 +333,7 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 	}
 	else
 	{
-		print_callback("genos_createthread : memory allocation failed !");		
+		print_callback("genos_createthread : memory allocation failed !");
 	}
 
 	return sit;
@@ -453,7 +453,7 @@ char * genos_getfilenameext(char * fullpath,char * filenameext, int type )
 	char * filename;
 	int len,i;
 
-	filename=genos_getfilenamebase(fullpath,0,type);
+	filename = genos_getfilenamebase(fullpath,0,type);
 
 	if(filename)
 	{
@@ -550,6 +550,7 @@ int genos_checkfileext(char * path,char *ext,int type)
 {
 	char pathext[16];
 	char srcext[16];
+	char * ptr;
 
 	if(path && ext)
 	{
@@ -557,7 +558,11 @@ int genos_checkfileext(char * path,char *ext,int type)
 		srcext[0] = ' ';
 		srcext[1] = '\0';
 
-		if( ( strlen(genos_getfilenameext(path,0,type)) < 16 )  && ( strlen(ext) < 16 ))
+		ptr = genos_getfilenameext(path,0,type);
+		if(!ptr)
+			return 0;
+
+		if( ( strlen(ptr) < 16 )  && ( strlen(ext) < 16 ))
 		{
 			genos_getfilenameext(path,(char*)&pathext,type);
 			genos_strlower(pathext);

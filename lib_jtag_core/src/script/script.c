@@ -1987,7 +1987,7 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 		else
 		{
 			memset(tmp_buffer, 0, sizeof(tmp_buffer));
-			for (i = 0; i<size; i++)
+			for (i = 0; i<size && i < sizeof(tmp_buffer2); i++)
 			{
 				sprintf(tmp_buffer3, " %.2X", tmp_buffer2[i]);
 				strcat(tmp_buffer, tmp_buffer3);

@@ -414,10 +414,6 @@ void * genos_find_first_file(char *folder, char *file, filefoundinfo* fileinfo)
 		closedir (dir);
 		dir=0;
 	}
-	else
-	{
-		dir=0;
-	}
 
 	return (void*)dir;
 

@@ -138,7 +138,7 @@ int jtagcore_scan_and_init_chain(jtag_core * jc)
 		jc->io_functions.drv_TXRX_DATA(jc, (unsigned char *)&buf_out, (unsigned char *)&buf_in, sizeof(buf_out));
 
 		i = 0;
-		while (!buf_in[i] && i < sizeof(buf_out))
+		while( i < sizeof(buf_in) && !buf_in[i])
 		{
 			i++;
 		}

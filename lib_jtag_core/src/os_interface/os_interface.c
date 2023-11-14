@@ -659,6 +659,11 @@ char * genos_strndstcat( char *dest, const char *src, size_t maxdestsize )
 			i++;
 			j++;
 		}
+
+		if( i < maxdestsize )
+		{
+			dest[i] = '\0';
+		}
 	}
 
 	return dest;

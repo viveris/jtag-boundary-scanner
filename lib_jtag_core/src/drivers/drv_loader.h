@@ -34,7 +34,7 @@ typedef int (*DRV_DETECT) (void* jtag_core);
 typedef int (*DRV_INIT) (void* jtag_core,int sub_drv,char * params);
 typedef int (*DRV_TXRXDATA) (void* jtag_core, unsigned char * str_out, unsigned char * str_in, int size);
 typedef int (*DRV_TXTMS) (void* jtag_core, unsigned char * str_out, int size);
-typedef int (*DRV_GETMODULEINFOS) (void* jtag_core,int sub_drv,unsigned long infotype, void * returnvalue);
+typedef int (*DRV_GETMODULEINFOS) (void* jtag_core,int sub_drv,unsigned int infotype, void * returnvalue);
 typedef int (*DRV_DEINIT) (void* jtag_core);
 
 typedef struct drv_ptr_

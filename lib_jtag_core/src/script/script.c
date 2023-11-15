@@ -1367,8 +1367,9 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 		do
 		{
 			strcpy(filename,szExecPath);
-			strcat(filename,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR);
-			strcat(filename,fileinfo.filename);
+			genos_strndstcat(filename,DIR_SEPARATOR"bsdl_files"DIR_SEPARATOR,sizeof(filename));
+			genos_strndstcat(filename,fileinfo.filename,sizeof(filename));
+			filename[sizeof(filename) - 1] = '\0';
 
 			if ( ! fileinfo.isdirectory )
 			{

@@ -1282,6 +1282,7 @@ static int cmd_initarray( script_ctx * ctx, char * line)
 	ret = JTAG_CORE_BAD_PARAMETER;
 
 	strcpy(varvalue,"0");
+	varname[0] = '\0';
 
 	i = get_param_str( ctx, line, 1, varname );
 	j = get_param( ctx, line, 2, varsize );
@@ -1291,7 +1292,7 @@ static int cmd_initarray( script_ctx * ctx, char * line)
 	{
 		size = atoi(varsize);
 
-		if(size >= 0)
+		if(size >= 0 && strlen(varname) )
 		{
 			ptr = getEnvVar( *((envvar_entry **)ctx->env),(char*)&varname, NULL);
 			if(ptr)

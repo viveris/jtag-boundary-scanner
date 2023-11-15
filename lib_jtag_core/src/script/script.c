@@ -35,6 +35,7 @@
 #include "../jtag_core_internal.h"
 #include "script.h"
 #include "../jtag_core.h"
+#include "../version.h"
 
 #include "../bsdl_parser/bsdl_loader.h"
 #include "../os_interface/os_interface.h"

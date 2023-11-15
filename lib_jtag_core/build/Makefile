@@ -33,14 +33,14 @@ endif
 ifeq ($(TARGET), mingw32)
 CC=i686-w64-mingw32-gcc
 RESC=i686-w64-mingw32-windres
-LDFLAGS += -static-libgcc -lws2_32 ./win32/libjtagcore/libjtagcore/libjtagcore.def
+LDFLAGS += -static-libgcc -lws2_32 ../src/os_interface/win32/libjtagcore.def
 EXEC=libjtagcore.dll
 endif
 
 ifeq ($(TARGET), mingw64)
 CC=x86_64-w64-mingw32-gcc
 RESC=x86_64-w64-mingw32-windres
-LDFLAGS += -static-libgcc -lws2_32 ./win32/libjtagcore/libjtagcore/libjtagcore.def
+LDFLAGS += -static-libgcc -lws2_32 ../src/os_interface/win32/libjtagcore.def
 EXEC=libjtagcore.dll
 endif
 
@@ -76,9 +76,12 @@ libjtagcore.so: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSOR
 	$(CC) -o $@    $^ $(LDFLAGS)
 	cp $@ ../../build
 
-libjtagcore.dll: $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
+libjtagcore.dll: win32_libjtagcore_res.o $(LIB_JTAG_CORE) $(PROTOCOLS_DRIVERS) $(PROBES_DRIVERS) $(NATSORT)
 	$(CC) -o $@    $^ $(LDFLAGS)
 	cp $@ ../../build
+
+win32_libjtagcore_res.o: $(BASEDIR)/os_interface/win32/libjtagcore.rc
+	$(RESC) $< $@
 
 jtag_core.o: $(BASEDIR)/jtag_core.c
 	$(CC) -o $@ -c $< $(CFLAGS)

@@ -31,6 +31,7 @@
 #include "drivers/drv_loader.h"
 #include "jtag_core_internal.h"
 #include "jtag_core.h"
+#include "version.h"
 
 #include "script/env.h"
 

@@ -1,0 +1,107 @@
+//Microsoft Developer Studio generated resource script.
+//
+#include "../../version.h"
+
+#define FILE_VERSION       VDIG1,VDIG2,VDIG3,VDIG4
+#define STR_FILE_VERSION   vxstr(VDIG1) "." vxstr(VDIG2) "." vxstr(VDIG3) "." vxstr(VDIG4)
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "windows.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Language resources
+
+#if !defined(AFX_RESOURCE_DLL)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE DISCARDABLE
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+#ifndef _MAC
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION FILE_VERSION
+ PRODUCTVERSION FILE_VERSION
+ FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS VOS__WINDOWS32
+ FILETYPE VFT_DLL
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040c04b0"
+        BEGIN
+            VALUE "Comments", "lib jtag core " STR_FILE_VERSION " Release : " STR_DATE " Build : " __DATE__ " " __TIME__ "\0"
+            VALUE "CompanyName", "(c) Viveris\0"
+            VALUE "FileDescription", "jtag boundary scanner core\0"
+            VALUE "FileVersion", STR_FILE_VERSION "\0"
+            VALUE "InternalName", "libjtagcore.dll\0"
+            VALUE "LegalCopyright", "Copyright © 2023\0"
+            VALUE "LegalTrademarks", "(c) Viveris\0"
+            VALUE "OriginalFilename", "libjtagcore.dll\0"
+            VALUE "ProductName", "jtag-boundary-scanner\0"
+            VALUE "ProductVersion", STR_FILE_VERSION "\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x40c, 1200
+    END
+END
+
+#endif    // !_MAC
+
+#endif
+/////////////////////////////////////////////////////////////////////////////
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

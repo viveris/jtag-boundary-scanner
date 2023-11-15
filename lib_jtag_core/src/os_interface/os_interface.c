@@ -276,14 +276,15 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 	threadinitptr=(threadinit*)malloc(sizeof(threadinit));
 	if( threadinitptr )
 	{
-		threadinitptr->thread=thread;
-		threadinitptr->jtag_ctx=jtag_ctx;
-		threadinitptr->hwcontext=hwcontext;
+		threadinitptr->thread = thread;
+		threadinitptr->jtag_ctx = jtag_ctx;
+		threadinitptr->hwcontext = hwcontext;
 
 		thread_handle = CreateThread(NULL,8*1024,&ThreadProc,threadinitptr,0,&sit);
 
 		if(!thread_handle)
 		{
+			free(threadinitptr);
 	//		jtag_ctx->jtagcore_print_callback(MSG_ERROR,"genos_createthread : CreateThread failed -> 0x.8X", GetLastError());
 		}
 	}
@@ -318,17 +319,18 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 
 	print_callback = jtag_ctx->jtagcore_print_callback;
 
-	threadinitptr=(threadinit *)malloc(sizeof(threadinit));
-	if(threadinitptr)
+	threadinitptr = (threadinit *)malloc(sizeof(threadinit));
+	if( threadinitptr )
 	{
-		threadinitptr->thread=thread;
-		threadinitptr->jtag_ctx=jtag_ctx;
+		threadinitptr->thread = thread;
+		threadinitptr->jtag_ctx = jtag_ctx;
 		//threadinitptr->hwcontext=hwcontext;
 
 		ret = pthread_create(&threadid, &threadattrib,ThreadProc, threadinitptr);
 		if(ret)
 		{
 			print_callback("genos_createthread : pthread_create failed !");
+			free( threadinitptr );
 		}
 	}
 	else

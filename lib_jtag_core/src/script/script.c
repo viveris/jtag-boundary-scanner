@@ -1502,7 +1502,10 @@ static char * get_id_str( script_ctx * ctx, int numberofdevice)
 
 	jc = (jtag_core *)ctx->app_ctx;
 
-	stringbuffer = 0;
+	stringbuffer = NULL;
+
+	if( numberofdevice < 0 || numberofdevice > 256)
+		return NULL;
 
 	stringbuffer = malloc(256 * numberofdevice);
 	if (stringbuffer)

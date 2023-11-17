@@ -992,7 +992,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 				{
 					genos_strndstcat((char*)str,tmp_str,sizeof(str));
 					genos_strndstcat((char*)str," ",sizeof(str));
-					str[sizeof(str) - 1] = '\0'; 
+					str[sizeof(str) - 1] = '\0';
 				}
 				else
 				{
@@ -1000,7 +1000,7 @@ static int cmd_print( script_ctx * ctx, char * line)
 					if( ptr )
 					{
 						genos_strndstcat((char*)str,ptr,sizeof(str));
-						genos_strndstcat((char*)str," ",sizeof(str)); 
+						genos_strndstcat((char*)str," ",sizeof(str));
 					}
 					else
 					{
@@ -1247,19 +1247,16 @@ char * arrayresize(char * array, int size, unsigned char c)
 			cursize++;
 		}
 
+		ptr[cursize*2] = '\0';
+
 		if( cursize < size  )
 		{
 			while( cursize < size )
 			{
 				sprintf(&ptr[(cursize*2) + 0],"%.2X",c);
+				ptr[(cursize*2) + 2] = '\0';
 				cursize++;
 			}
-			ptr[(cursize*2) + 0] = '\0';
-			
-		}
-		else
-		{
-			ptr[ (size * 2) - 1 ] = '\0';
 		}
 	}
 

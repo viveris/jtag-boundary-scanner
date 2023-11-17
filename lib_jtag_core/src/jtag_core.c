@@ -52,6 +52,8 @@ jtag_core * jtagcore_init()
 	{
 		memset( jc, 0, sizeof(jtag_core) );
 
+		jc->envvar = (void*)initEnv(NULL, NULL);
+
 		jtagcore_setEnvVar( jc, "LIBVERSION", "v"LIB_JTAG_CORE_VERSION);
 
 		sctx = jtagcore_initScript(jc);
@@ -1061,13 +1063,8 @@ int jtagcore_select_and_open_probe(jtag_core * jc, int probe_id)
 
 int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 {
-	envvar_entry * tmp_env;
-
-	tmp_env = setEnvVar( jc->envvar, varname, varvalue );
-
-	if( tmp_env )
+	if( setEnvVarDat( jc->envvar, varname, varvalue ) >= 0 )
 	{
-		jc->envvar = tmp_env;
 		return JTAG_CORE_NO_ERROR;
 	}
 	else
@@ -1078,12 +1075,12 @@ int jtagcore_setEnvVar( jtag_core * jc, char * varname, char * varvalue )
 
 char * jtagcore_getEnvVar( jtag_core * jc, char * varname, char * varvalue)
 {
-	return getEnvVar( jc->envvar, varname, varvalue);
+	return getEnvVarDat( jc->envvar, varname, varvalue, 512 );
 }
 
 char * jtagcore_getEnvVarIndex( jtag_core * jc, int index, char * varvalue)
 {
-	return getEnvVarIndex( jc->envvar, index, varvalue);
+	return getEnvVarDatIndex( jc->envvar, index, varvalue, 512 );
 }
 
 int jtagcore_getEnvVarValue( jtag_core * jc, char * varname)
@@ -1095,6 +1092,7 @@ void jtagcore_deinit(jtag_core * jc)
 {
 	if( jc )
 	{
+		deinitEnv( (envvar_entry *)jc->envvar );
 		free( jc );
 	}
 }

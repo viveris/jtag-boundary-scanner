@@ -60,7 +60,6 @@ typedef struct _jtag_core
 	jtag_device devices_list[MAX_NB_JTAG_DEVICE];
 	int IR_filled;
 
-
 	// I2C over JTAG
 	int i2c_sda_device;
 	int i2c_scl_device;

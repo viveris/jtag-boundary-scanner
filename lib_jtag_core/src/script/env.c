@@ -37,10 +37,6 @@
 if L & H == 0 -> end of buffer
 */
 
-#ifdef STATIC_ENV_BUFFER
-static envvar_entry static_envvar;
-#endif
-
 static int stringcopy(char * dst, char * src, unsigned int maxsize)
 {
 	int s;
@@ -269,12 +265,17 @@ static int pushEnvEntry(envvar_entry * env, char * varname, char * vardata)
 	return -1;
 }
 
-envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
+int setEnvVarDat( envvar_entry * env, char * varname, char * vardata )
 {
 	int i,off,ret;
 	unsigned short varname_size, vardata_size;
 	int varname_len, vardata_len;
 	int oldentrysize;
+
+	ret = 0;
+
+	if(!env)
+		return -1;
 
 	i = 0;
 
@@ -282,7 +283,7 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 	vardata_len = 0;
 
 	if( !varname )
-		return env;
+		return -1;
 
 	varname_len = strlen(varname);
 
@@ -291,32 +292,7 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 
 	if( varname_len > ENV_MAX_STRING_SIZE || vardata_len > ENV_MAX_STRING_SIZE)
 	{
-		return env;
-	}
-
-	if(!env)
-	{
-#ifdef STATIC_ENV_BUFFER
-		memset(&static_envvar,0,ENV_PAGE_SIZE);
-		static_envvar.bufsize = ENV_PAGE_SIZE;
-
-		env = &static_envvar;
-#else
-		env = malloc( sizeof(envvar_entry) );
-		if(!env)
-			return NULL;
-
-		memset( env,0,sizeof(envvar_entry));
-
-		env->bufsize = ENV_PAGE_SIZE;
-		env->buf = malloc(env->bufsize);
-		if(!env->buf)
-		{
-			free(env);
-			return NULL;
-		}
-		memset(env->buf,0,env->bufsize);
-#endif
+		return -1;
 	}
 
 	off = getEnvBufOff( env, varname );
@@ -331,7 +307,7 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 		{
 			vardata_len = strlen(vardata);
 			if( vardata_len + 1 > 0xFFFF )
-				return env;
+				return -1;
 
 			if( vardata_len + 1 > vardata_size )
 			{
@@ -379,10 +355,10 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 		}
 	}
 
-	return env;
+	return ret;
 }
 
-char * getEnvVar( envvar_entry * env, char * varname, char * vardata)
+char * getEnvVarDat( envvar_entry * env, char * varname, char * vardata, int maxsize)
 {
 	int off;
 	unsigned short varname_size, vardata_size;
@@ -403,7 +379,7 @@ char * getEnvVar( envvar_entry * env, char * varname, char * vardata)
 		{
 			if(vardata)
 			{
-				stringcopy(vardata, (char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
+				stringcopy(vardata, (char*)&env->buf[off + 2 + varname_size + 2], maxsize);
 			}
 
 			return (char*)&env->buf[off + 2 + varname_size + 2];
@@ -423,7 +399,7 @@ env_var_value getEnvVarValue( envvar_entry * env, char * varname)
 	if(!varname)
 		return 0;
 
-	str_return = getEnvVar( env, varname, NULL);
+	str_return = getEnvVarDat( env, varname, NULL, 0);
 
 	if(str_return)
 	{
@@ -447,7 +423,7 @@ env_var_value getEnvVarValue( envvar_entry * env, char * varname)
 	return value;
 }
 
-envvar_entry * setEnvVarValue( envvar_entry * env, char * varname, env_var_value value)
+int setEnvVarValue( envvar_entry * env, char * varname, env_var_value value)
 {
 	char tmp_str[128];
 
@@ -455,10 +431,10 @@ envvar_entry * setEnvVarValue( envvar_entry * env, char * varname, env_var_value
 
 	snprintf(tmp_str,sizeof(tmp_str) - 1, "%d",value);
 
-	return setEnvVar( env, varname, tmp_str );
+	return setEnvVarDat( env, varname, tmp_str );
 }
 
-char * getEnvVarIndex( envvar_entry * env, int index, char * vardata)
+char * getEnvVarDatIndex( envvar_entry * env, int index, char * vardata, int maxsize)
 {
 	int str_index, off;
 	unsigned short varname_size, vardata_size;
@@ -478,7 +454,7 @@ char * getEnvVarIndex( envvar_entry * env, int index, char * vardata)
 			{
 				if(vardata)
 				{
-					stringcopy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
+					stringcopy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], maxsize);
 				}
 
 				return (char*)&env->buf[off + 2 + varname_size + 2];
@@ -496,48 +472,78 @@ char * getEnvVarIndex( envvar_entry * env, int index, char * vardata)
 	return NULL; // Not found.
 }
 
-envvar_entry * duplicate_env_vars(envvar_entry * src)
+envvar_entry * initEnv(envvar_entry * env, envvar_entry * dst)
 {
-#ifndef STATIC_ENV_BUFFER
-	envvar_entry * tmp_envvars;
-#endif
-
-	if(!src)
-		return NULL;
-
-	if(!src->buf)
-		return NULL;
-
-#ifndef STATIC_ENV_BUFFER
-	tmp_envvars = malloc(sizeof(envvar_entry));
-	if(tmp_envvars)
+	if(!env)
 	{
-		memset(tmp_envvars,0,sizeof(envvar_entry));
-		tmp_envvars->buf = malloc(src->bufsize);
-		if(!tmp_envvars->buf)
+#ifdef STATIC_ENV_BUFFER
+		return NULL;
+#else
+		env = malloc( sizeof(envvar_entry) );
+		if(!env)
+			return NULL;
+
+		memset( env,0,sizeof(envvar_entry));
+
+		env->bufsize = ENV_PAGE_SIZE;
+		env->buf = malloc(env->bufsize);
+		if(!env->buf)
 		{
-			free(tmp_envvars);
+			free(env);
 			return NULL;
 		}
+		memset(env->buf,0,env->bufsize);
 
-		memcpy(tmp_envvars->buf,src->buf,src->bufsize);
-
-		return tmp_envvars;
-	}
+		return env;
 #endif
+	}
+	else
+	{
+#ifdef STATIC_ENV_BUFFER
+		if(!dst)
+			return NULL;
+
+		memset(&dst,0,sizeof(envvar_entry));
+		dst->bufsize = ENV_PAGE_SIZE;
+#else
+		envvar_entry * tmp_envvars;
+
+		if(!env->buf)
+			return NULL;
+
+		tmp_envvars = malloc(sizeof(envvar_entry));
+		if(tmp_envvars)
+		{
+			memset(tmp_envvars,0,sizeof(envvar_entry));
+			tmp_envvars->buf = malloc(env->bufsize);
+			if(!tmp_envvars->buf)
+			{
+				free(tmp_envvars);
+				return NULL;
+			}
+
+			memcpy(tmp_envvars->buf,env->buf,env->bufsize);
+
+			return tmp_envvars;
+		}
+#endif
+	}
+
 	return NULL;
 }
 
-void free_env_vars(envvar_entry * src)
+void deinitEnv(envvar_entry * env)
 {
 #ifndef STATIC_ENV_BUFFER
-	if(!src)
+	if(!env)
 		return;
 
-	if(src->buf)
-		free(src->buf);
+	if(env->buf)
+		free(env->buf);
 
-	free(src);
+	free(env);
+#else
+	memset(env,0,sizeof(envvar_entry));
 #endif
 	return;
 }

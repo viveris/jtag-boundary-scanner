@@ -1217,6 +1217,9 @@ char * arrayresize(char * array, int size, unsigned char c)
 	int cursize;
 	char * ptr;
 
+	if( size < 0 )
+		return array;
+
 	if(array)
 	{
 		if( array[0] == '0' && (array[1] == 'x' || array[1] == 'X') )

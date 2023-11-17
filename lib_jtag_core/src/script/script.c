@@ -1230,11 +1230,11 @@ char * arrayresize(char * array, int size, unsigned char c)
 	}
 	else
 	{
-		array = malloc(DEFAULT_BUFLEN);
+		array = malloc(DEFAULT_BUFLEN + 1);
 		if(array)
 		{
 			size = DEFAULT_BUFLEN / 2;
-			memset(array,0,DEFAULT_BUFLEN);
+			memset(array,0,DEFAULT_BUFLEN + 1);
 		}
 
 		ptr = array;
@@ -1253,14 +1253,14 @@ char * arrayresize(char * array, int size, unsigned char c)
 			while( cursize < size )
 			{
 				sprintf(&ptr[(cursize*2) + 0],"%.2X",c);
-				//ptr[(cursize*2) + 0] = '0';
-				//ptr[(cursize*2) + 1] = '0';
 				cursize++;
 			}
+			ptr[(cursize*2) + 0] = '\0';
+			
 		}
 		else
 		{
-			ptr[ (size * 2) - 1 ] = 0;
+			ptr[ (size * 2) - 1 ] = '\0';
 		}
 	}
 

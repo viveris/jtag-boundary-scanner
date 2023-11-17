@@ -46,15 +46,8 @@ static int stringcopy(char * dst, char * src, unsigned int maxsize)
 
 	if( !src )
 	{
-		if(maxsize)
-		{
-			*dst = '\0';
-			return 1;
-		}
-		else
-		{
-			return 0;
-		}
+		*dst = '\0';
+		return 1;
 	}
 
 	s = 0;

@@ -41,6 +41,39 @@ if L & H == 0 -> end of buffer
 static envvar_entry static_envvar;
 #endif
 
+static int stringcopy(char * dst, char * src, unsigned int maxsize)
+{
+	int s;
+
+	if( !dst || (maxsize <= 0))
+		return 0;
+
+	if( !src )
+	{
+		if(maxsize)
+		{
+			*dst = '\0';
+			return 1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+
+	s = 0;
+	while( *src && s < (maxsize - 1))
+	{
+		*dst++ = *src++;
+		s++;
+	}
+
+	*dst = '\0';
+	s++;
+
+	return s;
+}
+
 static uint16_t getEnvStrSize(unsigned char * buf)
 {
 	uint16_t size;
@@ -143,9 +176,8 @@ static int pushStr(envvar_entry * env, int offset, char * str)
 	{
 		setEnvStrSize(&env->buf[offset], size);
 		offset += 2;
-		strncpy((char*)&env->buf[offset],str,size);
+		stringcopy((char*)&env->buf[offset], str, size);
 		offset += size;
-		env->buf[offset - 1] = '\0';
 
 		return offset;
 	}
@@ -251,7 +283,7 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 
 	if( !varname )
 		return env;
-	
+
 	varname_len = strlen(varname);
 
 	if( vardata )
@@ -322,8 +354,7 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 				if(vardata_size)
 				{
 					memset((char*)&env->buf[off + 2 + varname_size + 2], 0, vardata_size );
-					strncpy( (char*)&env->buf[off + 2 + varname_size + 2], vardata, vardata_size - 1);
-					env->buf[off + 2 + varname_size + 2 + vardata_size - 1] = '\0';
+					stringcopy( (char*)&env->buf[off + 2 + varname_size + 2], vardata, vardata_size);
 				}
 			}
 		}
@@ -372,8 +403,7 @@ char * getEnvVar( envvar_entry * env, char * varname, char * vardata)
 		{
 			if(vardata)
 			{
-				strncpy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
-				vardata[ENV_MAX_STRING_SIZE - 1] = '\0';
+				stringcopy(vardata, (char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
 			}
 
 			return (char*)&env->buf[off + 2 + varname_size + 2];
@@ -448,8 +478,7 @@ char * getEnvVarIndex( envvar_entry * env, int index, char * vardata)
 			{
 				if(vardata)
 				{
-					strncpy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
-					vardata[ENV_MAX_STRING_SIZE - 1] = '\0';
+					stringcopy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
 				}
 
 				return (char*)&env->buf[off + 2 + varname_size + 2];

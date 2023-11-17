@@ -605,7 +605,7 @@ char * get_attribut(char ** lines,char * name, char * entity)
 	char * ptr;
 	i = 0;
 
-	do
+	while( lines[i] )
 	{
 		if(!strncmp(lines[i],"attribute ",10))
 		{
@@ -635,7 +635,7 @@ char * get_attribut(char ** lines,char * name, char * entity)
 			}
 		}
 		i++;
-	}while( lines[i] );
+	}
 
 	return NULL;
 }

@@ -1380,43 +1380,46 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 		qsort(bsdl->pins_list, i, sizeof bsdl->pins_list[0], compare_pin_name);
 	}
 
-	i = 0;
-	while(bsdl->pins_list[i].pinname[0])
+	if(bsdl->pins_list)
 	{
-		char dbg_str[512];
-		int namelen,j,k;
-		char disval;
-
-		namelen = strlen(bsdl->pins_list[i].pinname);
-
-		sprintf(dbg_str,"Pin %s",bsdl->pins_list[i].pinname);
-		for(j=0;j<(16 - namelen);j++)
+		i = 0;
+		while(bsdl->pins_list[i].pinname[0])
 		{
-			strcat(dbg_str," ");
-		}
+			char dbg_str[512];
+			int namelen,j,k;
+			char disval;
 
-		k = strlen(dbg_str);
+			namelen = strlen(bsdl->pins_list[i].pinname);
 
-		disval = 'X';
-
-		if(bsdl->pins_list[i].out_bit_number >=0 )
-		{
-			if( bsdl->chain_list[bsdl->pins_list[i].out_bit_number].control_disable_state >= 0 )
+			sprintf(dbg_str,"Pin %s",bsdl->pins_list[i].pinname);
+			for(j=0;j<(16 - namelen);j++)
 			{
-				disval = '0' + bsdl->chain_list[bsdl->pins_list[i].out_bit_number].control_disable_state;
+				strcat(dbg_str," ");
 			}
+
+			k = strlen(dbg_str);
+
+			disval = 'X';
+
+			if(bsdl->pins_list[i].out_bit_number >=0 )
+			{
+				if( bsdl->chain_list[bsdl->pins_list[i].out_bit_number].control_disable_state >= 0 )
+				{
+					disval = '0' + bsdl->chain_list[bsdl->pins_list[i].out_bit_number].control_disable_state;
+				}
+			}
+
+			sprintf(&dbg_str[k]," type %.2d, ctrl %.3d (disval:%c), out %.3d, in %.3d\r\n",
+									bsdl->pins_list[i].pintype,
+									bsdl->pins_list[i].ctrl_bit_number,
+									disval,
+									bsdl->pins_list[i].out_bit_number,
+									bsdl->pins_list[i].in_bit_number);
+
+			jtagcore_logs_printf(jc,MSG_DEBUG,dbg_str);
+
+			i++;
 		}
-
-		sprintf(&dbg_str[k]," type %.2d, ctrl %.3d (disval:%c), out %.3d, in %.3d\r\n",
-								bsdl->pins_list[i].pintype,
-								bsdl->pins_list[i].ctrl_bit_number,
-								disval,
-								bsdl->pins_list[i].out_bit_number,
-								bsdl->pins_list[i].in_bit_number);
-
-		jtagcore_logs_printf(jc,MSG_DEBUG,dbg_str);
-
-		i++;
 	}
 
 	///////////////////////
@@ -1478,6 +1481,7 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 			lines[i] = 0;
 		}
 	}
+
 	free(lines);
 
 	jtagcore_logs_printf(jc,MSG_INFO_0,"BSDL file %s loaded and parsed\r\n",filename);

@@ -249,8 +249,10 @@ envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
 	varname_len = 0;
 	vardata_len = 0;
 
-	if( varname )
-		varname_len = strlen(varname);
+	if( !varname )
+		return env;
+	
+	varname_len = strlen(varname);
 
 	if( vardata )
 		vardata_len = strlen(vardata);

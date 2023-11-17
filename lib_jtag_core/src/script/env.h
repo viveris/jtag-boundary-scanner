@@ -22,7 +22,6 @@
 * @brief  Internal variables support header file.
 * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
 */
-
 #ifdef SCRIPT_64BITS_SUPPORT
 #define env_var_value uint64_t
 #define signed_env_var_value int64_t
@@ -33,15 +32,25 @@
 #define STRTOVALUE strtoul
 #endif
 
+//#define STATIC_ENV_BUFFER 1
+#define ENV_PAGE_SIZE (16*1024)
+#define ENV_MAX_TOTAL_BUFFER_SIZE (1024 * 1024) // 1MB
+#define ENV_MAX_STRING_SIZE 512
+
 typedef struct envvar_entry_
 {
-	char * name;
-	char * varvalue;
+#ifdef STATIC_ENV_BUFFER
+	unsigned char buf[ENV_PAGE_SIZE];
+#else
+	unsigned char * buf;
+#endif
+	unsigned int  bufsize;
 }envvar_entry;
 
-envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * varvalue);
-char * getEnvVar( envvar_entry * env, char * varname, char * varvalue);
+envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata);
+char * getEnvVar( envvar_entry * env, char * varname, char * vardata);
 env_var_value getEnvVarValue( envvar_entry * env, char * varname);
-char * getEnvVarIndex( envvar_entry * env, int index, char * varvalue);
+envvar_entry * setEnvVarValue( envvar_entry * env, char * varname, env_var_value value);
+char * getEnvVarIndex( envvar_entry * env, int index, char * vardata);
 envvar_entry * duplicate_env_vars(envvar_entry * src);
 void free_env_vars(envvar_entry * src);

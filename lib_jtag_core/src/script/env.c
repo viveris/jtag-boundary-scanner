@@ -30,123 +30,355 @@
 
 #include "env.h"
 
-envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * varvalue )
+/*
+|L|H|str varname\0|L|H|str vardata\0|L|H|str varname\0|L|H|str vardata\0|0|0|
+
+(H*256)+L = str size (\0 included)
+if L & H == 0 -> end of buffer
+*/
+
+#ifdef STATIC_ENV_BUFFER
+static envvar_entry static_envvar;
+#endif
+
+static uint16_t getEnvStrSize(unsigned char * buf)
 {
-	int i;
-	envvar_entry * tmp_envvars;
+	uint16_t size;
 
-	i = 0;
+	size = *buf++;
+	size += (((uint16_t)*buf)<<8);
 
-	tmp_envvars = (envvar_entry *)env;
-
-	if(!tmp_envvars)
-	{
-		tmp_envvars = malloc(sizeof(envvar_entry) );
-		if(!tmp_envvars)
-			goto alloc_error;
-
-		memset( tmp_envvars,0,sizeof(envvar_entry));
-	}
-
-	// is the variable already there
-	while(tmp_envvars[i].name)
-	{
-		if(!strcmp(tmp_envvars[i].name,varname) )
-		{
-			break;
-		}
-		i++;
-	}
-
-	if(tmp_envvars[i].name)
-	{
-		// the variable already exist - update it.
-		if(tmp_envvars[i].varvalue)
-		{
-			free(tmp_envvars[i].varvalue);
-			tmp_envvars[i].varvalue = NULL;
-		}
-
-		if(varvalue)
-		{
-			tmp_envvars[i].varvalue = malloc(strlen(varvalue)+1);
-
-			if(!tmp_envvars[i].varvalue)
-				goto alloc_error;
-
-			memset(tmp_envvars[i].varvalue,0,strlen(varvalue)+1);
-			if(varvalue)
-				strcpy(tmp_envvars[i].varvalue,varvalue);
-		}
-	}
-	else
-	{
-		// No variable found, alloc an new entry
-		if(strlen(varname))
-		{
-			tmp_envvars[i].name = malloc(strlen(varname)+1);
-			if(!tmp_envvars[i].name)
-				goto alloc_error;
-
-			memset(tmp_envvars[i].name,0,strlen(varname)+1);
-			strcpy(tmp_envvars[i].name,varname);
-
-			if(varvalue)
-			{
-				tmp_envvars[i].varvalue = malloc(strlen(varvalue)+1);
-
-				if(!tmp_envvars[i].varvalue)
-					goto alloc_error;
-
-				memset(tmp_envvars[i].varvalue,0,strlen(varvalue)+1);
-				if(varvalue)
-					strcpy(tmp_envvars[i].varvalue,varvalue);
-			}
-
-			tmp_envvars = realloc(tmp_envvars,sizeof(envvar_entry) * (i + 1 + 1));
-			memset(&tmp_envvars[i + 1],0,sizeof(envvar_entry));
-		}
-	}
-
-	return tmp_envvars;
-
-alloc_error:
-	return NULL;
+	return size;
 }
 
-char * getEnvVar( envvar_entry * env, char * varname, char * varvalue)
+static void setEnvStrSize(unsigned char * buf, uint16_t size)
 {
-	int i;
+	*buf++ = size & 0xFF;
+	*buf = (size >> 8) & 0xFF;
 
-	envvar_entry * tmp_envvars;
+	return;
+}
+
+static int getEnvEmptyOffset(envvar_entry * env)
+{
+	int off;
+	unsigned short varname_size, vardata_size;
+
+	off = 0;
+
+	varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+	vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+
+	while( varname_size )
+	{
+		off += (2 + varname_size + 2 + vardata_size);
+
+		varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+		vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+	}
+
+	return off;
+}
+
+static int getEnvBufOff(envvar_entry * env, char * varname)
+{
+	unsigned short curstr_size;
+	int str_index,i;
 
 	i = 0;
+
+	str_index = 0;
+	curstr_size = getEnvStrSize(&env->buf[i]);
+	i += 2;
+
+	while( curstr_size )
+	{
+		if( !(str_index & 1) ) // variable name ?
+		{
+			if( !strcmp((char*)&env->buf[i],varname ) )
+			{
+				// this is the variable we are looking for.
+				return (i - 2);
+			}
+			else
+			{
+				// not the right variable - skip this string.
+				i += curstr_size;
+			}
+		}
+		else
+		{
+			//variable data - skip this string.
+			i += curstr_size;
+		}
+
+		if( i < env->bufsize - 2 )
+		{
+			curstr_size = getEnvStrSize(&env->buf[i]);
+			i += 2;
+		}
+		else
+		{
+			curstr_size = 0;
+		}
+
+		str_index++;
+	}
+
+	return -1; // Not found.
+}
+
+static int pushStr(envvar_entry * env, int offset, char * str)
+{
+	int size;
+
+	if(!str || offset < 0)
+		return -1;
+
+	size = strlen(str) + 1;
+	if(size > 0xFFFF)
+		return -1;
+
+	if( ( offset + 2 + size ) <  env->bufsize )
+	{
+		setEnvStrSize(&env->buf[offset], size);
+		offset += 2;
+		strncpy((char*)&env->buf[offset],str,size);
+		offset += size;
+		env->buf[offset - 1] = '\0';
+
+		return offset;
+	}
+
+	return -1;
+}
+
+#ifndef STATIC_ENV_BUFFER
+static envvar_entry * realloc_env_buffer(envvar_entry * env, unsigned int size)
+{
+	unsigned int tmp_bufsize;
+	unsigned char * tmpbuf;
+
+	if( !env )
+	{
+		env = malloc( sizeof(envvar_entry) );
+		if(!env)
+			return NULL;
+
+		memset( env,0,sizeof(envvar_entry));
+	}
+
+	tmp_bufsize = size;
+
+	if( tmp_bufsize & (ENV_PAGE_SIZE - 1) )
+	{
+		tmp_bufsize = (tmp_bufsize & (~(ENV_PAGE_SIZE - 1))) + ENV_PAGE_SIZE;
+	}
+
+	if( tmp_bufsize > ENV_MAX_TOTAL_BUFFER_SIZE )
+	{
+		return env;
+	}
+
+	if( env->bufsize != tmp_bufsize )
+	{
+		tmpbuf = realloc(env->buf, tmp_bufsize);
+		if(tmpbuf)
+		{
+			if( env->bufsize < tmp_bufsize )
+				memset(&tmpbuf[env->bufsize], 0, tmp_bufsize - env->bufsize );
+
+			env->bufsize = tmp_bufsize;
+			env->buf = tmpbuf;
+		}
+	}
+
+	return env;
+}
+#endif
+
+static int pushEnvEntry(envvar_entry * env, char * varname, char * vardata)
+{
+	unsigned int total_size;
+	int varname_len,vardata_len;
+	int offset;
+
+	if(!varname || !vardata)
+		return -1;
+
+	varname_len = strlen(varname) + 1;
+	vardata_len = strlen(vardata) + 1;
+
+	if( varname_len > ENV_MAX_STRING_SIZE || vardata_len > ENV_MAX_STRING_SIZE)
+	{
+		return -2;
+	}
+
+	total_size = 2 + varname_len + 2 + vardata_len;
+
+	offset = getEnvEmptyOffset(env);
+	if( offset < 0 )
+	{
+		return -1;
+	}
+
+#ifndef STATIC_ENV_BUFFER
+	realloc_env_buffer(env, offset + total_size + 4);
+#endif
+
+	if( (total_size + offset) <  env->bufsize )
+	{
+		offset = pushStr(env, offset, varname);
+		offset = pushStr(env, offset, vardata);
+
+		return offset;
+	}
+
+	return -1;
+}
+
+envvar_entry * setEnvVar( envvar_entry * env, char * varname, char * vardata )
+{
+	int i,off,ret;
+	unsigned short varname_size, vardata_size;
+	int varname_len, vardata_len;
+	int oldentrysize;
+
+	i = 0;
+
+	varname_len = 0;
+	vardata_len = 0;
+
+	if( varname )
+		varname_len = strlen(varname);
+
+	if( vardata )
+		vardata_len = strlen(vardata);
+
+	if( varname_len > ENV_MAX_STRING_SIZE || vardata_len > ENV_MAX_STRING_SIZE)
+	{
+		return env;
+	}
+
+	if(!env)
+	{
+#ifdef STATIC_ENV_BUFFER
+		memset(&static_envvar,0,ENV_PAGE_SIZE);
+		static_envvar.bufsize = ENV_PAGE_SIZE;
+
+		env = &static_envvar;
+#else
+		env = malloc( sizeof(envvar_entry) );
+		if(!env)
+			return NULL;
+
+		memset( env,0,sizeof(envvar_entry));
+
+		env->bufsize = ENV_PAGE_SIZE;
+		env->buf = malloc(env->bufsize);
+		if(!env->buf)
+		{
+			free(env);
+			return NULL;
+		}
+		memset(env->buf,0,env->bufsize);
+#endif
+	}
+
+	off = getEnvBufOff( env, varname );
+	if( off >= 0 )
+	{
+		varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+		vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+
+		oldentrysize = 2 + varname_size + 2 + vardata_size;
+
+		if(vardata)
+		{
+			vardata_len = strlen(vardata);
+			if( vardata_len + 1 > 0xFFFF )
+				return env;
+
+			if( vardata_len + 1 > vardata_size )
+			{
+				// add new entry, and pack the strings
+				ret = pushEnvEntry(env, varname, vardata);
+				if( ret > 0 )
+				{
+					unsigned char byte;
+					for(i=0;i<env->bufsize - (off + oldentrysize);i++)
+					{
+						byte = env->buf[off + i + oldentrysize];
+						env->buf[off + i + oldentrysize] = '\0';
+						env->buf[off + i] = byte;
+					}
+				}
+			}
+			else
+			{
+				vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+				if(vardata_size)
+				{
+					memset((char*)&env->buf[off + 2 + varname_size + 2], 0, vardata_size );
+					strncpy( (char*)&env->buf[off + 2 + varname_size + 2], vardata, vardata_size - 1);
+					env->buf[off + 2 + varname_size + 2 + vardata_size - 1] = '\0';
+				}
+			}
+		}
+		else
+		{
+			// unset variable
+			unsigned char byte;
+			for(i=0;i<env->bufsize - (off + oldentrysize);i++)
+			{
+				byte = env->buf[off + i + oldentrysize];
+				env->buf[off + i + oldentrysize] = '\0';
+				env->buf[off + i] = byte;
+			}
+		}
+	}
+	else
+	{
+		if(vardata)
+		{
+			// New variable
+			ret = pushEnvEntry(env, varname, vardata);
+		}
+	}
+
+	return env;
+}
+
+char * getEnvVar( envvar_entry * env, char * varname, char * vardata)
+{
+	int off;
+	unsigned short varname_size, vardata_size;
+
+	envvar_entry * tmp_envvars;
 
 	tmp_envvars = (envvar_entry *)env;
 	if(!tmp_envvars)
 		return NULL;
 
-	// search the variable...
-	while(tmp_envvars[i].name)
+	off = getEnvBufOff( env, varname );
+	if( off >= 0 )
 	{
-		if(!strcmp(tmp_envvars[i].name,varname) )
+		varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+		vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+
+		if( varname_size>0 && vardata_size>0)
 		{
-			break;
+			if(vardata)
+			{
+				strncpy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
+				vardata[ENV_MAX_STRING_SIZE - 1] = '\0';
+			}
+
+			return (char*)&env->buf[off + 2 + varname_size + 2];
 		}
-		i++;
 	}
 
-	if(tmp_envvars[i].name)
-	{
-		if(varvalue)
-			strcpy(varvalue,tmp_envvars[i].varvalue);
-
-		return tmp_envvars[i].varvalue;
-	}
-	else
-	{
-		return NULL;
-	}
+	return NULL;
 }
 
 env_var_value getEnvVarValue( envvar_entry * env, char * varname)
@@ -183,104 +415,98 @@ env_var_value getEnvVarValue( envvar_entry * env, char * varname)
 	return value;
 }
 
-char * getEnvVarIndex( envvar_entry * env, int index, char * varvalue)
+envvar_entry * setEnvVarValue( envvar_entry * env, char * varname, env_var_value value)
 {
-	int i;
-	envvar_entry * tmp_envvars;
+	char tmp_str[128];
 
-	i = 0;
+	tmp_str[128 - 1] = 0;
 
-	tmp_envvars = (envvar_entry *)env;
-	if(!tmp_envvars)
-		return NULL;
+	snprintf(tmp_str,sizeof(tmp_str) - 1, "%d",value);
 
-	// search the variable...
-	while(tmp_envvars[i].name && i < index)
+	return setEnvVar( env, varname, tmp_str );
+}
+
+char * getEnvVarIndex( envvar_entry * env, int index, char * vardata)
+{
+	int str_index, off;
+	unsigned short varname_size, vardata_size;
+
+	off = 0;
+
+	str_index = 0;
+
+	varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+	vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+
+	while( varname_size )
 	{
-		i++;
+		if( str_index == index )
+		{
+			if( varname_size>0 && vardata_size>0)
+			{
+				if(vardata)
+				{
+					strncpy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], ENV_MAX_STRING_SIZE);
+					vardata[ENV_MAX_STRING_SIZE - 1] = '\0';
+				}
+
+				return (char*)&env->buf[off + 2 + varname_size + 2];
+			}
+		}
+
+		off += (2 + varname_size + 2 + vardata_size);
+
+		varname_size = getEnvStrSize(&env->buf[off]); // var name string size
+		vardata_size = getEnvStrSize(&env->buf[off + 2 + varname_size]); // var data string size
+
+		str_index++;
 	}
 
-	if(tmp_envvars[i].name)
-	{
-		if(varvalue)
-			strcpy(varvalue,tmp_envvars[i].varvalue);
-
-		return tmp_envvars[i].name;
-	}
-	else
-	{
-		return NULL;
-	}
+	return NULL; // Not found.
 }
 
 envvar_entry * duplicate_env_vars(envvar_entry * src)
 {
-	int i,j;
+#ifndef STATIC_ENV_BUFFER
 	envvar_entry * tmp_envvars;
+#endif
 
 	if(!src)
 		return NULL;
 
-	i = 0;
-	// count entry
-	while(src[i].name && i < 65536)
-	{
-		i++;
-	}
+	if(!src->buf)
+		return NULL;
 
-	tmp_envvars = malloc(sizeof(envvar_entry) * (i + 1));
+#ifndef STATIC_ENV_BUFFER
+	tmp_envvars = malloc(sizeof(envvar_entry));
 	if(tmp_envvars)
 	{
-		memset(tmp_envvars,0,sizeof(envvar_entry) * (i + 1));
-		for(j=0;j<i;j++)
+		memset(tmp_envvars,0,sizeof(envvar_entry));
+		tmp_envvars->buf = malloc(src->bufsize);
+		if(!tmp_envvars->buf)
 		{
-			if(src[j].name)
-			{
-				tmp_envvars[j].name = malloc(strlen(src[j].name) + 1);
-				if(tmp_envvars[j].name)
-					strcpy(tmp_envvars[j].name,src[j].name);
-			}
-
-			if(src[j].varvalue)
-			{
-				tmp_envvars[j].varvalue = malloc(strlen(src[j].varvalue) + 1);
-				if(tmp_envvars[j].varvalue)
-					strcpy(tmp_envvars[j].varvalue,src[j].varvalue);
-			}
+			free(tmp_envvars);
+			return NULL;
 		}
-	}
 
-	return tmp_envvars;
+		memcpy(tmp_envvars->buf,src->buf,src->bufsize);
+
+		return tmp_envvars;
+	}
+#endif
+	return NULL;
 }
 
 void free_env_vars(envvar_entry * src)
 {
-	int i,j;
-
+#ifndef STATIC_ENV_BUFFER
 	if(!src)
 		return;
 
-	i = 0;
-	// count entry
-	while(src[i].name)
-	{
-		i++;
-	}
-
-	for(j=0;j<i;j++)
-	{
-		if(src[j].name)
-		{
-			free(src[j].name);
-		}
-
-		if(src[j].varvalue)
-		{
-			free(src[j].varvalue);
-		}
-	}
+	if(src->buf)
+		free(src->buf);
 
 	free(src);
-
+#endif
 	return;
 }

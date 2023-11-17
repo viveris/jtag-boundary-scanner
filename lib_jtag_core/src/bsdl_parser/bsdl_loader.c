@@ -328,6 +328,9 @@ void preprocess_line(char * line)
 	write_offset = 0;
 	number_of_spaces = 0;
 
+	if(!line)
+		return;
+
 	// first pass : remove extra blank
 	while( line[read_offset] )
 	{

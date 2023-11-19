@@ -450,7 +450,7 @@ char * getEnvVarDatIndex( envvar_entry * env, int index, char * vardata, int max
 					stringcopy(vardata,(char*)&env->buf[off + 2 + varname_size + 2], maxsize);
 				}
 
-				return (char*)&env->buf[off + 2 + varname_size + 2];
+				return (char*)&env->buf[off + 2];
 			}
 		}
 
@@ -514,6 +514,8 @@ envvar_entry * initEnv(envvar_entry * env, envvar_entry * dst)
 				free(tmp_envvars);
 				return NULL;
 			}
+
+			tmp_envvars->bufsize = env->bufsize;
 
 			memcpy(tmp_envvars->buf,env->buf,env->bufsize);
 

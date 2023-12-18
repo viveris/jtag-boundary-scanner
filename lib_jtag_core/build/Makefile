@@ -147,7 +147,7 @@ $(BASEDIR)/config_script.h: $(BASEDIR)/config.script
 	cd $(BASEDIR);xxd -i config.script > config_script.h
 
 clean:
-	rm -rf *.o *.so
+	rm -rf *.o *.so *.map
 
 mrproper: clean
 	rm -rf $(EXEC)

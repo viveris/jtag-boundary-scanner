@@ -22,6 +22,7 @@ mrproper:
 	-rm -rf *.dll
 	-rm -rf *.exe
 	-rm -rf *.lib
+	-rm -rf *.map
 	-rm -rf *.ncb
 	-rm -rf *.exp
 	-rm -rf *.dylib

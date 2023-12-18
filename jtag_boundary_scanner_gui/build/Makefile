@@ -67,7 +67,7 @@ endif
 all:
 	$(MAKE) $(EXEC)
 
-JTAGBoundaryScanner.exe: win32_JTAGBoundaryScanner_res.o JTAGBoundaryScanner.o fileselector.o socket.o $(LIBJTAGCORE) 
+JTAGBoundaryScanner.exe: win32_JTAGBoundaryScanner_res.o version_res.o JTAGBoundaryScanner.o fileselector.o socket.o $(LIBJTAGCORE) 
 	$(CC) -o $@    $^ $(LDFLAGS)
 	cp $@ ../../build
 
@@ -79,6 +79,9 @@ $(LIBJTAGCORE): ../../build/$(LIBJTAGCORE)
 	ln ../../build/$(LIBJTAGCORE)  $(LIBJTAGCORE)
 
 win32_JTAGBoundaryScanner_res.o: $(BASEDIR)/JTAGBoundaryScanner.rc
+	$(RESC) $< $@ -I$(BASEDIR)/ -I$(BASEDIR)/images
+
+version_res.o: $(BASEDIR)/version.rc
 	$(RESC) $< $@ -I$(BASEDIR)/ -I$(BASEDIR)/images
 
 JTAGBoundaryScanner.o: $(BASEDIR)/JTAGBoundaryScanner.c

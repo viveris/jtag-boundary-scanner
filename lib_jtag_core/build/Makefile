@@ -33,7 +33,7 @@ endif
 ifeq ($(TARGET), mingw32)
 CC=i686-w64-mingw32-gcc
 RESC=i686-w64-mingw32-windres
-LDFLAGS += -static-libgcc -lws2_32 ../src/os_interface/win32/libjtagcore.def
+LDFLAGS += -static-libgcc -lws2_32 ../src/os_interface/win32/libjtagcore.def -Wl,-Map=output.map
 EXEC=libjtagcore.dll
 endif
 

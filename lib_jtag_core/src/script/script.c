@@ -1080,7 +1080,7 @@ static int cmd_call( script_ctx * ctx, char * line )
 
 		ret = JTAG_CORE_INTERNAL_ERROR;
 
-		new_ctx = init_script((void*)jc,0x00000000,(void*)&jc->envvar);
+		new_ctx = init_script((void*)jc,0x00000000,(void*)jc->envvar);
 		if(new_ctx)
 		{
 			new_ctx->script_printf = ctx->script_printf;
@@ -2488,7 +2488,7 @@ cmd_list script_commands_list[] =
 
 script_ctx * jtagcore_initScript(jtag_core * jc)
 {
-	return init_script((void*)jc,0x00000000,(void*)&jc->envvar);
+	return init_script((void*)jc,0x00000000,(void*)jc->envvar);
 }
 
 void jtagcore_setScriptOutputFunc( script_ctx * ctx, SCRIPT_PRINTF_FUNC ext_printf )

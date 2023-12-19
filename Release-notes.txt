@@ -4,6 +4,12 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.6.3.2 (2023-12-19)
+=================================================
+
+	- Fix v2.6.3.1 release :
+	Fix crash while loading bsdl file. (script engine issue).
+
 Noteworthy changes in release v2.6.3.1 (2023-12-18)
 =================================================
 

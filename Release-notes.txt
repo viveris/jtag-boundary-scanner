@@ -1,8 +1,13 @@
 =================================================
 * JTAG Boundary scanner
-* Copyright (c) 2008 - 2023 Viveris Technologies
+* Copyright (c) 2008 - 2024 Viveris Technologies
 * Release notes
 =================================================
+
+Noteworthy changes in release v2.6.3.3 (2024-03-05)
+=================================================
+
+	- Fix a probe communication issue with FTDI based probes and some JTAG targets/bsdl.
 
 Noteworthy changes in release v2.6.3.2 (2023-12-19)
 =================================================

@@ -827,7 +827,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 				{
 					Sleep(3);
 					status = pFT_GetQueueStatus(ftdih, &nbRead);
-				} while ((nbRead < ((payloadsize / 8) - 1)) && (status == FT_OK));
+				} while ( ( nbRead < 1 ) && ( status == FT_OK ) );
 
 				status = pFT_Read(ftdih, &ftdi_in_buf, nbRead, &nbRead);
 

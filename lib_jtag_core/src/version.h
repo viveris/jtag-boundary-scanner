@@ -1,9 +1,9 @@
 #define VDIG1 2
 #define VDIG2 6
 #define VDIG3 3
-#define VDIG4 2
+#define VDIG4 3
 
-#define STR_DATE "19 Dec 2023"
+#define STR_DATE "5 Mar 2024"
 
 #define vxstr(s) vstr(s)
 #define vstr(s) #s

@@ -111,7 +111,7 @@ FONT 8, "System"
 BEGIN
     ICON            IDI_JTAGTEST,IDC_MYICON,7,5,20,20
     LTEXT           APP_VER_STR(APP_VER),IDC_STATIC,39,6,190,8,SS_NOPREFIX
-    LTEXT           "Copyright (C) Viveris Technologies 2008-2023",
+    LTEXT           "Copyright (C) Viveris Technologies 2008-2024",
                     IDC_STATIC,39,16,155,10
     DEFPUSHBUTTON   "OK",IDOK,190,90,41,11,WS_GROUP
     CONTROL         137,IDC_VIVERISLOGO,"Static",SS_BITMAP |

@@ -1,6 +1,6 @@
 /*
  * JTAG Core library
- * Copyright (c) 2008 - 2023 Viveris Technologies
+ * Copyright (c) 2008 - 2024 Viveris Technologies
  *
  * JTAG Core library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -4,16 +4,21 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.6.4.1 (2024-03-06)
+=================================================
+
+    - I2C Bus over JTAG emulation : Support targets without OE control bits.
+
 Noteworthy changes in release v2.6.3.3 (2024-03-05)
 =================================================
 
-	- Fix a probe communication issue with FTDI based probes and some JTAG targets/bsdl.
+    - Fix a probe communication issue with FTDI based probes and some JTAG targets/bsdl.
 
 Noteworthy changes in release v2.6.3.2 (2023-12-19)
 =================================================
 
-	- Fix v2.6.3.1 release :
-	Fix crash while loading bsdl file. (script engine issue).
+    - Fix v2.6.3.1 release :
+     crash while loading bsdl file. (script engine issue).
 
 Noteworthy changes in release v2.6.3.1 (2023-12-18)
 =================================================

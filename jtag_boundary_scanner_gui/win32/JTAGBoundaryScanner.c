@@ -111,10 +111,27 @@ void AppendText(HWND hEditWnd, LPCTSTR Text)
     SendMessage(hEditWnd, EM_REPLACESEL, 0, (LPARAM)Text);
 }
 
-void logs_callback(const char * string)
+void logs_callback(jtag_core * jc, const char * string)
 {
+	char * path;
+	FILE * f;
+
+	if( !string )
+		return;
+
 	if(hDlg_logs)
 		AppendText(GetDlgItem(hDlg_logs, IDC_EDIT1), string);
+
+	path = jtagcore_get_logs_file( jc );
+	if( strlen(path) )
+	{
+		f = fopen(path, "a");
+		if(f)
+		{
+			fprintf(f, "%s", string);
+			fclose(f);
+		}
+	}
 }
 
 int APIENTRY WinMain(HINSTANCE hInstance,
@@ -164,7 +181,6 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		hDlg_logs = 0;
 
 		jtagcore_set_logs_callback(jc,logs_callback);
-		jtagcore_set_logs_level(jc,1);
 
 		// Initialize global strings
 		LoadString(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -2132,8 +2148,7 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			hDlg_logs = hDlg;
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT1),EM_SETLIMITTEXT,100000000,0);
 			SendDlgItemMessage(hDlg, IDC_SLIDER1, TBM_SETRANGE, 1, MAKELONG(0, 5));
-			SendDlgItemMessage(hDlg, IDC_SLIDER1, TBM_SETPOS, 1, 4);
-			jtagcore_set_logs_level(jc,1);
+			SendDlgItemMessage(hDlg, IDC_SLIDER1, TBM_SETPOS, 1, 5 - jtagcore_get_logs_level(jc) );
 			return TRUE;
 			break;
 
@@ -2156,7 +2171,7 @@ LRESULT CALLBACK DialogProc_Logs(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 			break;
 
 		case WM_HSCROLL:
-			jtagcore_set_logs_level(jc,5-SendMessage(GetDlgItem(hDlg, IDC_SLIDER1), TBM_GETPOS, 0, 0));
+			jtagcore_set_logs_level(jc, 5 - SendMessage(GetDlgItem(hDlg, IDC_SLIDER1), TBM_GETPOS, 0, 0) );
 			break;
 
 	}

@@ -78,7 +78,7 @@ int jtagcore_logs_printf(jtag_core * jc,int MSGTYPE,char * chaine, ...)
 			genos_strndstcat(tmp_msg, tmp_msg2, sizeof(tmp_msg) );
 			tmp_msg[sizeof(tmp_msg) - 1] = '\0';
 
-			print_callback(tmp_msg);
+			print_callback( jc, tmp_msg);
 
 			va_end( marker );
 		}
@@ -106,4 +106,34 @@ int jtagcore_set_logs_level(jtag_core * jc,int level)
 		return JTAG_CORE_NO_ERROR;
 	}
 	return JTAG_CORE_BAD_PARAMETER;
+}
+
+int jtagcore_get_logs_level(jtag_core * jc)
+{
+	if(jc)
+	{
+		return jc->logs_level;
+	}
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+int jtagcore_set_logs_file(jtag_core * jc,char * path)
+{
+	if(jc)
+	{
+		strncpy(jc->log_file_path, path, DEFAULT_BUFLEN - 1);
+
+		return JTAG_CORE_NO_ERROR;
+	}
+	return JTAG_CORE_BAD_PARAMETER;
+}
+
+char * jtagcore_get_logs_file(jtag_core * jc)
+{
+	if(jc)
+	{
+		return jc->log_file_path;
+	}
+
+	return NULL;
 }

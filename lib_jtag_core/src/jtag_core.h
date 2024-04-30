@@ -64,12 +64,15 @@ jtag_core * jtagcore_init();
 void jtagcore_deinit(jtag_core * jc);
 
 #ifndef _JTAGCORE_PRINT_FUNC_
-typedef void (*JTAGCORE_PRINT_FUNC)(const char * string);
+typedef void (*JTAGCORE_PRINT_FUNC)(jtag_core * jc, const char * string);
 #define _JTAGCORE_PRINT_FUNC_
 #endif
 
 int jtagcore_set_logs_callback(jtag_core * jc, JTAGCORE_PRINT_FUNC jtag_core_print);
 int jtagcore_set_logs_level(jtag_core * jc,int level);
+int jtagcore_get_logs_level(jtag_core * jc);
+int jtagcore_set_logs_file(jtag_core * jc,char * path);
+char * jtagcore_get_logs_file(jtag_core * jc);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Probe driver selection/initialisation functions

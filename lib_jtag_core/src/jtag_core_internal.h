@@ -31,6 +31,8 @@
 #define MAX_BSDL_FILE_SIZE ( 1024 * 1024 )
 #define MAX_NUMBER_OF_BSDL_LINES ( 64 * 1024 )
 
+#define MAX_PATH_LEN 4096
+
 typedef struct _jtag_device
 {
 	void * bsdl;
@@ -100,6 +102,7 @@ typedef struct _jtag_core
 	int ram_ctrl_pin_pol[16];
 	int ram_ctrl_device[16];
 
+	char log_file_path[MAX_PATH_LEN];
 }jtag_core;
 
 #define JTAG_STR_DOUT    0x01

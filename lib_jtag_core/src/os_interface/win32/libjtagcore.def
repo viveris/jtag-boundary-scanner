@@ -5,6 +5,9 @@ EXPORTS
 	jtagcore_set_logs_callback @2
 	jtagcore_set_logs_level @3
 	setOutputFunc_script @4
+	jtagcore_get_logs_level @5
+	jtagcore_set_logs_file @6
+	jtagcore_get_logs_file @7
 	jtagcore_deinit @9
 
 	jtagcore_scan_and_init_chain @10

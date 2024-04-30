@@ -62,6 +62,16 @@ jtag_core * jtagcore_init()
 
 		jtagcore_execScriptFile( sctx, "config.script" );
 
+		if(jtagcore_getEnvVar( jc, "LOG_MESSAGES_FILTER_LEVEL", NULL))
+		{
+			jtagcore_set_logs_level( jc, jtagcore_getEnvVarValue( jc, "LOG_MESSAGES_FILTER_LEVEL") );
+		}
+
+		if(jtagcore_getEnvVar( jc, "LOG_MESSAGES_FILE_OUTPUT", NULL))
+		{
+			jtagcore_set_logs_file( jc, jtagcore_getEnvVar( jc, "LOG_MESSAGES_FILE_OUTPUT", NULL) );
+		}
+
 		jtagcore_deinitScript(sctx);
 	}
 

@@ -329,13 +329,13 @@ int genos_createthread(jtag_core* jtag_ctx,void* hwcontext,THREADFUNCTION thread
 		ret = pthread_create(&threadid, &threadattrib,ThreadProc, threadinitptr);
 		if(ret)
 		{
-			print_callback("genos_createthread : pthread_create failed !");
+			print_callback(jtag_ctx,"genos_createthread : pthread_create failed !");
 			free( threadinitptr );
 		}
 	}
 	else
 	{
-		print_callback("genos_createthread : memory allocation failed !");
+		print_callback(jtag_ctx,"genos_createthread : memory allocation failed !");
 	}
 
 	return sit;

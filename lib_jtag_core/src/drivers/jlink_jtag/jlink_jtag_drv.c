@@ -63,7 +63,11 @@ unsigned char jlink_in_buf[64 * 1024];
 
 #if defined(WIN32)
 
-#define MODULE_NAME		"JLinkARM.dll"
+#if defined(_WIN64)
+	#define MODULE_NAME    "JLink_x64.dll"
+#else
+	#define MODULE_NAME    "JLinkARM.dll"
+#endif
 
 typedef const char* (WINAPIV * JL_OPENEX)(const char* pfLog, void*);
 typedef int  (WINAPIV * JL_JTAG_STORERAW)(const unsigned char* pTDI, const unsigned char* pTMS, unsigned int NumBits);
@@ -154,7 +158,7 @@ int drv_JLINK_Detect(jtag_core * jc)
 	}
 	else
 	{
-		jtagcore_logs_printf(jc,MSG_INFO_1,"drv_JLINK_Detect : %s JLink library not found !\r\n",MODULE_NAME);		
+		jtagcore_logs_printf(jc,MSG_INFO_1,"drv_JLINK_Detect : %s JLink library not found !\r\n",MODULE_NAME);
 	}
 
 	return 0;

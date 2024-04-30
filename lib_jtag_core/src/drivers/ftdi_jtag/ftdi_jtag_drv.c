@@ -222,7 +222,6 @@ int drv_FTDI_Detect(jtag_core * jc)
 	FT_STATUS status;
 	char SerialNumber[512];
 
-
 	if(lib_handle == NULL)
 		lib_handle = LoadLibrary("ftd2xx.dll");
 
@@ -265,7 +264,13 @@ int drv_FTDI_Detect(jtag_core * jc)
 			i++;
 		}
 
+		jtagcore_logs_printf( jc, MSG_INFO_1, "drv_FTDI_Detect : %d interface(s) found !\r\n", numDevs );
+
 		return numDevs;
+	}
+	else
+	{
+		jtagcore_logs_printf( jc, MSG_INFO_1, "drv_FTDI_Detect : ftd2xx.dll not found !\r\n" );
 	}
 
 	return 0;

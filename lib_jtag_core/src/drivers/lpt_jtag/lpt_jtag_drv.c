@@ -226,6 +226,8 @@ int drv_LPT_Detect(jtag_core * jc)
 		jtagcore_logs_printf(jc,MSG_ERROR,"drv_LPT_Init : Can't load giveio !\r\n");
 		return 0;
 	}
+
+	jtagcore_logs_printf(jc,MSG_ERROR,"drv_LPT_Detect : giveio enabled !\r\n");
 #endif
 
 	lpt_address = test_port();	// find a valid parallel port address

@@ -174,7 +174,12 @@ int drv_LinuxGPIO_Detect(jtag_core * jc)
 		if(f)
 		{
 			fclose(f);
+			jtagcore_logs_printf(jc,MSG_ERROR,"drv_LinuxGPIO_Detect : JTAG GPIO interface enabled\r\n",tmp_str);
 			return 3;
+		}
+		else
+		{
+			jtagcore_logs_printf(jc,MSG_ERROR,"drv_LinuxGPIO_Detect : Can't open %s !\r\n",tmp_str);
 		}
 	}
 #endif

@@ -148,16 +148,36 @@ int drv_JLINK_Detect(jtag_core * jc)
 
 	if (lib_handle)
 	{
+		jtagcore_logs_printf(jc,MSG_INFO_1,"drv_JLINK_Detect : %s JLink library found !\r\n",MODULE_NAME);
+
 		return 1;
+	}
+	else
+	{
+		jtagcore_logs_printf(jc,MSG_INFO_1,"drv_JLINK_Detect : %s JLink library not found !\r\n",MODULE_NAME);		
 	}
 
 	return 0;
 }
 
+static void * drv_JLINK_GetDrvFunc(jtag_core * jc,  HMODULE libh, char * function_name)
+{
+	void * function_ptr;
+
+	function_ptr = (void *)GetProcAddress(libh, function_name);
+	if (!function_ptr)
+	{
+		jtagcore_logs_printf(jc,MSG_ERROR,"drv_JLINK_GetDrvFunc : Can't get %s function !\r\n",function_name);
+
+		return NULL;
+	}
+
+	return function_ptr;
+}
+
 int drv_JLINK_Init(jtag_core * jc, int sub_drv, char * params)
 {
 	const char* sError;
-
 
 	if(lib_handle == NULL) {
 		lib_handle = LoadLibrary(MODULE_NAME);
@@ -165,43 +185,43 @@ int drv_JLINK_Init(jtag_core * jc, int sub_drv, char * params)
 
 	if (lib_handle)
 	{
-		pJLINKARM_OpenEx = (JL_OPENEX)GetProcAddress(lib_handle, "JLINKARM_OpenEx");
+		pJLINKARM_OpenEx = (JL_OPENEX)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_OpenEx");
 		if (!pJLINKARM_OpenEx)
 			goto loadliberror;
 
-		pJLINKARM_JTAG_StoreRaw = (JL_JTAG_STORERAW)GetProcAddress(lib_handle, "JLINKARM_JTAG_StoreRaw");
+		pJLINKARM_JTAG_StoreRaw = (JL_JTAG_STORERAW)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_JTAG_StoreRaw");
 		if (!pJLINKARM_JTAG_StoreRaw)
 			goto loadliberror;
 
-		pJLINKARM_JTAG_StoreGetRaw = (JL_JTAG_STOREGETRAW)GetProcAddress(lib_handle, "JLINKARM_JTAG_StoreGetRaw");
+		pJLINKARM_JTAG_StoreGetRaw = (JL_JTAG_STOREGETRAW)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_JTAG_StoreGetRaw");
 		if (!pJLINKARM_JTAG_StoreGetRaw)
 			goto loadliberror;
 
-		pJLINKARM_JTAG_SyncBits = (JL_JTAG_SYNCBITS)GetProcAddress(lib_handle, "JLINKARM_JTAG_SyncBits");
+		pJLINKARM_JTAG_SyncBits = (JL_JTAG_SYNCBITS)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_JTAG_SyncBits");
 		if (!pJLINKARM_JTAG_SyncBits)
 			goto loadliberror;
 
-		pJLINKARM_SetSpeed = (JL_SETSPEED)GetProcAddress(lib_handle, "JLINKARM_SetSpeed");
+		pJLINKARM_SetSpeed = (JL_SETSPEED)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_SetSpeed");
 		if (!pJLINKARM_SetSpeed)
 			goto loadliberror;
 
-		pJLINKARM_SetResetDelay = (JL_SETRESETDELAY)GetProcAddress(lib_handle, "JLINKARM_SetResetDelay");
+		pJLINKARM_SetResetDelay = (JL_SETRESETDELAY)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_SetResetDelay");
 		if (!pJLINKARM_SetResetDelay)
 			goto loadliberror;
 
-		pJLINKARM_ResetPullsRESET = (JL_RESETPULLSRESET)GetProcAddress(lib_handle, "JLINKARM_ResetPullsRESET");
+		pJLINKARM_ResetPullsRESET = (JL_RESETPULLSRESET)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_ResetPullsRESET");
 		if (!pJLINKARM_ResetPullsRESET)
 			goto loadliberror;
 
-		pJLINKARM_Reset = (JL_RESET)GetProcAddress(lib_handle, "JLINKARM_Reset");
+		pJLINKARM_Reset = (JL_RESET)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_Reset");
 		if (!pJLINKARM_Reset)
 			goto loadliberror;
 
-		pJLINKARM_HasError = (JL_HASERROR)GetProcAddress(lib_handle, "JLINKARM_HasError");
+		pJLINKARM_HasError = (JL_HASERROR)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_HasError");
 		if (!pJLINKARM_HasError)
 			goto loadliberror;
 
-		pJLINKARM_Close = (JL_CLOSE)GetProcAddress(lib_handle, "JLINKARM_Close");
+		pJLINKARM_Close = (JL_CLOSE)drv_JLINK_GetDrvFunc(jc, lib_handle, "JLINKARM_Close");
 		if (!pJLINKARM_Close)
 			goto loadliberror;
 	}
@@ -224,7 +244,10 @@ int drv_JLINK_Init(jtag_core * jc, int sub_drv, char * params)
 	return 0;
 
 loadliberror:
+	jtagcore_logs_printf(jc,MSG_ERROR,"drv_JLINK_Init : Something wrong happened ! JLink probe support not enabled.\r\n");
+
 	FreeLibrary(lib_handle);
+
 	lib_handle = NULL;
 	return -1;
 }

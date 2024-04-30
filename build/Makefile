@@ -2,7 +2,7 @@ TARGET ?= mingw32
 
 all: JTAGBoundaryScanner
 
-lib_jtag_core: 
+lib_jtag_core:
 	$(MAKE) TARGET=$(TARGET) -C ../lib_jtag_core/build/
 
 JTAGBoundaryScanner: lib_jtag_core

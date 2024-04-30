@@ -13,6 +13,24 @@
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------
 
+# Log messages filter level
+#
+# 0 : Debug messages
+# 1 : Info level 0 messages
+# 2 : Info level 1 messages
+# 3 : Warning level messages
+# 4 : Error level messages
+# 5 : No log / no message
+
+set LOG_MESSAGES_FILTER_LEVEL 1
+
+# Log file
+
+#set LOG_MESSAGES_FILE_OUTPUT "logs_file.txt"
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
 #
 # Pins name sorter
 #

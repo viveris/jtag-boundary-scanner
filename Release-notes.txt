@@ -4,6 +4,13 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.6.5.1 (2024-04-30)
+=================================================
+
+    - Log file output added.
+
+    - JLINK JTAG probes support fix : Try to load JLink_x64.dll instead of JLinkARM.dll in 64 bits mode.
+
 Noteworthy changes in release v2.6.4.1 (2024-03-06)
 =================================================
 

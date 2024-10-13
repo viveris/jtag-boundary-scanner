@@ -83,6 +83,33 @@ static drv_desc subdrv_list[MAX_PROBES_FTDI]=
 	{"USB_GENERIC_FTDI_PROBE","GENERIC USB FTDI PROBE",PROBE_GENERIC_FTDI,0}
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Command Processor for MPSSE and MCU Host Bus Emulation Modes
+//
+// The data shifting commands are made up of the following definitions:
+// Bit 7 : 0
+// Bit 6 : Do write TMS
+// Bit 5 : Do read TDO
+// Bit 4 : Do write TDI
+// Bit 3 : LSB first = 1 else MSB first = 0
+// Bit 2 : -ve CLK on read
+// Bit 1 : bit mode = 1 else byte mode = 0
+// Bit 0 : -ve CLK on write
+
+// The write commands to TDI take effect when bits 7 and 6 are '0'. Read TDO will operate with TMS output or TDI output or on its own.
+
+// Clock Data Bytes Out on +ve clock edge MSB first (no read)
+// 0x10, LengthL, LengthH, [Byte1..Byte65536 (max)]
+
+#define OP_WR_TMS     (0x1 << 6)
+#define OP_RD_TDO     (0x1 << 5)
+#define OP_WR_TDI     (0x1 << 4)
+#define OP_LSB_FIRST  (0x1 << 3)
+#define OP_FEDGE_RD   (0x1 << 2)
+#define OP_BIT_MODE   (0x1 << 1)
+#define OP_FEDGE_WR   (0x1 << 0)
+
+///////////////////////////////////////////////////////////////////////////////
 
 static HMODULE lib_handle = 0;
 
@@ -108,11 +135,12 @@ unsigned char ftdi_in_buf[64 * 1024];
 
 int Sleep( unsigned int timeout_ms )
 {
-        struct timeval tv;
-        tv.tv_sec = timeout_ms/1000;
-        tv.tv_usec = (timeout_ms%1000) * 1000;
-        select(0, NULL, NULL, NULL, &tv);
-        return 0;
+	struct timeval tv;
+	tv.tv_sec = timeout_ms/1000;
+	tv.tv_usec = (timeout_ms%1000) * 1000;
+	select(0, NULL, NULL, NULL, &tv);
+
+	return 0;
 }
 #endif
 
@@ -156,9 +184,7 @@ FT_GETDEVICEINFO pFT_GetDeviceInfo;
 FT_RESETDEVICE pFT_ResetDevice;
 FT_SETCHARS pFT_SetChars;
 
-
 #else
-
 
 
 #endif
@@ -170,9 +196,9 @@ static int ft2232_set_data_bits_low_byte(unsigned char value, unsigned char dire
 	DWORD dw_bytes_written = 0;
 	unsigned char buf[3];
 
-	buf[0] = 0x80;		// command "set data bits low byte"
-	buf[1] = value;		// value
-	buf[2] = direction;	// direction
+	buf[0] = 0x80;      // command "set data bits low byte"
+	buf[1] = value;     // value
+	buf[2] = direction; // direction
 
 	status = pFT_Write(ftdih, buf, sizeof(buf), &dw_bytes_written);
 	if ( (status != FT_OK) || (dw_bytes_written != sizeof(buf) ) ) {
@@ -188,9 +214,9 @@ static int ft2232_set_data_bits_high_byte(unsigned char value, unsigned char dir
 	DWORD dw_bytes_written = 0;
 	unsigned char buf[3];
 
-	buf[0] = 0x82;		// command "set data bits high byte"
-	buf[1] = value;		// value
-	buf[2] = direction;	// direction
+	buf[0] = 0x82;      // command "set data bits high byte"
+	buf[1] = value;     // value
+	buf[2] = direction; // direction
 
 	status = pFT_Write(ftdih, buf, sizeof(buf), &dw_bytes_written);
 	if ( (status != FT_OK) || ( dw_bytes_written != sizeof(buf) ) ) {
@@ -592,7 +618,6 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	// FT2232D/H
 	// TCK clock = (12Mhz or 60Mhz)/ ((1 + ([ValueH << 8 | ValueL]))*2)
 
-	nbtosend = 0;
 	baseclock = jtagcore_getEnvVarValue( jc, "PROBE_FTDI_INTERNAL_FREQ_KHZ");
 	tckfreq =   jtagcore_getEnvVarValue( jc, "PROBE_FTDI_TCK_FREQ_KHZ");
 	if( baseclock <= 0 || tckfreq <= 0){
@@ -602,6 +627,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 
 	divisor = ( ( baseclock / tckfreq ) - 2 ) / 2;
 
+	nbtosend = 0;
 	ftdi_out_buf[nbtosend++] = 0x86;
 	ftdi_out_buf[nbtosend++] = divisor & 0xFF;
 	ftdi_out_buf[nbtosend++] = (divisor>>8) & 0xFF;
@@ -611,6 +637,17 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_Write : Error %x !\r\n",status);
 		goto loadliberror;
 	}
+
+#if 0 // Loopback
+	nbtosend = 0;
+	ftdi_out_buf[nbtosend++] = 0x84;
+
+	status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
+	if (status != FT_OK) {
+		jtagcore_logs_printf(jc,MSG_ERROR,"pFT_Write : Error %x !\r\n",status);
+		goto loadliberror;
+	}
+#endif
 
 	if(jtagcore_getEnvVarValue( jc, "PROBE_FTDI_JTAG_ENABLE_RTCK") > 0)
 	{
@@ -655,6 +692,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 	DWORD nbRead,nbtosend;
 	FT_STATUS status;
 	int read_ptr;
+	unsigned char opcode;
 
 	read_ptr = 0;
 	memset(ftdi_out_buf, 0, sizeof(ftdi_out_buf));
@@ -669,17 +707,14 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		// Set the first TMS/DOUT
 		if (str_out[i] & JTAG_STR_TMS)
 		{
+			if( str_in )
+				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO );
+			else
+				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR );
 
-			ftdi_out_buf[nbtosend] = 0x4B; // cmd
-
-			if (str_in)
-				ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
-
-			nbtosend++;
-
-			ftdi_out_buf[nbtosend++] = 0x00; // 1 Bit
-
-			ftdi_out_buf[nbtosend] = 0x00;
+			ftdi_out_buf[nbtosend++] = opcode;
+			ftdi_out_buf[nbtosend++] = 0x00; // Size field : 1 Bit
+			ftdi_out_buf[nbtosend]   = 0x00; // Data field
 
 			if (str_out[i] & JTAG_STR_DOUT)
 				ftdi_out_buf[nbtosend] |= 0x80;
@@ -693,7 +728,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
-			if (str_in)
+			if ( opcode & OP_RD_TDO )
 			{
 				status = pFT_GetQueueStatus(ftdih, &nbRead);
 				while (nbRead < 1 && (status == FT_OK))
@@ -722,15 +757,15 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		}
 
 		nbtosend = 0;
-		ftdi_out_buf[nbtosend] = 0x19;
 
-		if (str_in)
-			ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
+		if( str_in )
+			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR | OP_RD_TDO );
+		else
+			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR );
 
-		nbtosend++;
-
-		ftdi_out_buf[nbtosend++] = 0x00;
-		ftdi_out_buf[nbtosend++] = 0x00;
+		ftdi_out_buf[nbtosend++] = opcode;
+		ftdi_out_buf[nbtosend++] = 0x00;  // (Size-1) Low byte
+		ftdi_out_buf[nbtosend++] = 0x00;  // (Size-1) High byte
 
 		ftdi_out_buf[nbtosend] = 0x00;
 
@@ -755,13 +790,14 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 
 			payloadsize++;
 			i++;
-
 		}
 
 		if (payloadsize)
 		{
+			// update size
 			ftdi_out_buf[1] = ( ( (payloadsize>>3)-1 ) & 0xff);
 			ftdi_out_buf[2] = ( ( (payloadsize>>3)-1 ) >> 8);
+
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
 			if (str_in)
@@ -770,7 +806,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 				{
 					Sleep(3);
 					status = pFT_GetQueueStatus(ftdih, &nbRead);
-				} while (nbRead < (payloadsize >> 3) && (status == FT_OK ));
+				} while (nbRead < (unsigned long)(payloadsize >> 3) && (status == FT_OK ));
 
 				status = pFT_Read(ftdih, &ftdi_in_buf, nbRead, &nbRead);
 
@@ -786,23 +822,22 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 					}
 					read_ptr++;
 				}
-
 			}
 		}
 
-
 		// Send the remaining bits...
 		nbtosend = 0;
-		ftdi_out_buf[nbtosend] = 0x1B; //bit mode
 
-		if (str_in)
-			ftdi_out_buf[nbtosend] |= JTAG_STR_DINREQ;
+		if( str_in )
+			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO ); //bit mode
+		else
+			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR ); //bit mode
 
-		nbtosend++;
+		ftdi_out_buf[nbtosend++] = opcode;
 
-		ftdi_out_buf[nbtosend++] = 0x00;
+		ftdi_out_buf[nbtosend++] = 0x00; // Size field
 
-		ftdi_out_buf[nbtosend] = 0x00;
+		ftdi_out_buf[nbtosend] = 0x00;   // Data field
 
 		j = 0;
 		payloadsize = 0;
@@ -823,7 +858,9 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 
 		if (payloadsize)
 		{
-			ftdi_out_buf[1] = ((payloadsize - 1) & 0xf);
+			// Update the size field
+			ftdi_out_buf[1] = ((payloadsize - 1) & 0x7);
+
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
 			if (str_in)
@@ -881,13 +918,11 @@ int drv_FTDI_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 			if (!(i % 6))
 			{
 				nbtosend = 0;
-				ftdi_out_buf[nbtosend] = 0x4B; // cmd
-				nbtosend++;
-
+				ftdi_out_buf[nbtosend++] = (OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR); // cmd
 				ftdi_out_buf[nbtosend++] = 0x06 - 1; // 6 Bit
 
 				if ((databyte&0x20) && size)
-					ftdi_out_buf[nbtosend++] = databyte|0x40;
+					ftdi_out_buf[nbtosend++] = databyte | 0x40;
 				else
 					ftdi_out_buf[nbtosend++] = databyte;
 
@@ -900,9 +935,8 @@ int drv_FTDI_TMS_xfer(jtag_core * jc, unsigned char * str_out, int size)
 		if ((i % 6))
 		{
 			nbtosend = 0;
-			ftdi_out_buf[nbtosend] = 0x4B; // cmd
+			ftdi_out_buf[nbtosend++] = (OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR);
 
-			nbtosend++;
 			ftdi_out_buf[nbtosend++] = (i % 6) - 1; // 1 Bit
 
 			ftdi_out_buf[nbtosend++] = databyte;

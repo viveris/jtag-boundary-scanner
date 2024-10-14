@@ -109,6 +109,12 @@ static drv_desc subdrv_list[MAX_PROBES_FTDI]=
 #define OP_BIT_MODE   (0x1 << 1)
 #define OP_FEDGE_WR   (0x1 << 0)
 
+#define CMD_ENABLE_LOOPBACK   0x84
+#define CMD_DISABLE_LOOPBACK  0x85
+#define CMD_SET_DIVISOR       0x86 // +0xValueL, 0xValueH
+#define CMD_WAIT_IO_HIGH      0x88
+#define CMD_WAIT_IO_LOW       0x89
+
 ///////////////////////////////////////////////////////////////////////////////
 
 static HMODULE lib_handle = 0;
@@ -628,7 +634,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 	divisor = ( ( baseclock / tckfreq ) - 2 ) / 2;
 
 	nbtosend = 0;
-	ftdi_out_buf[nbtosend++] = 0x86;
+	ftdi_out_buf[nbtosend++] = CMD_SET_DIVISOR;
 	ftdi_out_buf[nbtosend++] = divisor & 0xFF;
 	ftdi_out_buf[nbtosend++] = (divisor>>8) & 0xFF;
 
@@ -640,7 +646,7 @@ int drv_FTDI_Init(jtag_core * jc, int sub_drv, char * params)
 
 #if 0 // Loopback
 	nbtosend = 0;
-	ftdi_out_buf[nbtosend++] = 0x84;
+	ftdi_out_buf[nbtosend++] = CMD_ENABLE_LOOPBACK;
 
 	status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 	if (status != FT_OK) {
@@ -692,7 +698,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 	DWORD nbRead,nbtosend;
 	FT_STATUS status;
 	int read_ptr;
-	unsigned char opcode;
+	unsigned char opcode,data;
 
 	read_ptr = 0;
 	memset(ftdi_out_buf, 0, sizeof(ftdi_out_buf));
@@ -708,23 +714,22 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		if (str_out[i] & JTAG_STR_TMS)
 		{
 			if( str_in )
-				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO );
+				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO );  // with TDO read back
 			else
 				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR );
 
 			ftdi_out_buf[nbtosend++] = opcode;
 			ftdi_out_buf[nbtosend++] = 0x00; // Size field : 1 Bit
-			ftdi_out_buf[nbtosend]   = 0x00; // Data field
+
+			data = 0x00;
 
 			if (str_out[i] & JTAG_STR_DOUT)
-				ftdi_out_buf[nbtosend] |= 0x80;
+				data = 0x80;     // Bit 7: TDI/DO pin state
 
 			if (str_out[i] & JTAG_STR_TMS)
-			{
-				ftdi_out_buf[nbtosend] |= 0x3F;
-			}
+				data |= 0x3F;    // TMS state
 
-			nbtosend++;
+			ftdi_out_buf[nbtosend++] = data; // Data field
 
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
@@ -829,7 +834,7 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 		nbtosend = 0;
 
 		if( str_in )
-			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO ); //bit mode
+			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO ); //bit mode with TDO read back
 		else
 			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR ); //bit mode
 

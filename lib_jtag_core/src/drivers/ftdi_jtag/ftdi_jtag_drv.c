@@ -693,41 +693,43 @@ int drv_FTDI_DeInit(jtag_core * jc)
 
 int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char * str_in, int size)
 {
-	int i,j,l,payloadsize;
+	int wr_bit_index,rd_bit_index;
+	int j,l,payloadsize;
 	int rounded_size;
 	DWORD nbRead,nbtosend;
 	FT_STATUS status;
-	int read_ptr;
 	unsigned char opcode,data;
 
-	read_ptr = 0;
+	rd_bit_index = 0;
+	wr_bit_index = 0;
+
 	memset(ftdi_out_buf, 0, sizeof(ftdi_out_buf));
 	memset(ftdi_in_buf, 0, sizeof(ftdi_in_buf));
 
 	if (size)
 	{
-		i = 0;
-
-		nbtosend = 0;
-
 		// Set the first TMS/DOUT
-		if (str_out[i] & JTAG_STR_TMS)
+		if ( str_out[wr_bit_index] & JTAG_STR_TMS )
 		{
 			if( str_in )
 				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO );  // with TDO read back
 			else
 				opcode = ( OP_WR_TMS | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR );
 
+			nbtosend = 0;
+
 			ftdi_out_buf[nbtosend++] = opcode;
 			ftdi_out_buf[nbtosend++] = 0x00; // Size field : 1 Bit
 
 			data = 0x00;
 
-			if (str_out[i] & JTAG_STR_DOUT)
+			if (str_out[wr_bit_index] & JTAG_STR_DOUT)
 				data = 0x80;     // Bit 7: TDI/DO pin state
 
-			if (str_out[i] & JTAG_STR_TMS)
+			if (str_out[wr_bit_index] & JTAG_STR_TMS)
 				data |= 0x3F;    // TMS state
+
+			wr_bit_index++;
 
 			ftdi_out_buf[nbtosend++] = data; // Data field
 
@@ -744,64 +746,58 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 
 				status = pFT_Read(ftdih, &ftdi_in_buf, nbRead, &nbRead);
 
-				for (l = 0; l < 1; l++)
+				if ( ftdi_in_buf[0] & 0x01 )
 				{
-					if (ftdi_in_buf[l >> 3] & (0x01 << (l & 7)))
-					{
-						str_in[read_ptr] = JTAG_STR_DOUT;
-					}
-					else
-					{
-						str_in[read_ptr] = 0x00;
-					}
-					read_ptr++;
+					str_in[rd_bit_index++] = JTAG_STR_DOUT;
+				}
+				else
+				{
+					str_in[rd_bit_index++] = 0x00;
 				}
 			}
-
-			i++;
 		}
 
-		nbtosend = 0;
+		if( wr_bit_index >= size )
+			return 0;
 
-		if( str_in )
-			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR | OP_RD_TDO );
-		else
-			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR );
-
-		ftdi_out_buf[nbtosend++] = opcode;
-		ftdi_out_buf[nbtosend++] = 0x00;  // (Size-1) Low byte
-		ftdi_out_buf[nbtosend++] = 0x00;  // (Size-1) High byte
-
-		ftdi_out_buf[nbtosend] = 0x00;
-
-		rounded_size = (size - i) & ~(0x7);
-
-		j = 0;
-		payloadsize = 0;
-		while (payloadsize < rounded_size)
+		rounded_size = (size - wr_bit_index) & ~(0x7);
+		if( rounded_size )
 		{
-			if (str_out[i] & JTAG_STR_DOUT)
+			// byte(s) buffer transmission/reception
+
+			if( str_in )
+				opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR | OP_RD_TDO );
+			else
+				opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_FEDGE_WR );
+
+			nbtosend = 0;
+
+			ftdi_out_buf[nbtosend++] = opcode;
+			ftdi_out_buf[nbtosend++] = ( ( (rounded_size>>3)-1 ) & 0xff );  // (Size-1) Low byte
+			ftdi_out_buf[nbtosend++] = ( ( (rounded_size>>3)-1 ) >> 8 );    // (Size-1) High byte
+
+			ftdi_out_buf[nbtosend] = 0x00;
+
+			j = 0;
+			payloadsize = 0;
+			while (payloadsize < rounded_size)
 			{
-				ftdi_out_buf[nbtosend] |= (0x01 << (j & 0x7));
+				if (str_out[wr_bit_index] & JTAG_STR_DOUT)
+				{
+					ftdi_out_buf[nbtosend] |= (0x01 << (j & 0x7));
+				}
+
+				j++;
+
+				if (!(j & 0x7))
+				{
+					nbtosend++;
+					ftdi_out_buf[nbtosend] = 0x00;
+				}
+
+				payloadsize++;
+				wr_bit_index++;
 			}
-
-			j++;
-
-			if (!(j & 0x7))
-			{
-				nbtosend++;
-				ftdi_out_buf[nbtosend] = 0x00;
-			}
-
-			payloadsize++;
-			i++;
-		}
-
-		if (payloadsize)
-		{
-			// update size
-			ftdi_out_buf[1] = ( ( (payloadsize>>3)-1 ) & 0xff);
-			ftdi_out_buf[2] = ( ( (payloadsize>>3)-1 ) >> 8);
 
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
@@ -811,64 +807,58 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 				{
 					Sleep(3);
 					status = pFT_GetQueueStatus(ftdih, &nbRead);
-				} while (nbRead < (unsigned long)(payloadsize >> 3) && (status == FT_OK ));
+				} while (nbRead < (unsigned long)(rounded_size >> 3) && (status == FT_OK ));
 
 				status = pFT_Read(ftdih, &ftdi_in_buf, nbRead, &nbRead);
 
-				for (l = 0; l < payloadsize; l++)
+				for (l = 0; l < rounded_size; l++)
 				{
 					if (ftdi_in_buf[l >> 3] & (0x01 << (l & 7)))
 					{
-						str_in[read_ptr] = JTAG_STR_DOUT;
+						str_in[rd_bit_index++] = JTAG_STR_DOUT;
 					}
 					else
 					{
-						str_in[read_ptr] = 0x00;
+						str_in[rd_bit_index++] = 0x00;
 					}
-					read_ptr++;
 				}
 			}
 		}
 
-		// Send the remaining bits...
-		nbtosend = 0;
-
-		if( str_in )
-			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO ); //bit mode with TDO read back
-		else
-			opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR ); //bit mode
-
-		ftdi_out_buf[nbtosend++] = opcode;
-
-		ftdi_out_buf[nbtosend++] = 0x00; // Size field
-
-		ftdi_out_buf[nbtosend] = 0x00;   // Data field
-
-		j = 0;
-		payloadsize = 0;
-		while (i < size) // Should left less than 8 bits.
+		if( wr_bit_index < size )
 		{
-			if (str_out[i] & JTAG_STR_DOUT)
+			// Send the remaining bits...
+
+			if( str_in )
+				opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR | OP_RD_TDO ); //bit mode with TDO read back
+			else
+				opcode = ( OP_WR_TDI | OP_LSB_FIRST | OP_BIT_MODE | OP_FEDGE_WR ); //bit mode
+
+			nbtosend = 0;
+
+			ftdi_out_buf[nbtosend++] = opcode;
+			ftdi_out_buf[nbtosend++] = (((size - wr_bit_index)-1) & 0x7); // Size field
+			ftdi_out_buf[nbtosend] = 0x00;   // Data field
+
+			j = 0;
+			payloadsize = 0;
+			while (wr_bit_index < size) // Should left less than 8 bits.
 			{
-				ftdi_out_buf[nbtosend] |= (0x01 << (j & 0x7));
+				if (str_out[wr_bit_index++] & JTAG_STR_DOUT)
+				{
+					ftdi_out_buf[nbtosend] |= (0x01 << (j & 0x7));
+				}
+
+				j++;
+
+				payloadsize++;
 			}
 
-			j++;
-
-			payloadsize++;
-			i++;
-		}
-
-		nbtosend++;
-
-		if (payloadsize)
-		{
-			// Update the size field
-			ftdi_out_buf[1] = ((payloadsize - 1) & 0x7);
+			nbtosend++;
 
 			status = pFT_Write(ftdih, ftdi_out_buf, nbtosend, &nbtosend);
 
-			if (str_in)
+			if ( opcode & OP_RD_TDO )
 			{
 				do
 				{
@@ -882,13 +872,12 @@ int drv_FTDI_TDOTDI_xfer(jtag_core * jc, unsigned char * str_out, unsigned char 
 				{
 					if (ftdi_in_buf[l >> 3] & (0x01 << (l & 7)))
 					{
-						str_in[read_ptr] = JTAG_STR_DOUT;
+						str_in[rd_bit_index++] = JTAG_STR_DOUT;
 					}
 					else
 					{
-						str_in[read_ptr] = 0x00;
+						str_in[rd_bit_index++] = 0x00;
 					}
-					read_ptr++;
 				}
 			}
 		}

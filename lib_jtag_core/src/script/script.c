@@ -1286,7 +1286,7 @@ static int cmd_initarray( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		size = atoi(varsize);
+		size = str_to_int(varsize);
 
 		if(size >= 0 && strlen(varname) )
 		{
@@ -1619,7 +1619,7 @@ static int cmd_load_bsdl( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		if (jtagcore_loadbsdlfile(jc, filename, atoi(dev_index)) >= 0)
+		if (jtagcore_loadbsdlfile(jc, filename, str_to_int(dev_index)) >= 0)
 		{
 			ctx->script_printf( ctx, MSG_INFO_0, "BSDL %s loaded and parsed !\n", filename );
 			return JTAG_CORE_NO_ERROR;
@@ -1652,14 +1652,14 @@ static int cmd_set_scan_mode( script_ctx * ctx, char * line)
 	{
 		if( !strcmp(scan_mode,"EXTEST") )
 		{
-			jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_EXTEST_SCANMODE);
+			jtagcore_set_scan_mode(jc, str_to_int(dev_index),JTAG_CORE_EXTEST_SCANMODE);
 			ctx->script_printf( ctx, MSG_INFO_0, "EXTEST mode\n" );
 		}
 		else
 		{
 			if( !strcmp(scan_mode,"SAMPLE") )
 			{
-				jtagcore_set_scan_mode(jc, atoi(dev_index),JTAG_CORE_SAMPLE_SCANMODE);
+				jtagcore_set_scan_mode(jc, str_to_int(dev_index),JTAG_CORE_SAMPLE_SCANMODE);
 
 				ctx->script_printf( ctx, MSG_INFO_0, "SAMPLE mode\n" );
 			}
@@ -1716,13 +1716,13 @@ static int cmd_set_pin_mode( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OE, atoi(mode));
+			jtagcore_set_pin_state(jc, str_to_int(dev_index), id, JTAG_CORE_OE, str_to_int(mode));
 
-			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s mode set to %d\n", pinname, atoi(mode) );
+			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s mode set to %d\n", pinname, str_to_int(mode) );
 
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1754,13 +1754,13 @@ static int cmd_set_pin_state( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_set_pin_state(jc, atoi(dev_index), id, JTAG_CORE_OUTPUT, atoi(state));
+			jtagcore_set_pin_state(jc, str_to_int(dev_index), id, JTAG_CORE_OUTPUT, str_to_int(state));
 
-			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s set to %d\n", pinname, atoi(state) );
+			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s set to %d\n", pinname, str_to_int(state) );
 
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1792,11 +1792,11 @@ static int cmd_get_pin_state( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			ret = jtagcore_get_pin_state(jc, atoi(dev_index), id, JTAG_CORE_INPUT);
+			ret = jtagcore_get_pin_state(jc, str_to_int(dev_index), id, JTAG_CORE_INPUT);
 
 			ctx->script_printf( ctx, MSG_INFO_0, "Pin %s state : %d\n", pinname, ret );
 
@@ -1834,11 +1834,11 @@ static int cmd_set_i2c_sda_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_i2c_set_sda_pin(jc, atoi(dev_index), id);
+			jtagcore_i2c_set_sda_pin(jc, str_to_int(dev_index), id);
 			ctx->script_printf( ctx, MSG_INFO_0, "SDA set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1868,11 +1868,11 @@ static int cmd_set_i2c_scl_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_i2c_set_scl_pin(jc, atoi(dev_index), id);
+			jtagcore_i2c_set_scl_pin(jc, str_to_int(dev_index), id);
 			ctx->script_printf( ctx, MSG_INFO_0, "SCL set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -1970,7 +1970,7 @@ static int cmd_do_i2c_rd( script_ctx * ctx, char * line)
 	if(i>=0 && j>=0)
 	{
 		i2cadr = strtoul(adresse,0,16);
-		size  = atoi(sizebuf);
+		size  = str_to_int(sizebuf);
 
 		ret = jtagcore_i2c_write_read(jc, i2cadr, 0, 0, (unsigned char*)tmp_buffer2, size, (unsigned char*)tmp_buffer2);
 
@@ -2024,11 +2024,11 @@ static int cmd_set_mdio_mdc_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_mdio_set_mdc_pin(jc, atoi(dev_index), id);
+			jtagcore_mdio_set_mdc_pin(jc, str_to_int(dev_index), id);
 			ctx->script_printf( ctx, MSG_INFO_0, "MDC set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -2058,11 +2058,11 @@ static int cmd_set_mdio_mdio_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_mdio_set_mdio_pin(jc, atoi(dev_index), id);
+			jtagcore_mdio_set_mdio_pin(jc, str_to_int(dev_index), id);
 			ctx->script_printf( ctx, MSG_INFO_0, "MDIO set to Pin %s\n", pinname );
 			return JTAG_CORE_NO_ERROR;
 		}
@@ -2173,12 +2173,12 @@ static int cmd_set_spi_cs_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_spi_set_cs_pin(jc, atoi(dev_index), id, atoi(polarity));
-			ctx->script_printf( ctx, MSG_INFO_0, "CS set to Pin %s with polarity %d\n", pinname, atoi(polarity) );
+			jtagcore_spi_set_cs_pin(jc, str_to_int(dev_index), id, str_to_int(polarity));
+			ctx->script_printf( ctx, MSG_INFO_0, "CS set to Pin %s with polarity %d\n", pinname, str_to_int(polarity) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
@@ -2209,12 +2209,12 @@ static int cmd_set_spi_clk_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_spi_set_clk_pin(jc, atoi(dev_index), id, atoi(polarity));
-			ctx->script_printf( ctx, MSG_INFO_0, "CLK set to Pin %s with polarity %d\n", pinname, atoi(polarity) );
+			jtagcore_spi_set_clk_pin(jc, str_to_int(dev_index), id, str_to_int(polarity));
+			ctx->script_printf( ctx, MSG_INFO_0, "CLK set to Pin %s with polarity %d\n", pinname, str_to_int(polarity) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
@@ -2245,12 +2245,12 @@ static int cmd_set_spi_mosi_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_spi_set_mosi_pin(jc, atoi(dev_index), id, atoi(phase));
-			ctx->script_printf( ctx, MSG_INFO_0, "MOSI set to Pin %s with polarity %d\n", pinname, atoi(phase) );
+			jtagcore_spi_set_mosi_pin(jc, str_to_int(dev_index), id, str_to_int(phase));
+			ctx->script_printf( ctx, MSG_INFO_0, "MOSI set to Pin %s with polarity %d\n", pinname, str_to_int(phase) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
@@ -2281,12 +2281,12 @@ static int cmd_set_spi_miso_pin( script_ctx * ctx, char * line)
 
 	if(i>=0 && j>=0 && k>=0)
 	{
-		id = jtagcore_get_pin_id(jc, atoi(dev_index), pinname);
+		id = jtagcore_get_pin_id(jc, str_to_int(dev_index), pinname);
 
 		if(id>=0)
 		{
-			jtagcore_spi_set_miso_pin(jc, atoi(dev_index), id, atoi(phase));
-			ctx->script_printf( ctx, MSG_INFO_0, "MISO set to Pin %s with polarity %d\n", pinname, atoi(phase) );
+			jtagcore_spi_set_miso_pin(jc, str_to_int(dev_index), id, str_to_int(phase));
+			ctx->script_printf( ctx, MSG_INFO_0, "MISO set to Pin %s with polarity %d\n", pinname, str_to_int(phase) );
 			return JTAG_CORE_NO_ERROR;
 		}
 		else
@@ -2322,7 +2322,7 @@ static int cmd_spi_rd_wr( script_ctx * ctx, char * line)
 	{
 		if(j>=0)
 		{
-			jtagcore_spi_set_bitorder(jc, atoi(lsbfirst));
+			jtagcore_spi_set_bitorder(jc, str_to_int(lsbfirst));
 		}
 
 		size  = strlen(data_out_txt);
@@ -2377,13 +2377,13 @@ static int cmd_get_pins_list( script_ctx * ctx, char * line)
 	i = get_param( ctx, line, 1, dev_index );
 	if(i>=0)
 	{
-		nb_of_pins = jtagcore_get_number_of_pins(jc,atoi(dev_index));
+		nb_of_pins = jtagcore_get_number_of_pins(jc,str_to_int(dev_index));
 		if(nb_of_pins>=0)
 		{
-			ctx->script_printf( ctx, MSG_INFO_0, "Device %d : %d pin(s)\n", atoi(dev_index), nb_of_pins );
+			ctx->script_printf( ctx, MSG_INFO_0, "Device %d : %d pin(s)\n", str_to_int(dev_index), nb_of_pins );
 			for(j = 0;j < nb_of_pins;j++)
 			{
-				if(jtagcore_get_pin_properties(jc, atoi(dev_index), j, pinname, sizeof(pinname), &type) == JTAG_CORE_NO_ERROR)
+				if(jtagcore_get_pin_properties(jc, str_to_int(dev_index), j, pinname, sizeof(pinname), &type) == JTAG_CORE_NO_ERROR)
 				{
 					ctx->script_printf( ctx, MSG_NONE, "%s : ", pinname );
 					if(type & JTAG_CORE_PIN_IS_INPUT)

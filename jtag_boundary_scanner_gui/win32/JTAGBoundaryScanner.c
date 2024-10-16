@@ -1971,7 +1971,7 @@ int set_mem_pins(char * filename)
 							i++;
 						}
 
-						pin_id = jtagcore_get_pin_id(jc, 0, ptr);
+						pin_id = jtagcore_get_pin_id(jc, last_selected_dev_index, ptr);
 
 						if(pin_id >= 0)
 						{
@@ -2002,7 +2002,7 @@ int set_mem_pins(char * filename)
 							i++;
 						}
 
-						pin_id = jtagcore_get_pin_id(jc, 0, ptr);
+						pin_id = jtagcore_get_pin_id(jc, last_selected_dev_index, ptr);
 
 						if(pin_id >= 0)
 						{

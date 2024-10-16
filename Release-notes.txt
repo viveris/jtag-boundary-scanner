@@ -4,6 +4,15 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.6.6.1 (2024-10-16)
+=================================================
+
+    - FTDI based JTAG probes fix : Last bits jtag chain shift-in issue fixed.
+
+    - Script : (Most commands) Fix hexadecimal number from variable support.
+
+    - MEM Tool : Fix device selection issue.
+
 Noteworthy changes in release v2.6.5.1 (2024-04-30)
 =================================================
 

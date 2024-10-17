@@ -141,6 +141,17 @@ print Or and xor operation, VARIABLE_1_TEST : $VARIABLE_1_TEST (Should be 0xCCCC
 
 if $VARIABLE_1_TEST != 0xCCCCAA55 then goto test_failed
 
+print Binary number format test
+
+$VARIABLE_1_TEST = 0b1010
+$VARIABLE_2_TEST = 0b01010000
+
+$VARIABLE_TMP = $VARIABLE_1_TEST | $VARIABLE_2_TEST
+
+if $VARIABLE_TMP != 0b01011010 then goto test_failed
+
+print Binary number format test passed !
+
 print End of script ( All Tests passed :) ) !
 
 return # exit the from current script

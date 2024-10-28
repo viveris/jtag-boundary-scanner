@@ -4,6 +4,13 @@
 * Release notes
 =================================================
 
+Noteworthy changes in release v2.6.7.1 (2024-10-28)
+=================================================
+
+    - BSDL parser : Chip ID 'x' bits mask support.
+
+    - Script : Binary "0bxxx" number format support.
+
 Noteworthy changes in release v2.6.6.1 (2024-10-16)
 =================================================
 

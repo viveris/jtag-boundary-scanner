@@ -58,6 +58,7 @@ typedef struct _jtag_chain
 typedef struct _jtag_bsdl
 {
 	unsigned long chip_id;
+	unsigned long chip_id_mask;
 
 	char src_filename[512];
 	char entity_name[512];

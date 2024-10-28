@@ -119,7 +119,7 @@ int jtagcore_get_dev_name(jtag_core * jc, int device, char * devname, char * bsd
 
 // jtagcore_get_bsdl_id : Return the chip id present into a bsdl file
 
-unsigned long jtagcore_get_bsdl_id(jtag_core * jc, char * path);
+unsigned long jtagcore_get_bsdl_id(jtag_core * jc, char * path, unsigned long * mask);
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Pins/IO access functions

@@ -1399,7 +1399,7 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 	filefoundinfo fileinfo;
 	void* h_file_find;
 
-	unsigned long chip_id;
+	unsigned long chip_id,chip_id_mask;
 
 	jc = (jtag_core *)ctx->app_ctx;
 	loaded_bsdl = 0;
@@ -1435,12 +1435,13 @@ static int cmd_autoinit( script_ctx * ctx, char * line)
 
 			if ( ! fileinfo.isdirectory )
 			{
-				chip_id = jtagcore_get_bsdl_id(jc, filename);
+				chip_id_mask = 0xFFFFFFFF;
+				chip_id = jtagcore_get_bsdl_id(jc, filename, &chip_id_mask);
 				if( chip_id )
 				{
 					for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
 					{
-						if( chip_id == (jtagcore_get_dev_id(jc, dev_nb) & (~0xF0000000)) )
+						if( ( chip_id & chip_id_mask ) == ( jtagcore_get_dev_id(jc, dev_nb) & chip_id_mask ) )
 						{
 							if(jtagcore_get_number_of_pins(jc, dev_nb) > 0)
 							{

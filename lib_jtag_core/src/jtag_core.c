@@ -370,7 +370,7 @@ int jtagcore_loadbsdlfile(jtag_core * jc, char * path, int device)
 	return JTAG_CORE_BAD_PARAMETER;
 }
 
-unsigned long jtagcore_get_bsdl_id(jtag_core * jc, char * path)
+unsigned long jtagcore_get_bsdl_id(jtag_core * jc, char * path, unsigned long * mask)
 {
 	jtag_bsdl * bsdl_file;
 	unsigned long chip_id;
@@ -379,6 +379,10 @@ unsigned long jtagcore_get_bsdl_id(jtag_core * jc, char * path)
 	if (bsdl_file)
 	{
 		chip_id = bsdl_file->chip_id;
+		if( mask )
+		{
+			*mask = bsdl_file->chip_id_mask;
+		}
 		unload_bsdlfile(jc,bsdl_file);
 		return chip_id;
 	}

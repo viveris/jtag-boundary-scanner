@@ -592,7 +592,7 @@ int update_jtag_ids_menu(HWND hWnd)
 	char entityname[DEFAULT_BUFLEN];
 	WIN32_FIND_DATA FindFileData;
 	HANDLE hFind;
-	unsigned long chip_id;
+	unsigned long chip_id, chip_id_mask;
 
 	// BSDL Auto load : check which bsdl file match with the device
 	// And load it.
@@ -627,12 +627,13 @@ int update_jtag_ids_menu(HWND hWnd)
 
 			if ( !(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 			{
-				chip_id = jtagcore_get_bsdl_id(jc, filename);
+				chip_id_mask = 0xFFFFFFFF;
+				chip_id = jtagcore_get_bsdl_id(jc, filename, &chip_id_mask);
 				if( chip_id )
 				{
 					for(dev_nb=0;dev_nb < number_of_devices;dev_nb++)
 					{
-						if( chip_id == jtagcore_get_dev_id(jc, dev_nb) )
+						if( ( chip_id & chip_id_mask ) == ( jtagcore_get_dev_id(jc, dev_nb) & chip_id_mask ) )
 						{
 							// The BSDL ID match with the device.
 							if(jtagcore_loadbsdlfile(jc, filename, dev_nb) == JTAG_CORE_NO_ERROR)
@@ -686,7 +687,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	char idstring[DEFAULT_BUFLEN*2];
 	char *tempstring2;
 	int ret,state, tmp_type;
-	unsigned long chip_id;
+	unsigned long chip_id, chip_id_mask;
 	static unsigned char togglebit=0;
 	HANDLE hDlgModeless;
 
@@ -808,10 +809,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 							if ( !(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) )
 							{
-								chip_id = jtagcore_get_bsdl_id(jc, filename);
+								chip_id_mask = 0xFFFFFFFF;
+								chip_id = jtagcore_get_bsdl_id(jc, filename, &chip_id_mask);
 								if( chip_id )
 								{
-									if( chip_id == jtagcore_get_dev_id(jc, wmId - BASE_DEV_ID) )
+									if( (chip_id & chip_id_mask) == ( jtagcore_get_dev_id(jc, wmId - BASE_DEV_ID) & chip_id_mask ) )
 									{
 										// The BSDL ID match with the device.
 
@@ -843,9 +845,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					memset(filename, 0, sizeof(filename));
 					if (fileselector(hWnd, 0, 0, filename, "Read bsdl file", TEXT("BSDL File\0*.BS*;*.TXT\0\0"), TEXT("BS*")))
 					{
-						chip_id = jtagcore_get_bsdl_id(jc, filename);
+						chip_id_mask = 0xFFFFFFFF;
+						chip_id = jtagcore_get_bsdl_id(jc, filename, &chip_id_mask);
 
-						if (chip_id != jtagcore_get_dev_id(jc, wmId - BASE_DEV_ID))
+						if ( (chip_id & chip_id_mask ) != ( jtagcore_get_dev_id(jc, wmId - BASE_DEV_ID) & chip_id_mask ) )
 						{
 							sprintf(tempstring, "BSDL Chip ID doesn't match. Load it anyway ?\n\n");
 							strcat(tempstring, "BSDL ID   : ");

@@ -1339,6 +1339,8 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 	///////////////////////
 	// Extract the chip ID
 	bsdl->chip_id = 0x00000000;
+	bsdl->chip_id_mask = 0xFFFFFFFF;
+
 	chipid_str = get_attribut_txt(lines,"IDCODE_REGISTER", entityname);
 	if(chipid_str)
 	{
@@ -1348,10 +1350,25 @@ jtag_bsdl * load_bsdlfile(jtag_core * jc,char *filename)
 			i = 0;
 			while(chipid_str[i]!='"' && chipid_str[i]!=';' && chipid_str[i] && i < 32)
 			{
-				if(chipid_str[i] == '1')
+				switch( chipid_str[i] )
 				{
-					bsdl->chip_id |= 0x80000000 >> i;
+					case '0':
+						bsdl->chip_id &= ~(0x80000000 >> i);
+					break;
+
+					case '1':
+						bsdl->chip_id |=  (0x80000000 >> i);
+					break;
+
+					case 'x':
+					case 'X':
+						bsdl->chip_id_mask &= ~(0x80000000 >> i);
+					break;
+
+					default:
+					break;
 				}
+
 				i++;
 			}
 		}

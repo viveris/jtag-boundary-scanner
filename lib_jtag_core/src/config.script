@@ -68,7 +68,23 @@ set PROBE_FTDI_TCK_FREQ_KHZ 1000
 
 set PROBE_FTDI_JTAG_ENABLE_RTCK 0
 
-#
+# FTDI Probe configuration selection : 0=Olimex ARM-USB-OCD-H, 1=Tigard Protocol Tool...
+
+set FTDI_PROBE_CFG 0
+
+if $FTDI_PROBE_CFG == 0 then goto ftdi_cfg_olimex
+if $FTDI_PROBE_CFG == 1 then goto ftdi_cfg_tigard
+
+goto end_ftdi_cfg
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Olimex ARM-USB-OCD-H JTAG signals
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
+ftdi_cfg_olimex:
+
 # Probe internal mapping
 #
 # Olimex ARM-USB-OCD-H JTAG signals example
@@ -163,6 +179,110 @@ set PROBE_FTDI_SET_SRST_STATE_PINNUM          -1
 set PROBE_FTDI_SET_CONNECTION_LED_PINNUM      11
 
 set PROBE_FTDI_JTAG_TRST_DELAY_MS             200
+
+goto end_ftdi_cfg
+
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# Tigard Protocol Tool use Tigard V1.1 B TG11149eB as Probe
+# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
+
+ftdi_cfg_tigard:
+
+#
+# VREF – voltage follower input for the output buffers adjust
+# JTAG signals as per your target board voltage levels
+#
+# The TCK/TDI/TDO/TMS signals are fixed to these pins
+# BDBUS0 -> TCK; (out)
+# BDBUS1 -> TDI; (out)
+# BDBUS2 -> TDO; (in)
+# BDBUS3 -> TMS; (out)
+
+# BDBUS4 -> TRST;   (GPIOL0) (out)
+# BDBUS5 -> SRST;   (GPIOL1) (in)
+# BDBUS6 -> unused; (GPIOL2) (in)
+# BDBUS7 -> unused; (GPIOL3) (in)
+# BCBUS0 -> unused; (GPIOH0)
+# BCBUS1 -> unused; (GPIOH1)
+# BCBUS2 -> unused; (GPIOH2)
+# BCBUS3 -> unused; (GPIOH3)
+
+#
+# Set the internal GPIO direction (0 -> input, 1 -> output)
+#
+
+set PROBE_FTDI_SET_PIN_DIR_ADBUS0             1 # TCK -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS1             1 # TDI -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS2             0 # TDO -> in
+set PROBE_FTDI_SET_PIN_DIR_ADBUS3             1 # TMS -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS4             1 # TRST -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS5             1 # SRST -> out
+set PROBE_FTDI_SET_PIN_DIR_ADBUS6             0 # unused
+set PROBE_FTDI_SET_PIN_DIR_ADBUS7             0 # unused
+
+set PROBE_FTDI_SET_PIN_DIR_ACBUS0             0 # unused
+set PROBE_FTDI_SET_PIN_DIR_ACBUS1             0 # unused
+set PROBE_FTDI_SET_PIN_DIR_ACBUS2             0 # unused
+set PROBE_FTDI_SET_PIN_DIR_ACBUS3             0 # unused
+
+#
+# Set the internal GPIOs output state
+#
+
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS0   0 # TCK
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS1   0 # TDI
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS2   0 # TDO
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS3   1 # TMS
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS4   0 # TRST
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS5   0 # SRST
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS6   0 # unused
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ADBUS7   0 # unused
+
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS0   0 # unused
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS1   0 # unused
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS2   0 # unused
+set PROBE_FTDI_SET_PIN_DEFAULT_STATE_ACBUS3   0 # unused
+
+#
+# Set the internal GPIOs polarity
+# 0 : Active High.
+# 1 : Active Low.
+#
+
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS0        0 # TCK
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS1        0 # TDI
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS2        0 # TDO
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS3        0 # TMS
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS4        1 # TRST is active-low
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS5        0 # SRST
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS6        0 # unused
+set PROBE_FTDI_SET_PIN_POLARITY_ADBUS7        0 # unused
+
+set PROBE_FTDI_SET_PIN_POLARITY_ACBUS0        0 # unused
+set PROBE_FTDI_SET_PIN_POLARITY_ACBUS1        0 # unused
+set PROBE_FTDI_SET_PIN_POLARITY_ACBUS2        0 # unused
+set PROBE_FTDI_SET_PIN_POLARITY_ACBUS3        0 # unused
+
+#
+# Assign the TRST / SRST control pins
+# 0<>7  : ADBUS
+# 8<>11 : ACBUS
+# Set to -1 when not available/used.
+#
+
+set PROBE_FTDI_SET_TRST_OE_PINNUM             -1 # no tristate buffer
+set PROBE_FTDI_SET_TRST_STATE_PINNUM          12 # BDBUS4 / GPIOL0 (Pin43 on FT2232HQ)
+
+set PROBE_FTDI_SET_SRST_OE_PINNUM             -1 # no tristate buffer
+set PROBE_FTDI_SET_SRST_STATE_PINNUM          13 # BDBUS5 / GPIOL1 (Pin44 on FT2232HQ)
+
+set PROBE_FTDI_SET_CONNECTION_LED_PINNUM      -1 # No connection LED
+
+goto end_ftdi_cfg
+
+end_ftdi_cfg:
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

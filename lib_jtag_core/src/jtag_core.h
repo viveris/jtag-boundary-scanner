@@ -23,6 +23,13 @@
  * @author Jean-François DEL NERO <Jean-Francois.DELNERO@viveris.fr>
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifndef JTAG_CORE_H
+#define JTAG_CORE_H
+
 #ifndef _jtag_core_
 typedef void jtag_core;
 #define _jtag_core_
@@ -340,3 +347,9 @@ int jtagemu_get_regbit_state(jtag_emu * je, int regid, int bit);
 int jtagemu_loadbsdlfile(jtag_emu * je, char * path, int device);
 
 void jtagemu_deinit(jtag_emu * je);
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif

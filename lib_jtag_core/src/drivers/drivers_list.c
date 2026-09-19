@@ -43,6 +43,8 @@
 #include "./jlink_jtag/jlink_jtag_drv.h"
 #endif
 
+#include "./dummy_jtag/dummy_jtag_drv.h"
+
 #include "drivers_list.h"
 
 const drv_entry staticdrvs[] =
@@ -61,5 +63,6 @@ const drv_entry staticdrvs[] =
 #if defined(__linux__)
 	{(DRV_GETMODULEINFOS)drv_LinuxGPIO_libGetDrv,0},
 #endif
+	{(DRV_GETMODULEINFOS)drv_dummy_libGetDrv,0},
 	{(DRV_GETMODULEINFOS)-1,0}
 };

@@ -58,7 +58,7 @@ EXEC=libjtagcore.dylib
 endif
 
 LIB_JTAG_CORE = jtag_core.o dbg_logs.o bsdl_loader.o bsdl_strings.o drv_loader.o script.o env.o fs.o os_interface.o network.o
-PROBES_DRIVERS = drivers_list.o jlink_jtag_drv.o linux_gpio_jtag_drv.o lpt_jtag_drv.o ftdi_jtag_drv.o
+PROBES_DRIVERS = drivers_list.o dummy_jtag_drv.o jlink_jtag_drv.o linux_gpio_jtag_drv.o lpt_jtag_drv.o ftdi_jtag_drv.o
 PROTOCOLS_DRIVERS = i2c_over_jtag.o mdio_over_jtag.o spi_over_jtag.o memory_over_jtag.o
 NATSORT = strnatcmp.o
 
@@ -111,6 +111,9 @@ drv_loader.o: $(BASEDIR)/drivers/drv_loader.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 drivers_list.o: $(BASEDIR)/drivers/drivers_list.c
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+dummy_jtag_drv.o: $(BASEDIR)/drivers/dummy_jtag/dummy_jtag_drv.c
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 lpt_jtag_drv.o: $(BASEDIR)/drivers/lpt_jtag/lpt_jtag_drv.c

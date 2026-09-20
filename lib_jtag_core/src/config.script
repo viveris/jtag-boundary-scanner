@@ -300,3 +300,13 @@ set PROBE_LINUXGPIO_TMS_PIN_INVERT_POLARITY 0
 set PROBE_LINUXGPIO_TDI_PIN_INVERT_POLARITY 0
 set PROBE_LINUXGPIO_TDO_PIN_INVERT_POLARITY 0
 set PROBE_LINUXGPIO_TCK_PIN_INVERT_POLARITY 0
+
+# ----------------------------------------------------------------------------
+# Dummy probe configuration
+# ----------------------------------------------------------------------------
+
+# Dummy Altera EP2S15F484 JTAG parameters
+set DUMMY_CHIP_IR_REG_LEN    10
+set DUMMY_CHIP_ID            0x020910DD
+set DUMMY_CHIP_SCAN_REG_LEN  1140
+

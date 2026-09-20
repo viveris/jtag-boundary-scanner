@@ -50,11 +50,6 @@
 
 //#define DUMMY_JTAG_DEBUG 1
 
-// Fake Altera EP2S15F484
-#define FAKE_CHIP_ID 0x020910DD
-#define FAKE_CHIP_IR_LEN 10
-#define FAKE_CHIP_SCAN_LEN 1140
-
 typedef struct _jtag_tap_controller_core
 {
 	int tap_state;
@@ -326,6 +321,7 @@ int jtag_core_update( jtag_core * jc, jtag_tap_controller_core * tap_ctrl, int t
 {
 	int tdo_ir,tdo_id,tdo_bypass,tdo_scan;
 	int i,tdo,t;
+	uint32_t id;
 
 	tdo = 0;
 
@@ -337,19 +333,21 @@ int jtag_core_update( jtag_core * jc, jtag_tap_controller_core * tap_ctrl, int t
 	switch( tap_ctrl->tap_state )
 	{
 		case state_test_logic_reset:
-			tap.id_reg[0] = ((FAKE_CHIP_ID >> 0) & 0xFF);
-			tap.id_reg[1] = ((FAKE_CHIP_ID >> 8) & 0xFF);
-			tap.id_reg[2] = ((FAKE_CHIP_ID >> 16) & 0xFF);
-			tap.id_reg[3] = ((FAKE_CHIP_ID >> 24) & 0xFF);
+			id = jtagcore_getEnvVarValue( jc, "DUMMY_CHIP_ID");
+			tap.id_reg[0] = ((id >> 0) & 0xFF);
+			tap.id_reg[1] = ((id >> 8) & 0xFF);
+			tap.id_reg[2] = ((id >> 16) & 0xFF);
+			tap.id_reg[3] = ((id >> 24) & 0xFF);
 
 			memset(&tap.ir_reg, 0, 512);
 		break;
 
 		case state_capture_dr:
-			tap.id_reg[0] = ((FAKE_CHIP_ID >> 0) & 0xFF);
-			tap.id_reg[1] = ((FAKE_CHIP_ID >> 8) & 0xFF);
-			tap.id_reg[2] = ((FAKE_CHIP_ID >> 16) & 0xFF);
-			tap.id_reg[3] = ((FAKE_CHIP_ID >> 24) & 0xFF);
+			id = jtagcore_getEnvVarValue( jc, "DUMMY_CHIP_ID");
+			tap.id_reg[0] = ((id >> 0) & 0xFF);
+			tap.id_reg[1] = ((id >> 8) & 0xFF);
+			tap.id_reg[2] = ((id >> 16) & 0xFF);
+			tap.id_reg[3] = ((id >> 24) & 0xFF);
 		break;
 
 		case state_capture_ir:
@@ -444,9 +442,9 @@ int drv_dummy_Init(jtag_core * jc, int sub_drv,char * params)
 
 	memset(&tap,0,sizeof(jtag_tap_controller_core));
 
-	tap.ir_reg_len = FAKE_CHIP_IR_LEN;
+	tap.ir_reg_len = jtagcore_getEnvVarValue( jc, "DUMMY_CHIP_IR_REG_LEN");
 	tap.id_reg_len = 32;
-	tap.scan_reg_len = FAKE_CHIP_SCAN_LEN;
+	tap.scan_reg_len = jtagcore_getEnvVarValue( jc, "DUMMY_CHIP_SCAN_REG_LEN");
 	tap.bypass_reg_len = 1;
 
 	if(probe_detected)
